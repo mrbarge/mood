@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambient Music Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Ambient Music Generator</h1>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="mood">Mood</label>
+            <select id="mood">
+                <option value="calm">Calm</option>
+                <option value="ethereal">Ethereal</option>
+                <option value="mysterious">Mysterious</option>
+                <option value="melancholic">Melancholic</option>
+                <option value="hopeful">Hopeful</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="density">Note Density</label>
+            <div class="slider-container">
+                <input type="range" id="density" min="1" max="10" value="5">
+                <div class="slider-labels">
+                    <span>Sparse</span>
+                    <span>Dense</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="reverb">Reverb Amount</label>
+            <div class="slider-container">
+                <input type="range" id="reverb" min="0" max="1" step="0.1" value="0.5">
+                <div class="slider-labels">
+                    <span>Dry</span>
+                    <span>Wet</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="volume">Master Volume</label>
+            <div class="slider-container">
+                <input type="range" id="volume" min="-30" max="0" step="1" value="-15">
+                <div class="slider-labels">
+                    <span>Quiet</span>
+                    <span>Loud</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="melodic-instrument">Melodic Instrument</label>
+            <select id="melodic-instrument">
+                <option value="none">None</option>
+                <option value="piano" selected>Soft Piano</option>
+                <option value="marimba">Marimba</option>
+                <option value="harp">Harp</option>
+                <option value="music-box">Music Box</option>
+            </select>
+            <div class="slider-container mt-8">
+                <label for="melodic-reverb">Melodic Reverb</label>
+                <input type="range" id="melodic-reverb" min="0" max="1" step="0.05" value="0.8">
+                <div class="slider-labels">
+                    <span>Dry</span>
+                    <span>Wet</span>
+                </div>
+            </div>
+            <div class="slider-container mt-8">
+                <label for="melodic-frequency">Frequency</label>
+                <input type="range" id="melodic-frequency" min="1" max="10" value="4">
+                <div class="slider-labels">
+                    <span>Rare</span>
+                    <span>Often</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="noise-toggle">Ocean Waves</label>
+            <div class="toggle-container">
+                <input type="checkbox" id="noise-toggle">
+                <label for="noise-toggle" class="toggle-label"></label>
+            </div>
+            <div class="slider-container mt-8">
+                <label for="noise-volume">Wave Volume</label>
+                <input type="range" id="noise-volume" min="-30" max="0" step="1" value="-15">
+                <div class="slider-labels">
+                    <span>Quiet</span>
+                    <span>Loud</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <button id="start">Generate Music</button>
+            <button id="stop" disabled>Stop Music</button>
+        </div>
+    </div>
+
+    <div class="visualizer">
+        <div class="waves" id="waves"></div>
+    </div>
+
+    <div class="active-notes" id="active-notes"></div>
+
+    <div class="info">
+        <p>Inspired by Brian Eno's generative music principles. Each composition is unique and evolves over time.</p>
+    </div>
+</div>
+
+<script>
+    // Initialize variables
+    let isPlaying = false;
+    let activeNotes = {};
+    let synths = [];
+    let visualizerInterval = null;
+
+    // Create audio context and effects
+    const masterVolume = new Tone.Volume(-15).toDestination();
+
+    const reverb = new Tone.Reverb({
+        decay: 10,
+        wet: 0.5,
+        preDelay: 0.01
+    }).connect(masterVolume);
+
+    const delay = new Tone.FeedbackDelay({
+        delayTime: "8n",
+        feedback: 0.4,
+        wet: 0.3
+    }).connect(reverb);
+
+    const filter = new Tone.Filter({
+        type: "lowpass",
+        frequency: 2000,
+        Q: 1
+    }).connect(delay);
+
+    // Initialize UI elements
+    const startButton = document.getElementById("start");
+    const stopButton = document.getElementById("stop");
+    const moodSelect = document.getElementById("mood");
+    const densitySlider = document.getElementById("density");
+    const reverbSlider = document.getElementById("reverb");
+    const wavesContainer = document.getElementById("waves");
+    const activeNotesContainer = document.getElementById("active-notes");
+
+    const melodicInstrumentSelect = document.getElementById("melodic-instrument");
+    const melodicFrequencySlider = document.getElementById("melodic-frequency");
+    const melodicReverbSlider = document.getElementById("melodic-reverb");
+
+    let noiseSource = null;
+    const noiseToggle = document.getElementById("noise-toggle");
+    const noiseVolumeSlider = document.getElementById("noise-volume");
+    noiseVolumeSlider.min = "-30";
+    noiseVolumeSlider.max = "0";
+    noiseVolumeSlider.value = "-15";
+
+    // Create wave elements for visualizer
+    for (let i = 0; i < 40; i++) {
+        const wave = document.createElement("div");
+        wave.className = "wave";
+        wavesContainer.appendChild(wave);
+    }
+
+    // Event listeners
+    startButton.addEventListener("click", startMusic);
+    stopButton.addEventListener("click", stopMusic);
+    reverbSlider.addEventListener("input", (e) => {
+        reverb.wet.value = parseFloat(e.target.value);
+    });
+
+    const volumeSlider = document.getElementById("volume");
+    volumeSlider.addEventListener("input", (e) => {
+        masterVolume.volume.value = parseInt(e.target.value);
+    });
+
+    noiseToggle.addEventListener("change", toggleNoise);
+    noiseVolumeSlider.addEventListener("input", updateNoiseVolume);
+
+    melodicReverbSlider.addEventListener("input", function() {
+        if (melodicReverbNode) {
+            const reverbAmount = parseFloat(this.value);
+            console.log("Setting melodic reverb to:", reverbAmount);
+            melodicReverbNode.wet.value = reverbAmount;
+        }
+    });
+
+    // Scale definitions for different moods
+    const scales = {
+        calm: ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5"],
+        ethereal: ["D3", "F#3", "A3", "B3", "D4", "F#4", "A4", "B4", "D5"],
+        mysterious: ["C3", "D#3", "F3", "G#3", "B3", "C4", "D#4", "F4", "G#4", "B4"],
+        melancholic: ["A2", "C3", "D3", "E3", "F3", "A3", "C4", "D4", "E4", "F4", "A4"],
+        hopeful: ["G3", "A3", "B3", "D4", "E4", "G4", "A4", "B4", "D5", "E5"]
+    };
+
+    // Add melodic patterns for different moods (near your scales definition)
+    const melodicPatterns = {
+        calm: ["E4", "G4", "C5"],
+        ethereal: ["F#4", "B4", "D5"],
+        mysterious: ["D#4", "G#4", "C5"],
+        melancholic: ["C4", "E4", "A4"],
+        hopeful: ["B4", "D5", "G4"]
+    };
+    let melodicReverbNode = null;
+
+    // Synth presets
+    function createPad() {
+        const synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "sine"
+            },
+            envelope: {
+                attack: 3,
+                decay: 2,
+                sustain: 0.8,
+                release: 8
+            }
+        }).connect(filter);
+
+        // Add custom methods for cleanup
+        synth.timeout = null;
+        return synth;
+    }
+
+    function createChimes() {
+        const synth = new Tone.PolySynth(Tone.FMSynth, {
+            harmonicity: 8,
+            modulationIndex: 2,
+            oscillator: {
+                type: "sine"
+            },
+            envelope: {
+                attack: 0.1,
+                decay: 2,
+                sustain: 0.1,
+                release: 2
+            },
+            modulation: {
+                type: "square"
+            },
+            modulationEnvelope: {
+                attack: 0.5,
+                decay: 0.5,
+                sustain: 0.2,
+                release: 2
+            }
+        }).connect(filter);
+
+        // Add custom methods for cleanup
+        synth.timeout = null;
+        return synth;
+    }
+
+    function createBass() {
+        const synth = new Tone.MonoSynth({
+            oscillator: {
+                type: "sine"
+            },
+            envelope: {
+                attack: 0.1,
+                decay: 0.3,
+                sustain: 0.9,
+                release: 5
+            },
+            filterEnvelope: {
+                attack: 0.1,
+                decay: 0.2,
+                sustain: 0.9,
+                release: 5,
+                baseFrequency: 200,
+                octaves: 2.5
+            }
+        }).connect(filter);
+
+        // Add custom methods for cleanup
+        synth.timeout = null;
+        return synth;
+    }
+
+    // Function to create different melodic instruments
+    function createMelodicInstrument(type) {
+        let synth;
+
+        switch(type) {
+            case "piano":
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "triangle" },
+                    envelope: {
+                        attack: 0.02,
+                        decay: 0.1,
+                        sustain: 0.3,
+                        release: 1
+                    }
+                });
+                break;
+
+            case "marimba":
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "sine" },
+                    envelope: {
+                        attack: 0.01,
+                        decay: 0.5,
+                        sustain: 0,
+                        release: 0.1
+                    }
+                });
+                break;
+
+            case "harp":
+                // Use FMSynth instead which is compatible with PolySynth
+                synth = new Tone.PolySynth(Tone.FMSynth, {
+                    harmonicity: 1.5,
+                    modulationIndex: 10,
+                    oscillator: {
+                        type: "sine"
+                    },
+                    envelope: {
+                        attack: 0.01,
+                        decay: 0.7,
+                        sustain: 0.1,
+                        release: 1
+                    },
+                    modulation: {
+                        type: "triangle"
+                    },
+                    modulationEnvelope: {
+                        attack: 0.05,
+                        decay: 0.5,
+                        sustain: 0.2,
+                        release: 0.5
+                    },
+                    volume: -5
+                });
+                break;
+
+            case "music-box":
+                synth = new Tone.PolySynth(Tone.MetalSynth, {
+                    harmonicity: 3.1,
+                    resonance: 1000,
+                    modulationIndex: 12,
+                    envelope: {
+                        attack: 0.001,
+                        decay: 1,
+                        sustain: 0,
+                        release: 0.5
+                    },
+                    volume: -25
+                });
+                break;
+
+            default:
+                return null;
+        }
+
+        // Add a ping-pong delay before the reverb
+        const pingPongDelay = new Tone.PingPongDelay({
+            delayTime: "8n",
+            feedback: 0.3,
+            wet: 0.25  // 25% wet, subtle
+        });
+
+        // Create reverb with a reference kept globally
+        melodicReverbNode = new Tone.Reverb({
+            decay: 10,
+            wet: parseFloat(document.getElementById("melodic-reverb").value),
+            preDelay: 0.03
+        });
+
+        // Connect through effect chain
+        synth.connect(pingPongDelay);
+        pingPongDelay.connect(melodicReverbNode);
+        melodicReverbNode.connect(masterVolume);
+
+        // Add custom property for cleanup
+        synth.timeout = null;
+
+        return synth;
+    }
+
+    // Function to schedule melodic phrases
+    function scheduleMelodicPhrases(synth, scale, patternStartNotes, instrumentType) {
+        const playMelody = () => {
+            if (!isPlaying) return;
+
+            if (synth.timeout) {
+                clearTimeout(synth.timeout);
+                synth.timeout = null;
+            }
+
+            // Create a short melodic phrase
+            const phraseLength = Math.floor(Math.random() * 5) + 3; // 3-7 notes
+            const startNote = patternStartNotes[Math.floor(Math.random() * patternStartNotes.length)];
+            const startIndex = scale.indexOf(startNote);
+
+            if (startIndex !== -1) {
+                // Generate melody based on scale steps
+                const melody = [];
+                let currentIndex = startIndex;
+
+                // Add the first note
+                melody.push(scale[currentIndex]);
+
+                // Generate the rest of the phrase
+                for (let i = 1; i < phraseLength; i++) {
+                    // Calculate a step between -2 and +2 in the scale
+                    const step = Math.floor(Math.random() * 5) - 2;
+                    currentIndex = Math.min(Math.max(0, currentIndex + step), scale.length - 1);
+                    melody.push(scale[currentIndex]);
+                }
+
+                // Play the melody with varying timing
+                playMelodicSequence(synth, melody, instrumentType);
+            }
+
+            // Calculate next phrase time based on frequency setting
+            const frequency = parseInt(melodicFrequencySlider.value);
+            const baseTime = (11 - frequency) * 6; // Higher frequency means shorter time
+            const randomFactor = Math.random() * 10;
+            const nextPhraseTime = (baseTime + randomFactor) * 1000;
+
+            // Schedule next phrase only if we're still playing
+            if (isPlaying) {
+                synth.timeout = setTimeout(playMelody, nextPhraseTime);
+            }
+        };
+
+        // Start melodic phrases after a delay
+        if (isPlaying) {
+            synth.timeout = setTimeout(playMelody, Math.random() * 5000 + 10000); // 10-15 second initial delay
+        }
+    }
+
+    // Function to play a sequence of notes as a melodic phrase
+    function playMelodicSequence(synth, melody, instrumentType) {
+        // Different timing patterns for different instruments
+        let noteDuration, noteSpacing;
+
+        switch(instrumentType) {
+            case "piano":
+                noteDuration = 1.5;
+                noteSpacing = 0.8;
+                break;
+            case "marimba":
+                noteDuration = 0.5;
+                noteSpacing = 0.6;
+                break;
+            case "harp":
+                noteDuration = 1.0;
+                noteSpacing = 0.7;
+                break;
+            case "music-box":
+                noteDuration = 0.3;
+                noteSpacing = 0.4;
+                break;
+            default:
+                noteDuration = 1.0;
+                noteSpacing = 0.7;
+        }
+
+        // Play each note in the melody with slight timing variations
+        melody.forEach((note, index) => {
+            setTimeout(() => {
+                if (!isPlaying) return;
+
+                if (!activeNotes[note]) {
+                    activeNotes[note] = {
+                        count: 1,
+                        type: 'melodic'
+                    };
+                } else {
+                    activeNotes[note].count++;
+                }
+
+                // Play the note
+                synth.triggerAttackRelease(note, noteDuration);
+                updateActiveNotesDisplay();
+
+                // Remove note from active notes after it ends
+                setTimeout(() => {
+                    if (isPlaying && activeNotes[note]) {
+                        activeNotes[note].count--;
+                        if (activeNotes[note].count <= 0) {
+                            delete activeNotes[note];
+                            updateActiveNotesDisplay();
+                        }
+                    }
+                }, noteDuration * 1000 + 500);
+
+            }, index * noteSpacing * 1000 + (Math.random() * 0.2 * 1000)); // Slight random timing variations
+        });
+    }
+
+    // noise filters
+    function createNoiseGenerator() {
+        // Create noise source
+        const noise = new Tone.Noise({
+            type: "pink",
+            // type: "brown",
+            volume: parseInt(noiseVolumeSlider.value)
+        });
+
+        // Create filter for shaping the noise
+        const noiseFilter = new Tone.Filter({
+            type: "lowpass",
+            frequency: 800
+        });
+
+        // Add subtle LFO modulation to filter cutoff for wave-like effect
+        const filterLFO = new Tone.LFO({
+            frequency: 0.1,
+            min: 600,
+            max: 1000
+        }).connect(noiseFilter.frequency);
+
+        // Create amplitude modulation for wave-like volume changes
+        const volumeLFO = new Tone.LFO({
+            frequency: 0.05,
+            min: -20,
+            max: parseInt(noiseVolumeSlider.value)
+        });
+
+        // Create a separate reverb with less wet mix for the noise
+        const noiseReverb = new Tone.Reverb({
+            decay: 2,       // Shorter decay than main reverb
+            wet: 0.3,       // Less wet mix
+            preDelay: 0.01
+        }).connect(masterVolume);
+
+        // Apply EQ to make the ocean waves sound more natural and prominent
+        const noiseEQ = new Tone.EQ3({
+            low: 2,     // Boost low frequencies (+2 dB)
+            mid: -3,    // Cut mids a bit
+            high: 1     // Slight high boost
+        });
+        noise.connect(noiseEQ);
+        noiseEQ.connect(noiseFilter);
+
+        // Then connect to this instead
+        const noiseVolume = new Tone.Volume().connect(noiseReverb);
+
+        // Custom volume node to connect the LFO
+        // const noiseVolume = new Tone.Volume().connect(reverb);
+        volumeLFO.connect(noiseVolume.volume);
+
+        // Connect the chain
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseVolume);
+
+        // Start LFOs
+        filterLFO.start();
+        volumeLFO.start();
+
+        // Return objects for later control
+        return {
+            noise,
+            noiseFilter,
+            noiseVolume,
+            filterLFO,
+            volumeLFO
+        };
+    }
+
+    // Toggle noise on/off
+    function toggleNoise() {
+        console.log("Toggle noise called, isPlaying:", isPlaying, "checked:", noiseToggle.checked);
+        if (!isPlaying) return;
+
+        if (noiseToggle.checked) {
+            // Start noise if checked and not already running
+            console.log("Creating noise generator");
+            if (!noiseSource) {
+                console.log("Starting noise");
+                noiseSource = createNoiseGenerator();
+                noiseSource.noise.start();
+            }
+        } else {
+            // Stop noise if unchecked and running
+            if (noiseSource) {
+                noiseSource.noise.stop();
+                noiseSource.filterLFO.stop();
+                noiseSource.volumeLFO.stop();
+
+                // Clean up
+                setTimeout(() => {
+                    if (noiseSource) {
+                        noiseSource.noise.dispose();
+                        noiseSource.noiseFilter.dispose();
+                        noiseSource.noiseVolume.dispose();
+                        noiseSource.filterLFO.dispose();
+                        noiseSource.volumeLFO.dispose();
+                        noiseSource = null;
+                    }
+                }, 100);
+            }
+        }
+    }
+
+    // Update noise volume
+    function updateNoiseVolume() {
+        if (noiseSource && noiseSource.volumeLFO) {
+            const volume = parseInt(noiseVolumeSlider.value);
+            noiseSource.volumeLFO.max = volume;
+        }
+    }
+
+    // Main function to start generating music
+    async function startMusic() {
+        if (isPlaying) return;
+
+        // Start audio context
+        await Tone.start();
+
+        // Reset state
+        isPlaying = true;
+        activeNotes = {};
+
+        // Update UI
+        startButton.disabled = true;
+        stopButton.disabled = false;
+
+        // Clean up any previous synths
+        synths.forEach(synth => synth.dispose());
+        synths = [];
+
+        // Create new synths
+        const pad1 = createPad();
+        const pad2 = createPad();
+        const chimes = createChimes();
+        const bass = createBass();
+
+        synths.push(pad1, pad2, chimes, bass);
+
+        // Create melodic instrument if selected
+        const selectedInstrument = melodicInstrumentSelect.value;
+        if (selectedInstrument !== "none") {
+            const melodicSynth = createMelodicInstrument(selectedInstrument);
+            if (melodicSynth) {
+                synths.push(melodicSynth);
+                melodicSynth.volume.value = 0; // Set initial volume
+            }
+        }
+
+        // Setup volume levels
+        pad1.volume.value = -8;
+        pad2.volume.value = -10;
+        chimes.volume.value = -15;
+        bass.volume.value = -5;
+
+        // Update reverb
+        reverb.wet.value = parseFloat(reverbSlider.value);
+
+        // Update master volume
+        masterVolume.volume.value = parseInt(volumeSlider.value);
+
+        // Start transport
+        Tone.Transport.bpm.value = 60;
+        Tone.Transport.start();
+
+        // Get selected scale
+        const currentMood = moodSelect.value;
+        const currentScale = scales[currentMood];
+
+        // Generate ambient pad sounds
+        schedulePadNotes(pad1, currentScale);
+
+        // Wait a bit before adding the second pad for texture
+        setTimeout(() => {
+            schedulePadNotes(pad2, currentScale);
+        }, 5000);
+
+        // Add occasional chime sounds
+        scheduleChimes(chimes, currentScale);
+
+        // Add bass notes
+        scheduleBassNotes(bass, currentScale);
+
+        // Add melodic instrument phrases if selected
+        if (selectedInstrument !== "none") {
+            const melodicSynth = synths[synths.length - 1]; // Last added synth
+            const melodicPattern = melodicPatterns[currentMood];
+            scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
+        }
+
+        // Start noise if toggled
+        if (noiseToggle.checked) {
+            toggleNoise();
+        }
+
+        // Start visualizer
+        startVisualizer();
+    }
+
+    function schedulePadNotes(synth, scale) {
+        const playNote = () => {
+            // Don't schedule more notes if we've stopped playing
+            if (!isPlaying) return;
+
+            // Clear previous timeout if exists
+            if (synth.timeout) {
+                clearTimeout(synth.timeout);
+                synth.timeout = null;
+            }
+
+            // Select 1-3 notes from the scale to play as a chord
+            const numNotes = Math.floor(Math.random() * 3) + 1;
+            const notes = [];
+
+            for (let i = 0; i < numNotes; i++) {
+                const note = scale[Math.floor(Math.random() * scale.length)];
+                notes.push(note);
+
+                // Track active notes for visualization
+                if (!activeNotes[note]) {
+                    activeNotes[note] = {
+                        count: 1,
+                        type: 'pad'
+                    };
+                } else {
+                    activeNotes[note].count++;
+                }
+            }
+
+            // Play chord
+            if (notes.length > 0) {
+                synth.triggerAttackRelease(notes, Math.random() * 10 + 8);
+                updateActiveNotesDisplay();
+            }
+
+            // Calculate next note time based on density
+            const density = parseInt(densitySlider.value);
+            const baseTime = 11 - density; // Higher density means shorter time between notes
+            const randomFactor = Math.random() * 3;
+            const nextNoteTime = (baseTime + randomFactor) * 1000;
+
+            // Schedule next note only if we're still playing
+            if (isPlaying) {
+                synth.timeout = setTimeout(playNote, nextNoteTime);
+            }
+        };
+
+        // Start the recursive note scheduling
+        playNote();
+    }
+
+    function scheduleChimes(synth, scale) {
+        const playChime = () => {
+            // Don't schedule more notes if we've stopped playing
+            if (!isPlaying) return;
+
+            // Clear previous timeout if exists
+            if (synth.timeout) {
+                clearTimeout(synth.timeout);
+                synth.timeout = null;
+            }
+
+            // Randomly decide whether to play a note (75% chance)
+            if (Math.random() > 0.25) {
+                // Select a higher note from the scale
+                const highNotes = scale.filter(note => {
+                    const octave = parseInt(note.slice(-1));
+                    return octave >= 4;
+                });
+
+                if (highNotes.length > 0) {
+                    const note = highNotes[Math.floor(Math.random() * highNotes.length)];
+
+                    // Add note to active notes
+                    if (!activeNotes[note]) {
+                        activeNotes[note] = {
+                            count: 1,
+                            type: 'chime'
+                        };
+                    } else {
+                        activeNotes[note].count++;
+                    }
+
+                    // Play the note
+                    synth.triggerAttackRelease(note, "16n");
+                    updateActiveNotesDisplay();
+
+                    // Remove note from active notes after it ends
+                    setTimeout(() => {
+                        if (isPlaying && activeNotes[note]) {
+                            activeNotes[note].count--;
+                            if (activeNotes[note].count <= 0) {
+                                delete activeNotes[note];
+                                updateActiveNotesDisplay();
+                            }
+                        }
+                    }, 2000);
+                }
+            }
+
+            // Calculate next chime time based on density
+            const density = parseInt(densitySlider.value);
+            const baseTime = (11 - density) * 1.5; // Higher density means shorter time
+            const randomFactor = Math.random() * 4;
+            const nextChimeTime = (baseTime + randomFactor) * 1000;
+
+            // Schedule next chime only if we're still playing
+            if (isPlaying) {
+                synth.timeout = setTimeout(playChime, nextChimeTime);
+            }
+        };
+
+        // Start chimes after a short delay
+        if (isPlaying) {
+            synth.timeout = setTimeout(playChime, 8000);
+        }
+    }
+
+    function scheduleBassNotes(synth, scale) {
+        const playBass = () => {
+            // Don't schedule more notes if we've stopped playing
+            if (!isPlaying) return;
+
+            // Clear previous timeout if exists
+            if (synth.timeout) {
+                clearTimeout(synth.timeout);
+                synth.timeout = null;
+            }
+
+            // Select bass notes (lower octaves)
+            const bassNotes = scale.filter(note => {
+                const octave = parseInt(note.slice(-1));
+                return octave <= 3;
+            });
+
+            if (bassNotes.length > 0) {
+                const note = bassNotes[Math.floor(Math.random() * bassNotes.length)];
+
+                // Add note to active notes
+                if (!activeNotes[note]) {
+                    activeNotes[note] = {
+                        count: 1,
+                        type: 'bass'
+                    };
+                } else {
+                    activeNotes[note].count++;
+                }
+
+                // Play the note with longer duration
+                synth.triggerAttackRelease(note, Math.random() * 6 + 4);
+                updateActiveNotesDisplay();
+            }
+
+            // Calculate next bass note time
+            const nextBassTime = (Math.random() * 10 + 10) * 1000; // 10-20 seconds
+
+            // Schedule next bass note only if we're still playing
+            if (isPlaying) {
+                synth.timeout = setTimeout(playBass, nextBassTime);
+            }
+        };
+
+        // Start bass after a delay
+        if (isPlaying) {
+            synth.timeout = setTimeout(playBass, 2000);
+        }
+    }
+
+    function stopMusic() {
+        isPlaying = false;
+
+        // Stop all synths
+        synths.forEach(synth => {
+            // Clear any pending timeouts
+            if (synth.timeout) {
+                clearTimeout(synth.timeout);
+                synth.timeout = null;
+            }
+
+            // Properly release synth notes
+            try {
+                if (typeof synth.releaseAll === 'function') {
+                    synth.releaseAll();
+                } else if (typeof synth.triggerRelease === 'function') {
+                    synth.triggerRelease();
+                }
+            } catch (error) {
+                console.error("Error releasing synth:", error);
+            }
+
+            // Dispose after a short delay to allow release to complete
+            setTimeout(() => {
+                try {
+                    synth.dispose();
+                } catch (error) {
+                    console.error("Error disposing synth:", error);
+                }
+            }, 500);
+        });
+
+        // Stop noise if active
+        if (noiseSource) {
+            try {
+                noiseSource.noise.stop();
+                noiseSource.filterLFO.stop();
+                noiseSource.volumeLFO.stop();
+
+                setTimeout(() => {
+                    if (noiseSource) {
+                        noiseSource.noise.dispose();
+                        noiseSource.noiseFilter.dispose();
+                        noiseSource.noiseVolume.dispose();
+                        noiseSource.filterLFO.dispose();
+                        noiseSource.volumeLFO.dispose();
+                        noiseSource = null;
+                    }
+                }, 500);
+            } catch (error) {
+                console.error("Error stopping noise:", error);
+                noiseSource = null;
+            }
+        }
+
+        // Clear the synths array
+        synths = [];
+
+        // Stop transport
+        Tone.Transport.stop();
+
+        // Update UI
+        startButton.disabled = false;
+        stopButton.disabled = true;
+
+        // Stop visualizer
+        if (visualizerInterval) {
+            clearInterval(visualizerInterval);
+            visualizerInterval = null;
+        }
+
+        // Clear active notes
+        activeNotes = {};
+        updateActiveNotesDisplay();
+
+        console.log("Music stopped successfully");
+    }
+
+    function startVisualizer() {
+        // Clear any existing interval
+        if (visualizerInterval) {
+            clearInterval(visualizerInterval);
+        }
+
+        const waves = document.querySelectorAll('.wave');
+
+        visualizerInterval = setInterval(() => {
+            // Update each wave based on audio activity
+            waves.forEach((wave, index) => {
+                if (isPlaying) {
+
+                    // In your startVisualizer function, replace the wave color block:
+                    // Change color based on active instruments
+                    if (noiseToggle.checked && index % 4 === 0) {
+                        // Blue-green for ocean waves
+                        wave.style.backgroundColor = `hsla(${180 + Math.random() * 40}, 80%, 70%, 0.2)`;
+                    } else if (melodicInstrumentSelect.value !== "none" && index % 5 === 0) {
+                        // Gold/yellow for melodic instruments
+                        wave.style.backgroundColor = `hsla(${40 + Math.random() * 20}, 90%, 65%, 0.25)`;
+                    } else {
+                        // Normal color spectrum for other sounds
+                        // wave.style.backgroundColor = `hsla(${hue}, 80%, 70%, 0.2)`;
+
+                        // Create random but smooth movements
+                        const heightPercent = Math.random() * 50 + 10;
+                        wave.style.height = `${heightPercent}%`;
+
+                        // Add some color variation based on active notes
+                        const hue = (index * 9) % 360;
+                        wave.style.backgroundColor = `hsla(${hue}, 80%, 70%, 0.2)`;
+
+                    }
+
+                } else {
+                    wave.style.height = "30%";
+                    wave.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
+                }
+            });
+        }, 200);
+    }
+
+    function updateActiveNotesDisplay() {
+        activeNotesContainer.innerHTML = '';
+
+        // Display active notes
+        Object.keys(activeNotes).forEach(note => {
+            if (activeNotes[note].count > 0) {
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note-pill';
+                noteElement.textContent = note;
+
+                // Color based on note type
+                switch(activeNotes[note].type) {
+                    case 'pad':
+                        noteElement.style.backgroundColor = 'rgba(100, 200, 255, 0.3)';
+                        break;
+                    case 'chime':
+                        noteElement.style.backgroundColor = 'rgba(255, 200, 100, 0.3)';
+                        break;
+                    case 'bass':
+                        noteElement.style.backgroundColor = 'rgba(100, 255, 150, 0.3)';
+                        break;
+                    case 'melodic':
+                        noteElement.style.backgroundColor = 'rgba(255, 180, 50, 0.4)';
+                        break;
+                }
+
+                activeNotesContainer.appendChild(noteElement);
+            }
+        });
+    }
+</script>
+</body>
+</html>
