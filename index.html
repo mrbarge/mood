@@ -91,7 +91,7 @@
             </div>
             <div class="slider-container mt-8">
                 <label for="noise-volume">Wave Volume</label>
-                <input type="range" id="noise-volume" min="-30" max="0" step="1" value="-15">
+                <input type="range" id="noise-volume" min="-15" max="5" step="1" value="-6">
                 <div class="slider-labels">
                     <span>Quiet</span>
                     <span>Loud</span>
@@ -160,9 +160,6 @@
     let noiseSource = null;
     const noiseToggle = document.getElementById("noise-toggle");
     const noiseVolumeSlider = document.getElementById("noise-volume");
-    noiseVolumeSlider.min = "-30";
-    noiseVolumeSlider.max = "0";
-    noiseVolumeSlider.value = "-15";
 
     // Create wave elements for visualizer
     for (let i = 0; i < 40; i++) {
@@ -189,7 +186,7 @@
     melodicReverbSlider.addEventListener("input", function() {
         if (melodicReverbNode) {
             const reverbAmount = parseFloat(this.value);
-            console.log("Setting melodic reverb to:", reverbAmount);
+            console.debug("Setting melodic reverb to:", reverbAmount);
             melodicReverbNode.wet.value = reverbAmount;
         }
     });
@@ -515,18 +512,12 @@
             frequency: 800
         });
 
-        // Add subtle LFO modulation to filter cutoff for wave-like effect
-        const filterLFO = new Tone.LFO({
-            frequency: 0.1,
-            min: 600,
-            max: 1000
-        }).connect(noiseFilter.frequency);
-
         // Create amplitude modulation for wave-like volume changes
         const volumeLFO = new Tone.LFO({
             frequency: 0.05,
-            min: -20,
-            max: parseInt(noiseVolumeSlider.value)
+            min: -30,
+            max: parseInt(noiseVolumeSlider.value),
+            // max: parseInt(noiseVolumeSlider.max)
         });
 
         // Create a separate reverb with less wet mix for the noise
@@ -545,19 +536,18 @@
         noise.connect(noiseEQ);
         noiseEQ.connect(noiseFilter);
 
-        // Then connect to this instead
         const noiseVolume = new Tone.Volume().connect(noiseReverb);
 
         // Custom volume node to connect the LFO
-        // const noiseVolume = new Tone.Volume().connect(reverb);
         volumeLFO.connect(noiseVolume.volume);
+
+        noiseVolume.volume.value = parseInt(noiseVolumeSlider.value);
 
         // Connect the chain
         noise.connect(noiseFilter);
         noiseFilter.connect(noiseVolume);
 
         // Start LFOs
-        filterLFO.start();
         volumeLFO.start();
 
         // Return objects for later control
@@ -565,29 +555,26 @@
             noise,
             noiseFilter,
             noiseVolume,
-            filterLFO,
             volumeLFO
         };
     }
 
     // Toggle noise on/off
     function toggleNoise() {
-        console.log("Toggle noise called, isPlaying:", isPlaying, "checked:", noiseToggle.checked);
-        if (!isPlaying) return;
-
+        console.debug("Toggle noise called, checked:", noiseToggle.checked);
         if (noiseToggle.checked) {
             // Start noise if checked and not already running
-            console.log("Creating noise generator");
+            console.debug("Creating noise generator");
             if (!noiseSource) {
-                console.log("Starting noise");
+                console.debug("Starting noise");
                 noiseSource = createNoiseGenerator();
                 noiseSource.noise.start();
+                console.debug("noise volume current value is ", noiseSource.noiseVolume.volume.value);
             }
         } else {
             // Stop noise if unchecked and running
             if (noiseSource) {
                 noiseSource.noise.stop();
-                noiseSource.filterLFO.stop();
                 noiseSource.volumeLFO.stop();
 
                 // Clean up
@@ -596,7 +583,6 @@
                         noiseSource.noise.dispose();
                         noiseSource.noiseFilter.dispose();
                         noiseSource.noiseVolume.dispose();
-                        noiseSource.filterLFO.dispose();
                         noiseSource.volumeLFO.dispose();
                         noiseSource = null;
                     }
@@ -609,6 +595,11 @@
     function updateNoiseVolume() {
         if (noiseSource && noiseSource.volumeLFO) {
             const volume = parseInt(noiseVolumeSlider.value);
+            console.debug("Updating noise volume: ", volume, " where current value is ", noiseSource.noiseVolume.volume.value);
+            // Set volume directly on the volume node
+            noiseSource.noiseVolume.volume.value = volume;
+            // Important: We need to make sure this takes effect immediately
+            noiseSource.noiseVolume.volume.rampTo(volume, 0.1); // Smooth transition
             noiseSource.volumeLFO.max = volume;
         }
     }
@@ -689,11 +680,6 @@
             const melodicSynth = synths[synths.length - 1]; // Last added synth
             const melodicPattern = melodicPatterns[currentMood];
             scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
-        }
-
-        // Start noise if toggled
-        if (noiseToggle.checked) {
-            toggleNoise();
         }
 
         // Start visualizer
@@ -900,29 +886,6 @@
                 }
             }, 500);
         });
-
-        // Stop noise if active
-        if (noiseSource) {
-            try {
-                noiseSource.noise.stop();
-                noiseSource.filterLFO.stop();
-                noiseSource.volumeLFO.stop();
-
-                setTimeout(() => {
-                    if (noiseSource) {
-                        noiseSource.noise.dispose();
-                        noiseSource.noiseFilter.dispose();
-                        noiseSource.noiseVolume.dispose();
-                        noiseSource.filterLFO.dispose();
-                        noiseSource.volumeLFO.dispose();
-                        noiseSource = null;
-                    }
-                }, 500);
-            } catch (error) {
-                console.error("Error stopping noise:", error);
-                noiseSource = null;
-            }
-        }
 
         // Clear the synths array
         synths = [];
