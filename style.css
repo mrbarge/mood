@@ -244,3 +244,20 @@ input:checked + .toggle-label:before {
 .mt-8 {
     margin-top: 8px;
 }
+
+.instrument-notification {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: translateX(-50%) scale(0.95); }
+    50% { transform: translateX(-50%) scale(1.05); }
+    100% { transform: translateX(-50%) scale(1); }
+}
+
+#random-interval-container {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}

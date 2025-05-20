@@ -64,7 +64,24 @@
                 <option value="marimba">Marimba</option>
                 <option value="harp">Harp</option>
                 <option value="music-box">Music Box</option>
+                <option value="random">Random (Auto-changing)</option>
             </select>
+            <div class="slider-container mt-8">
+                <label for="melodic-frequency">Frequency</label>
+                <input type="range" id="melodic-frequency" min="1" max="10" value="4">
+                <div class="slider-labels">
+                    <span>Rare</span>
+                    <span>Often</span>
+                </div>
+            </div>
+            <div class="slider-container mt-8" id="random-interval-container" style="display: none;">
+                <label for="random-interval">Change Interval (minutes)</label>
+                <input type="range" id="random-interval" min="1" max="30" step="1" value="15">
+                <div class="slider-labels">
+                    <span>1m</span>
+                    <span>30m</span>
+                </div>
+            </div>
             <div class="slider-container mt-8">
                 <label for="melodic-reverb">Melodic Reverb</label>
                 <input type="range" id="melodic-reverb" min="0" max="1" step="0.05" value="0.8">
@@ -91,7 +108,7 @@
             </div>
             <div class="slider-container mt-8">
                 <label for="noise-volume">Wave Volume</label>
-                <input type="range" id="noise-volume" min="-15" max="5" step="1" value="-6">
+                <input type="range" id="noise-volume" min="-15" max="0" step="1" value="-7">
                 <div class="slider-labels">
                     <span>Quiet</span>
                     <span>Loud</span>
@@ -153,10 +170,16 @@
     const wavesContainer = document.getElementById("waves");
     const activeNotesContainer = document.getElementById("active-notes");
 
+    // Melody
     const melodicInstrumentSelect = document.getElementById("melodic-instrument");
     const melodicFrequencySlider = document.getElementById("melodic-frequency");
     const melodicReverbSlider = document.getElementById("melodic-reverb");
+    // Control random-ness
+    let randomMelodyInterval = null;
+    const randomIntervalSlider = document.getElementById("random-interval");
+    const randomIntervalContainer = document.getElementById("random-interval-container");
 
+    // Noise
     let noiseSource = null;
     const noiseToggle = document.getElementById("noise-toggle");
     const noiseVolumeSlider = document.getElementById("noise-volume");
@@ -188,6 +211,22 @@
             const reverbAmount = parseFloat(this.value);
             console.debug("Setting melodic reverb to:", reverbAmount);
             melodicReverbNode.wet.value = reverbAmount;
+        }
+    });
+
+
+    // Update event listener for the instrument dropdown
+    melodicInstrumentSelect.addEventListener("change", function() {
+        // Show/hide the random interval slider based on selection
+        if (this.value === "random") {
+            randomIntervalContainer.style.display = "block";
+        } else {
+            randomIntervalContainer.style.display = "none";
+        }
+
+        // If we're currently playing, handle instrument change
+        if (isPlaying) {
+            handleInstrumentChange();
         }
     });
 
@@ -497,6 +536,232 @@
         });
     }
 
+    // Function to handle instrument changes during playback
+    function handleInstrumentChange() {
+        // Clear any existing random interval
+        if (randomMelodyInterval) {
+            clearInterval(randomMelodyInterval);
+            randomMelodyInterval = null;
+        }
+
+        // Get the currently selected instrument
+        const selectedInstrument = melodicInstrumentSelect.value;
+        console.debug("Instrument changed to:", selectedInstrument);
+
+        // If it's a specific instrument (not random or none)
+        if (selectedInstrument !== "random" && selectedInstrument !== "none") {
+            // Remove any existing melodic synth
+            if (synths.length > 4) {
+                const oldSynth = synths.pop();
+                if (oldSynth && oldSynth.timeout) {
+                    clearTimeout(oldSynth.timeout);
+                }
+                setTimeout(() => {
+                    if (oldSynth) oldSynth.dispose();
+                }, 500);
+            }
+
+            // Create new synth with selected instrument
+            const melodicSynth = createMelodicInstrument(selectedInstrument);
+            if (melodicSynth) {
+                synths.push(melodicSynth);
+                melodicSynth.volume.value = -5;
+
+                // Get current scale and start scheduling
+                const currentMood = moodSelect.value;
+                const currentScale = scales[currentMood];
+                const melodicPattern = melodicPatterns[currentMood];
+
+                scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
+            }
+        }
+        // If it's set to random, start the random cycling
+        else if (selectedInstrument === "random") {
+            startRandomInstrumentCycle();
+        }
+        // If it's none, remove the melodic synth if it exists
+        else if (selectedInstrument === "none") {
+            if (synths.length > 4) {
+                const oldSynth = synths.pop();
+                if (oldSynth && oldSynth.timeout) {
+                    clearTimeout(oldSynth.timeout);
+                }
+                setTimeout(() => {
+                    if (oldSynth) oldSynth.dispose();
+                }, 500);
+            }
+        }
+    }
+
+    // Function to start random instrument cycling
+    function startRandomInstrumentCycle() {
+        console.debug("Starting random instrument cycle");
+
+        // Clear any existing interval
+        if (randomMelodyInterval) {
+            clearInterval(randomMelodyInterval);
+        }
+
+        // Change to a random instrument initially
+        changeToRandomInstrument();
+
+        // Set up the interval for future changes
+        const minutesValue = parseInt(randomIntervalSlider.value);
+        const milliseconds = minutesValue * 60 * 1000; // Convert minutes to milliseconds
+
+        console.debug(`Setting random instrument interval to ${minutesValue} minutes (${milliseconds}ms)`);
+        randomMelodyInterval = setInterval(() => {
+            if (isPlaying && melodicInstrumentSelect.value === "random") {
+                changeToRandomInstrument();
+            } else {
+                // If no longer in random mode or not playing, clear the interval
+                clearInterval(randomMelodyInterval);
+                randomMelodyInterval = null;
+            }
+        }, milliseconds);
+    }
+
+    // Function to change to a random instrument
+    function changeToRandomInstrument() {
+        // Get all regular instrument options (excluding "none" and "random")
+        const instrumentOptions = Array.from(melodicInstrumentSelect.options)
+            .filter(option => option.value !== "none" && option.value !== "random")
+            .map(option => option.value);
+
+        // Get current actual instrument (or last used if in random mode)
+        let currentInstrument = "";
+        if (synths.length > 4) {
+            currentInstrument = synths[4].instrumentType || ""; // We'll need to store this property
+        }
+
+        // Select a random instrument different from the current one
+        let newInstrument;
+        do {
+            const randomIndex = Math.floor(Math.random() * instrumentOptions.length);
+            newInstrument = instrumentOptions[randomIndex];
+        } while (newInstrument === currentInstrument && instrumentOptions.length > 1);
+
+        console.debug(`Random change: ${currentInstrument} → ${newInstrument}`);
+
+        // Remove current melodic synth if it exists
+        if (synths.length > 4) {
+            const oldSynth = synths.pop();
+
+            // Clear any pending timeouts
+            if (oldSynth.timeout) {
+                clearTimeout(oldSynth.timeout);
+            }
+
+            // Wait a moment before disposing to let any in-progress notes complete
+            setTimeout(() => {
+                try {
+                    oldSynth.dispose();
+                } catch (error) {
+                    // Silently catch any errors
+                    console.debug("Note: synth already disposed");
+                }
+            }, 500);
+        }
+
+        // Create new synth
+        const melodicSynth = createMelodicInstrument(newInstrument);
+        if (melodicSynth) {
+            // Store the instrument type for reference
+            melodicSynth.instrumentType = newInstrument;
+
+            synths.push(melodicSynth);
+            melodicSynth.volume.value = -5;
+
+            // Get current scale and start scheduling
+            const currentMood = moodSelect.value;
+            const currentScale = scales[currentMood];
+            const melodicPattern = melodicPatterns[currentMood];
+
+            scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, newInstrument);
+        }
+
+        // Visual feedback
+        animateInstrumentChange(newInstrument);
+    }
+
+    // Function to show visual feedback for instrument change
+    function animateInstrumentChange(instrument) {
+        // Find the proper name for this instrument
+        let instrumentName = instrument;
+        for (let i = 0; i < melodicInstrumentSelect.options.length; i++) {
+            if (melodicInstrumentSelect.options[i].value === instrument) {
+                instrumentName = melodicInstrumentSelect.options[i].textContent;
+                break;
+            }
+        }
+
+        // Create and animate the notification
+        const notification = document.createElement('div');
+        notification.className = 'instrument-notification';
+        notification.textContent = instrumentName;
+        notification.style.cssText = `
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        z-index: 10;
+    `;
+
+        document.querySelector('.visualizer').appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateX(-50%) translateY(10px)';
+        }, 10);
+
+        // Animate out
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(-50%) translateY(0)';
+        }, 2000);
+
+        // Remove from DOM
+        setTimeout(() => {
+            notification.remove();
+        }, 2500);
+
+        // Also flash some waves
+        document.querySelectorAll('.wave').forEach(wave => {
+            if (Math.random() > 0.7) {
+                const originalColor = wave.style.backgroundColor;
+                const originalHeight = wave.style.height;
+
+                wave.style.transition = "all 0.5s";
+
+                // Assign color based on instrument
+                let hue;
+                switch(instrument) {
+                    case "piano": hue = "210"; break;
+                    case "marimba": hue = "30"; break;
+                    case "harp": hue = "280"; break;
+                    case "music-box": hue = "140"; break;
+                    default: hue = "60";
+                }
+
+                wave.style.backgroundColor = `hsla(${hue}, 90%, 70%, 0.6)`;
+                wave.style.height = "60%";
+
+                setTimeout(() => {
+                    wave.style.backgroundColor = originalColor;
+                    wave.style.height = originalHeight;
+                }, 500);
+            }
+        });
+    }
+
     // noise filters
     function createNoiseGenerator() {
         // Create noise source
@@ -631,16 +896,6 @@
 
         synths.push(pad1, pad2, chimes, bass);
 
-        // Create melodic instrument if selected
-        const selectedInstrument = melodicInstrumentSelect.value;
-        if (selectedInstrument !== "none") {
-            const melodicSynth = createMelodicInstrument(selectedInstrument);
-            if (melodicSynth) {
-                synths.push(melodicSynth);
-                melodicSynth.volume.value = 0; // Set initial volume
-            }
-        }
-
         // Setup volume levels
         pad1.volume.value = -8;
         pad2.volume.value = -10;
@@ -660,6 +915,32 @@
         // Get selected scale
         const currentMood = moodSelect.value;
         const currentScale = scales[currentMood];
+
+        // Create melodic instrument if selected
+        const selectedInstrument = melodicInstrumentSelect.value;
+        if (selectedInstrument !== "none") {
+            if (selectedInstrument === "random") {
+                // Start random cycling mode
+                startRandomInstrumentCycle();
+
+                // Also show/hide the interval slider
+                randomIntervalContainer.style.display = "block";
+            } else {
+                // Create specific instrument
+                const melodicSynth = createMelodicInstrument(selectedInstrument);
+                if (melodicSynth) {
+                    melodicSynth.instrumentType = selectedInstrument; // Store type
+                    synths.push(melodicSynth);
+                    melodicSynth.volume.value = -5;
+
+                    const melodicPattern = melodicPatterns[currentMood];
+                    scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
+                }
+
+                // Hide interval slider if not in random mode
+                randomIntervalContainer.style.display = "none";
+            }
+        }
 
         // Generate ambient pad sounds
         schedulePadNotes(pad1, currentScale);
@@ -906,6 +1187,11 @@
         // Clear active notes
         activeNotes = {};
         updateActiveNotesDisplay();
+
+        if (randomMelodyInterval) {
+            clearInterval(randomMelodyInterval);
+            randomMelodyInterval = null;
+        }
 
         console.log("Music stopped successfully");
     }
