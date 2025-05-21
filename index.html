@@ -20,6 +20,7 @@
                 <option value="mysterious">Mysterious</option>
                 <option value="melancholic">Melancholic</option>
                 <option value="hopeful">Hopeful</option>
+                <option value="random">Random (Auto-changing)</option>
             </select>
         </div>
 
@@ -74,7 +75,7 @@
                     <span>Often</span>
                 </div>
             </div>
-            <div class="slider-container mt-8" id="random-interval-container" style="display: none;">
+            <div class="slider-container mt-8" id="random-interval-container">
                 <label for="random-interval">Change Interval (minutes)</label>
                 <input type="range" id="random-interval" min="1" max="30" step="1" value="15">
                 <div class="slider-labels">
@@ -139,6 +140,7 @@
     let activeNotes = {};
     let synths = [];
     let visualizerInterval = null;
+    let currentActiveMood = "calm"; // Default starting mood
 
     // Create audio context and effects
     const masterVolume = new Tone.Volume(-15).toDestination();
@@ -174,6 +176,7 @@
     const melodicInstrumentSelect = document.getElementById("melodic-instrument");
     const melodicFrequencySlider = document.getElementById("melodic-frequency");
     const melodicReverbSlider = document.getElementById("melodic-reverb");
+
     // Control random-ness
     let randomMelodyInterval = null;
     const randomIntervalSlider = document.getElementById("random-interval");
@@ -217,16 +220,16 @@
 
     // Update event listener for the instrument dropdown
     melodicInstrumentSelect.addEventListener("change", function() {
-        // Show/hide the random interval slider based on selection
-        if (this.value === "random") {
-            randomIntervalContainer.style.display = "block";
-        } else {
-            randomIntervalContainer.style.display = "none";
-        }
-
         // If we're currently playing, handle instrument change
         if (isPlaying) {
             handleInstrumentChange();
+        }
+    });
+
+    // Update mood select change handler
+    moodSelect.addEventListener("change", function() {
+        if (isPlaying) {
+            handleMoodChange();
         }
     });
 
@@ -248,6 +251,9 @@
         hopeful: ["B4", "D5", "G4"]
     };
     let melodicReverbNode = null;
+
+    // Scale randomization
+    let randomScaleInterval = null;
 
     // Synth presets
     function createPad() {
@@ -506,32 +512,35 @@
         // Play each note in the melody with slight timing variations
         melody.forEach((note, index) => {
             setTimeout(() => {
-                if (!isPlaying) return;
+                try {
+                    if (!isPlaying) return;
 
-                if (!activeNotes[note]) {
-                    activeNotes[note] = {
-                        count: 1,
-                        type: 'melodic'
-                    };
-                } else {
-                    activeNotes[note].count++;
-                }
-
-                // Play the note
-                synth.triggerAttackRelease(note, noteDuration);
-                updateActiveNotesDisplay();
-
-                // Remove note from active notes after it ends
-                setTimeout(() => {
-                    if (isPlaying && activeNotes[note]) {
-                        activeNotes[note].count--;
-                        if (activeNotes[note].count <= 0) {
-                            delete activeNotes[note];
-                            updateActiveNotesDisplay();
-                        }
+                    if (!activeNotes[note]) {
+                        activeNotes[note] = {
+                            count: 1,
+                            type: 'melodic'
+                        };
+                    } else {
+                        activeNotes[note].count++;
                     }
-                }, noteDuration * 1000 + 500);
 
+                    // Play the note
+                    synth.triggerAttackRelease(note, noteDuration);
+                    updateActiveNotesDisplay();
+
+                    // Remove note from active notes after it ends
+                    setTimeout(() => {
+                        if (isPlaying && activeNotes[note]) {
+                            activeNotes[note].count--;
+                            if (activeNotes[note].count <= 0) {
+                                delete activeNotes[note];
+                                updateActiveNotesDisplay();
+                            }
+                        }
+                    }, noteDuration * 1000 + 500);
+                } catch (error) {
+                    console.log("Note playback error (ignored):", error.message);
+                }
             }, index * noteSpacing * 1000 + (Math.random() * 0.2 * 1000)); // Slight random timing variations
         });
     }
@@ -568,9 +577,9 @@
                 melodicSynth.volume.value = -5;
 
                 // Get current scale and start scheduling
-                const currentMood = moodSelect.value;
-                const currentScale = scales[currentMood];
-                const melodicPattern = melodicPatterns[currentMood];
+                const effectiveMood = moodSelect.value === "random" ? currentActiveMood : moodSelect.value;
+                const currentScale = scales[effectiveMood];
+                const melodicPattern = melodicPatterns[effectiveMood];
 
                 scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
             }
@@ -590,6 +599,28 @@
                     if (oldSynth) oldSynth.dispose();
                 }, 500);
             }
+        }
+    }
+
+    // Function to handle mood changes
+    function handleMoodChange() {
+        // Clear any existing random interval
+        if (randomScaleInterval) {
+            clearInterval(randomScaleInterval);
+            randomScaleInterval = null;
+        }
+
+        const selectedMood = moodSelect.value;
+        console.log("Mood changed to:", selectedMood);
+
+        if (selectedMood !== "random") {
+            // Update all synths with the new scale
+            currentActiveMood = selectedMood;
+            const newScale = scales[selectedMood];
+            updateAllSynthsWithNewScale(newScale, selectedMood);
+        } else {
+            // Start random scale cycling
+            startRandomScaleCycle();
         }
     }
 
@@ -673,93 +704,95 @@
             melodicSynth.volume.value = -5;
 
             // Get current scale and start scheduling
-            const currentMood = moodSelect.value;
+            const currentMood = moodSelect.value === "random" ? currentActiveMood : moodSelect.value;
             const currentScale = scales[currentMood];
             const melodicPattern = melodicPatterns[currentMood];
 
             scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, newInstrument);
         }
-
-        // Visual feedback
-        animateInstrumentChange(newInstrument);
     }
 
-    // Function to show visual feedback for instrument change
-    function animateInstrumentChange(instrument) {
-        // Find the proper name for this instrument
-        let instrumentName = instrument;
-        for (let i = 0; i < melodicInstrumentSelect.options.length; i++) {
-            if (melodicInstrumentSelect.options[i].value === instrument) {
-                instrumentName = melodicInstrumentSelect.options[i].textContent;
-                break;
+    // Function to start random scale cycling
+    function startRandomScaleCycle() {
+        console.log("Starting random scale cycle");
+
+        // Initial random scale change
+        changeToRandomScale();
+
+        // Set up the interval for future changes
+        const minutesValue = parseInt(randomIntervalSlider.value);
+        const milliseconds = minutesValue * 60 * 1000; // Convert minutes to milliseconds
+
+        randomScaleInterval = setInterval(() => {
+            if (isPlaying && moodSelect.value === "random") {
+                changeToRandomScale();
+            } else {
+                // Clear if no longer in random mode
+                clearInterval(randomScaleInterval);
+                randomScaleInterval = null;
             }
-        }
+        }, milliseconds);
+    }
 
-        // Create and animate the notification
-        const notification = document.createElement('div');
-        notification.className = 'instrument-notification';
-        notification.textContent = instrumentName;
-        notification.style.cssText = `
-        position: absolute;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.6);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 14px;
-        opacity: 0;
-        transition: opacity 0.3s, transform 0.3s;
-        z-index: 10;
-    `;
+    // Function to change to a random scale
+    function changeToRandomScale() {
+        // Get all valid mood options (excluding "random")
+        const moodOptions = Array.from(moodSelect.options)
+            .filter(option => option.value !== "random")
+            .map(option => option.value);
 
-        document.querySelector('.visualizer').appendChild(notification);
+        // Select a random mood
+        const randomIndex = Math.floor(Math.random() * moodOptions.length);
+        const newMood = moodOptions[randomIndex];
 
-        // Animate in
-        setTimeout(() => {
-            notification.style.opacity = '1';
-            notification.style.transform = 'translateX(-50%) translateY(10px)';
-        }, 10);
+        // Update the current active mood
+        currentActiveMood = newMood;
 
-        // Animate out
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateX(-50%) translateY(0)';
-        }, 2000);
+        console.log("Random mood change to:", currentActiveMood);
 
-        // Remove from DOM
-        setTimeout(() => {
-            notification.remove();
-        }, 2500);
+        // Get the corresponding scale
+        const newScale = scales[currentActiveMood];
 
-        // Also flash some waves
-        document.querySelectorAll('.wave').forEach(wave => {
-            if (Math.random() > 0.7) {
-                const originalColor = wave.style.backgroundColor;
-                const originalHeight = wave.style.height;
+        // Update all synths with this scale
+        updateAllSynthsWithNewScale(newScale, currentActiveMood);
 
-                wave.style.transition = "all 0.5s";
+        return newScale;
+    }
 
-                // Assign color based on instrument
-                let hue;
-                switch(instrument) {
-                    case "piano": hue = "210"; break;
-                    case "marimba": hue = "30"; break;
-                    case "harp": hue = "280"; break;
-                    case "music-box": hue = "140"; break;
-                    default: hue = "60";
-                }
-
-                wave.style.backgroundColor = `hsla(${hue}, 90%, 70%, 0.6)`;
-                wave.style.height = "60%";
-
-                setTimeout(() => {
-                    wave.style.backgroundColor = originalColor;
-                    wave.style.height = originalHeight;
-                }, 500);
+    // Function to update all synths with a new scale
+    function updateAllSynthsWithNewScale(newScale, mood) {
+        // Stop current scheduling
+        synths.forEach(synth => {
+            if (synth.timeout) {
+                clearTimeout(synth.timeout);
+                synth.timeout = null;
             }
         });
+
+        // Get melodic pattern for this mood
+        const melodicPattern = melodicPatterns[mood];
+
+        // Restart scheduling with new scale
+        schedulePadNotes(synths[0], newScale);
+
+        setTimeout(() => {
+            if (isPlaying) {
+                schedulePadNotes(synths[1], newScale);
+            }
+        }, 2000);
+
+        scheduleChimes(synths[2], newScale);
+        scheduleBassNotes(synths[3], newScale);
+
+        // Update melodic synth if it exists
+        if (synths.length > 4) {
+            const melodicSynth = synths[4];
+            const instrumentType = melodicSynth.instrumentType || melodicInstrumentSelect.value;
+
+            if (instrumentType !== "none" && instrumentType !== "random") {
+                scheduleMelodicPhrases(melodicSynth, newScale, melodicPattern, instrumentType);
+            }
+        }
     }
 
     // noise filters
@@ -912,9 +945,25 @@
         Tone.Transport.bpm.value = 60;
         Tone.Transport.start();
 
-        // Get selected scale
-        const currentMood = moodSelect.value;
-        const currentScale = scales[currentMood];
+        // Initialize currentActiveMood
+        if (moodSelect.value !== "random") {
+            currentActiveMood = moodSelect.value;
+        } else {
+            // Pick a random initial mood
+            const moodOptions = Array.from(moodSelect.options)
+                .filter(option => option.value !== "random")
+                .map(option => option.value);
+
+            currentActiveMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
+            console.log("Starting with random mood:", currentActiveMood);
+        }
+
+        // Then use currentActiveMood for initial setup
+        const currentScale = scales[currentActiveMood];
+
+        if (moodSelect.value === "random") {
+            startRandomScaleCycle();
+        }
 
         // Create melodic instrument if selected
         const selectedInstrument = melodicInstrumentSelect.value;
@@ -922,9 +971,6 @@
             if (selectedInstrument === "random") {
                 // Start random cycling mode
                 startRandomInstrumentCycle();
-
-                // Also show/hide the interval slider
-                randomIntervalContainer.style.display = "block";
             } else {
                 // Create specific instrument
                 const melodicSynth = createMelodicInstrument(selectedInstrument);
@@ -933,12 +979,9 @@
                     synths.push(melodicSynth);
                     melodicSynth.volume.value = -5;
 
-                    const melodicPattern = melodicPatterns[currentMood];
+                    const melodicPattern = melodicPatterns[currentActiveMood];
                     scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
                 }
-
-                // Hide interval slider if not in random mode
-                randomIntervalContainer.style.display = "none";
             }
         }
 
@@ -955,13 +998,6 @@
 
         // Add bass notes
         scheduleBassNotes(bass, currentScale);
-
-        // Add melodic instrument phrases if selected
-        if (selectedInstrument !== "none") {
-            const melodicSynth = synths[synths.length - 1]; // Last added synth
-            const melodicPattern = melodicPatterns[currentMood];
-            scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
-        }
 
         // Start visualizer
         startVisualizer();
