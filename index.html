@@ -20,6 +20,18 @@
                 <option value="mysterious">Mysterious</option>
                 <option value="melancholic">Melancholic</option>
                 <option value="hopeful">Hopeful</option>
+                <option value="dreamy">Dreamy</option>
+                <option value="nostalgic">Nostalgic</option>
+                <option value="peaceful">Peaceful</option>
+                <option value="mystical">Mystical</option>
+                <option value="celestial">Celestial</option>
+                <option value="contemplative">Contemplative</option>
+                <option value="serene">Serene</option>
+                <option value="wandering">Wandering</option>
+                <option value="introspective">Introspective</option>
+                <option value="minimalist">Minimalist</option>
+                <option value="suspended">Suspended</option>
+                <option value="twilight">Twilight</option>
                 <option value="random">Random (Auto-changing)</option>
             </select>
         </div>
@@ -239,7 +251,19 @@
         ethereal: ["D3", "F#3", "A3", "B3", "D4", "F#4", "A4", "B4", "D5"],
         mysterious: ["C3", "D#3", "F3", "G#3", "B3", "C4", "D#4", "F4", "G#4", "B4"],
         melancholic: ["A2", "C3", "D3", "E3", "F3", "A3", "C4", "D4", "E4", "F4", "A4"],
-        hopeful: ["G3", "A3", "B3", "D4", "E4", "G4", "A4", "B4", "D5", "E5"]
+        hopeful: ["G3", "A3", "B3", "D4", "E4", "G4", "A4", "B4", "D5", "E5"],
+        dreamy: ["C3", "D3", "E3", "F#3", "G3", "A3", "B3", "C4", "D4", "E4", "F#4", "G4", "A4", "B4", "C5"],
+        nostalgic: ["A2", "B2", "C3", "D3", "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4"],
+        peaceful: ["D3", "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5"],
+        mystical: ["E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5"],
+        celestial: ["C3", "D3", "E3", "F#3", "G#3", "A#3", "C4", "D4", "E4", "F#4", "G#4", "A#4", "C5"],
+        contemplative: ["A2", "C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5"],
+        serene: ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5", "G5"],
+        wandering: ["G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5"],
+        introspective: ["A2", "B2", "C3", "D3", "E3", "F3", "G#3", "A3", "B3", "C4", "D4", "E4", "F4", "G#4", "A4"],
+        minimalist: ["C3", "E3", "G3", "D4", "F4", "A4", "C5", "E5", "G5"],
+        suspended: ["C3", "D3", "F3", "G3", "C4", "D4", "F4", "G4", "C5", "D5", "F5"],
+        twilight: ["C3", "Eb3", "F3", "Gb3", "G3", "Bb3", "C4", "Eb4", "F4", "Gb4", "G4", "Bb4", "C5"]
     };
 
     // Add melodic patterns for different moods (near your scales definition)
@@ -248,7 +272,19 @@
         ethereal: ["F#4", "B4", "D5"],
         mysterious: ["D#4", "G#4", "C5"],
         melancholic: ["C4", "E4", "A4"],
-        hopeful: ["B4", "D5", "G4"]
+        hopeful: ["B4", "D5", "G4"],
+        dreamy: ["E4", "F#4", "A4", "B4"],
+        nostalgic: ["C4", "E4", "F4", "A4"],
+        peaceful: ["D4", "F4", "A4", "C5"],
+        mystical: ["F4", "G4", "C5", "D5"],
+        celestial: ["D4", "F#4", "A#4", "C5"],
+        contemplative: ["C4", "E4", "G4"],
+        serene: ["E4", "G4", "C5"],
+        wandering: ["G4", "C5", "F5"],
+        introspective: ["E4", "F4", "G#4"],
+        minimalist: ["E4", "G4"],
+        suspended: ["D4", "F4", "G4"],
+        twilight: ["Eb4", "Gb4", "Bb4"]
     };
     let melodicReverbNode = null;
 
