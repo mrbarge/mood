@@ -266,7 +266,7 @@ input:checked + .toggle-label:before {
 .dice-section {
     background: linear-gradient(45deg, #667eea, #764ba2);
     border-radius: 12px;
-    padding: 20px;
+    padding: 15px 20px; /* Reduced from 20px to 15px vertical padding */
     margin-bottom: 20px;
     text-align: center;
 }
@@ -275,15 +275,19 @@ input:checked + .toggle-label:before {
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
-    padding: 15px 25px;
+    padding: 10px 20px; /* Reduced from 15px 25px */
     border-radius: 50px;
-    font-size: 1.1rem;
+    font-size: 1rem; /* Reduced from 1.1rem */
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px; /* Reduced from 10px */
+}
+
+.dice-icon {
+    font-size: 1.1rem; /* Reduced from 1.3rem */
 }
 
 .dice-button:hover {
@@ -292,8 +296,15 @@ input:checked + .toggle-label:before {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-.dice-icon {
-    font-size: 1.3rem;
+@media (max-width: 480px) {
+    .dice-section {
+        padding: 12px 15px; /* Even more compact on mobile */
+    }
+
+    .dice-button {
+        padding: 8px 16px; /* Smaller on mobile */
+        font-size: 0.9rem;
+    }
 }
 
 .playback-controls {
