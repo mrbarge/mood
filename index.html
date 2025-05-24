@@ -9,144 +9,335 @@
 </head>
 <body>
 <div class="container">
-    <h1>Ambient Music Generator</h1>
+    <div class="header">
+        <h1>Mood</h1>
+        <p>Each composition is unique and evolves over time using generative principles.</p>
+    </div>
 
-    <div class="controls">
-        <div class="control-group">
-            <label for="mood">Mood</label>
-            <select id="mood">
-                <option value="calm">Calm</option>
-                <option value="ethereal">Ethereal</option>
-                <option value="mysterious">Mysterious</option>
-                <option value="melancholic">Melancholic</option>
-                <option value="hopeful">Hopeful</option>
-                <option value="dreamy">Dreamy</option>
-                <option value="nostalgic">Nostalgic</option>
-                <option value="peaceful">Peaceful</option>
-                <option value="mystical">Mystical</option>
-                <option value="celestial">Celestial</option>
-                <option value="contemplative">Contemplative</option>
-                <option value="serene">Serene</option>
-                <option value="wandering">Wandering</option>
-                <option value="introspective">Introspective</option>
-                <option value="minimalist">Minimalist</option>
-                <option value="suspended">Suspended</option>
-                <option value="twilight">Twilight</option>
-                <option value="random">Random (Auto-changing)</option>
-            </select>
+    <div class="main-controls">
+        <!-- Dice Randomizer -->
+        <div class="dice-section">
+            <button class="dice-button" id="dice-button">
+                <span class="dice-icon">🎲</span>
+                Randomize Everything
+            </button>
         </div>
 
-        <div class="control-group">
-            <label for="density">Note Density</label>
+        <!-- Master Volume Section -->
+        <div class="volume-section">
             <div class="slider-container">
-                <input type="range" id="density" min="1" max="10" value="5">
+                <div class="slider-wrapper">
+                    <input type="range" id="volume" min="-30" max="0" step="1" value="-15">
+                </div>
                 <div class="slider-labels">
-                    <span>Sparse</span>
-                    <span>Dense</span>
+                    <span>🔇 Quiet</span>
+                    <span>Loud 🔊</span>
                 </div>
             </div>
         </div>
 
-        <div class="control-group">
-            <label for="reverb">Reverb Amount</label>
-            <div class="slider-container">
-                <input type="range" id="reverb" min="0" max="1" step="0.1" value="0.5">
-                <div class="slider-labels">
-                    <span>Dry</span>
-                    <span>Wet</span>
+        <!-- Mood Section -->
+        <div class="control-section" id="mood-section">
+            <div class="section-header" onclick="toggleSection('mood')">
+                <div class="section-title">
+                    <div class="section-icon mood-icon">🎭</div>
+                    <div>
+                        <div class="section-info">Mood & Scale</div>
+                        <div class="section-status" id="mood-status">Calm</div>
+                    </div>
+                </div>
+                <button class="expand-btn" id="mood-expand">
+                    <span>▼</span>
+                </button>
+            </div>
+            <div class="section-content" id="mood-content">
+                <div class="control-group">
+                    <label class="control-label" for="mood">Musical Mood</label>
+                    <select id="mood" onchange="updateMoodStatus()">
+                        <option value="calm">Calm</option>
+                        <option value="ethereal">Ethereal</option>
+                        <option value="mysterious">Mysterious</option>
+                        <option value="melancholic">Melancholic</option>
+                        <option value="hopeful">Hopeful</option>
+                        <option value="dreamy">Dreamy</option>
+                        <option value="nostalgic">Nostalgic</option>
+                        <option value="peaceful">Peaceful</option>
+                        <option value="random">Random (Auto-changing)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="density">Note Density</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="density" min="1" max="10" value="5">
+                        </div>
+                        <div class="slider-labels">
+                            <span>Sparse</span>
+                            <span>Dense</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="reverb">Reverb Amount</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="reverb" min="0" max="1" step="0.1" value="0.5">
+                        </div>
+                        <div class="slider-labels">
+                            <span>Dry</span>
+                            <span>Wet</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="control-group">
-            <label for="volume">Master Volume</label>
-            <div class="slider-container">
-                <input type="range" id="volume" min="-30" max="0" step="1" value="-15">
-                <div class="slider-labels">
-                    <span>Quiet</span>
-                    <span>Loud</span>
+        <!-- Melody Section -->
+        <div class="control-section" id="melody-section">
+            <div class="section-header" onclick="toggleSection('melody')">
+                <div class="section-title">
+                    <div class="section-icon melody-icon">🎹</div>
+                    <div>
+                        <div class="section-info">Melodic Instruments</div>
+                        <div class="section-status" id="melody-status">Soft Piano</div>
+                    </div>
+                </div>
+                <button class="expand-btn" id="melody-expand">
+                    <span>▼</span>
+                </button>
+            </div>
+            <div class="section-content" id="melody-content">
+                <div class="control-group">
+                    <label class="control-label" for="melodic-instrument">Instrument Type</label>
+                    <select id="melodic-instrument" onchange="updateMelodyStatus()">
+                        <option value="none">None</option>
+                        <option value="piano" selected>Soft Piano</option>
+                        <option value="marimba">Marimba</option>
+                        <option value="harp">Harp</option>
+                        <option value="music-box">Music Box</option>
+                        <option value="random">Random (Auto-changing)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="melodic-frequency">Note Frequency</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="melodic-frequency" min="1" max="10" value="4">
+                        </div>
+                        <div class="slider-labels">
+                            <span>Rare</span>
+                            <span>Often</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group" id="random-interval-container" style="display: none;">
+                    <label class="control-label" for="random-interval">Change Interval</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="random-interval" min="1" max="30" step="1" value="5">
+                        </div>
+                        <div class="slider-labels">
+                            <span>1 min</span>
+                            <span>30 min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="melodic-reverb">Melodic Reverb</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="melodic-reverb" min="0" max="1" step="0.05" value="0.8">
+                        </div>
+                        <div class="slider-labels">
+                            <span>Dry</span>
+                            <span>Wet</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="control-group">
-            <label for="melodic-instrument">Melodic Instrument</label>
-            <select id="melodic-instrument">
-                <option value="none">None</option>
-                <option value="piano" selected>Soft Piano</option>
-                <option value="marimba">Marimba</option>
-                <option value="harp">Harp</option>
-                <option value="music-box">Music Box</option>
-                <option value="random">Random (Auto-changing)</option>
-            </select>
-            <div class="slider-container mt-8">
-                <label for="melodic-frequency">Frequency</label>
-                <input type="range" id="melodic-frequency" min="1" max="10" value="4">
-                <div class="slider-labels">
-                    <span>Rare</span>
-                    <span>Often</span>
+        <!-- Ocean Waves Section -->
+        <div class="control-section" id="waves-section">
+            <div class="section-header" onclick="toggleSection('waves')">
+                <div class="section-title">
+                    <div class="section-icon waves-icon">🌊</div>
+                    <div>
+                        <div class="section-info">Ocean Waves</div>
+                        <div class="section-status" id="waves-status">Off</div>
+                    </div>
                 </div>
+                <button class="expand-btn" id="waves-expand">
+                    <span>▼</span>
+                </button>
             </div>
-            <div class="slider-container mt-8" id="random-interval-container">
-                <label for="random-interval">Change Interval (minutes)</label>
-                <input type="range" id="random-interval" min="1" max="30" step="1" value="15">
-                <div class="slider-labels">
-                    <span>1m</span>
-                    <span>30m</span>
+            <div class="section-content" id="waves-content">
+                <div class="control-group">
+                    <label class="control-label" for="noise-toggle">Enable Ocean Waves</label>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="noise-toggle" onchange="updateWavesStatus()">
+                        <label for="noise-toggle" class="toggle-label"></label>
+                    </div>
                 </div>
-            </div>
-            <div class="slider-container mt-8">
-                <label for="melodic-reverb">Melodic Reverb</label>
-                <input type="range" id="melodic-reverb" min="0" max="1" step="0.05" value="0.8">
-                <div class="slider-labels">
-                    <span>Dry</span>
-                    <span>Wet</span>
-                </div>
-            </div>
-            <div class="slider-container mt-8">
-                <label for="melodic-frequency">Frequency</label>
-                <input type="range" id="melodic-frequency" min="1" max="10" value="4">
-                <div class="slider-labels">
-                    <span>Rare</span>
-                    <span>Often</span>
-                </div>
-            </div>
-        </div>
 
-        <div class="control-group">
-            <label for="noise-toggle">Ocean Waves</label>
-            <div class="toggle-container">
-                <input type="checkbox" id="noise-toggle">
-                <label for="noise-toggle" class="toggle-label"></label>
-            </div>
-            <div class="slider-container mt-8">
-                <label for="noise-volume">Wave Volume</label>
-                <input type="range" id="noise-volume" min="-15" max="0" step="1" value="-7">
-                <div class="slider-labels">
-                    <span>Quiet</span>
-                    <span>Loud</span>
+                <div class="control-group">
+                    <label class="control-label" for="noise-volume">Wave Volume</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="noise-volume" min="-40" max="0" step="1" value="-15">
+                        </div>
+                        <div class="slider-labels">
+                            <span>Quiet</span>
+                            <span>Loud</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="control-group">
-            <button id="start">Generate Music</button>
-            <button id="stop" disabled>Stop Music</button>
+            </div>
         </div>
     </div>
 
-    <div class="visualizer">
-        <div class="waves" id="waves"></div>
+    <!-- Visualizer -->
+    <div class="visualizer" id="waves">
+        <!-- Waves will be generated by JavaScript -->
     </div>
 
-    <div class="active-notes" id="active-notes"></div>
+    <!-- Active Notes Display -->
+    <div class="active-notes" id="active-notes">
+        <!-- Notes will appear here -->
+    </div>
+
+    <!-- Playback Controls -->
+    <div class="playback-controls">
+        <button class="play-button" id="start">Generate Music</button>
+        <button class="stop-button" id="stop" disabled>Stop Music</button>
+    </div>
 
     <div class="info">
-        <p>Inspired by Brian Eno's generative music principles. Each composition is unique and evolves over time.</p>
+        <p>By <a href="https://github.com/mrbarge/mood">mrbarge</a> with thanks to <a href="https://tonejs.github.io/">tone.js</a>.</p>
     </div>
 </div>
 
 <script>
+    // Initialize wave visualizer elements
+    function initializeWaves() {
+        const wavesContainer = document.getElementById('waves');
+        for (let i = 0; i < 40; i++) {
+            const wave = document.createElement('div');
+            wave.className = 'wave';
+            wavesContainer.appendChild(wave);
+        }
+    }
+
+    // Toggle section expansion
+    function toggleSection(sectionName) {
+        const section = document.getElementById(`${sectionName}-section`);
+        const content = document.getElementById(`${sectionName}-content`);
+        const expandBtn = document.getElementById(`${sectionName}-expand`);
+
+        const isExpanded = section.classList.contains('expanded');
+
+        if (isExpanded) {
+            section.classList.remove('expanded');
+            content.classList.remove('expanded');
+            expandBtn.classList.remove('expanded');
+        } else {
+            section.classList.add('expanded');
+            content.classList.add('expanded');
+            expandBtn.classList.add('expanded');
+        }
+    }
+
+    // Update status displays
+    function updateMoodStatus() {
+        const mood = document.getElementById('mood');
+        const status = document.getElementById('mood-status');
+        status.textContent = mood.options[mood.selectedIndex].text;
+    }
+
+    function updateMelodyStatus() {
+        const instrument = document.getElementById('melodic-instrument');
+        const status = document.getElementById('melody-status');
+        const randomContainer = document.getElementById('random-interval-container');
+
+        status.textContent = instrument.options[instrument.selectedIndex].text;
+
+        // Show/hide random interval slider
+        if (instrument.value === 'random') {
+            randomContainer.style.display = 'block';
+        } else {
+            randomContainer.style.display = 'none';
+        }
+    }
+
+    function updateWavesStatus() {
+        const toggle = document.getElementById('noise-toggle');
+        const status = document.getElementById('waves-status');
+        status.textContent = toggle.checked ? 'On' : 'Off';
+    }
+
+    // Dice randomizer
+    function randomizeEverything() {
+        const diceButton = document.getElementById('dice-button');
+
+        // Add visual feedback
+        diceButton.style.transform = 'scale(0.95)';
+        diceButton.innerHTML = '<span class="dice-icon">🎲</span> Rolling...';
+
+        setTimeout(() => {
+            // Randomize mood
+            const moodSelect = document.getElementById('mood');
+            const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
+            const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
+            moodSelect.value = randomMood.value;
+
+            // Randomize melody
+            const melodySelect = document.getElementById('melodic-instrument');
+            const melodyOptions = Array.from(melodySelect.options);
+            const randomMelody = melodyOptions[Math.floor(Math.random() * melodyOptions.length)];
+            melodySelect.value = randomMelody.value;
+
+            // Randomize waves
+            const wavesToggle = document.getElementById('noise-toggle');
+            wavesToggle.checked = Math.random() > 0.5;
+
+            // Randomize some sliders
+            document.getElementById('density').value = Math.floor(Math.random() * 8) + 2;
+            document.getElementById('reverb').value = (Math.random() * 0.8 + 0.2).toFixed(1);
+            document.getElementById('melodic-frequency').value = Math.floor(Math.random() * 8) + 2;
+
+            // Apply changes gradually if music is playing
+            if (isPlaying) {
+                applySettingsGradually();
+            }
+
+            // Update status displays
+            updateMoodStatus();
+            updateMelodyStatus();
+            updateWavesStatus();
+
+            // Reset button
+            diceButton.style.transform = 'scale(1)';
+            diceButton.innerHTML = '<span class="dice-icon">🎲</span> Randomize Everything';
+        }, 500);
+    }
+
+    // Event listeners
+    document.getElementById('dice-button').addEventListener('click', randomizeEverything);
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeWaves();
+        updateMoodStatus();
+        updateMelodyStatus();
+        updateWavesStatus();
+    });
+
     // Initialize variables
     let isPlaying = false;
     let activeNotes = {};
@@ -1341,6 +1532,30 @@
             }
         });
     }
-</script>
+
+    function applySettingsGradually() {
+        if (!isPlaying) return;
+
+        // Gradually ramp reverb changes instead of instant jumps
+        const targetReverb = parseFloat(reverbSlider.value);
+        reverb.wet.rampTo(targetReverb, 1.5);
+
+        // Handle mood/scale change during playback
+        if (moodSelect.value !== "random") {
+            currentActiveMood = moodSelect.value;
+            const newScale = scales[currentActiveMood];
+            updateAllSynthsWithNewScale(newScale, currentActiveMood);
+        }
+
+        // Handle instrument change during playback
+        handleInstrumentChange();
+
+        // Handle waves toggle change
+        if (noiseToggle.checked && !noiseSource) {
+            toggleNoise(); // Start waves if they weren't on
+        } else if (!noiseToggle.checked && noiseSource) {
+            toggleNoise(); // Stop waves if they were on
+        }
+    }    </script>
 </body>
 </html>
