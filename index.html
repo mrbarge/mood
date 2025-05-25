@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ambient Music Generator</title>
+    <title>Mood</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -42,7 +42,7 @@
                 <div class="section-title">
                     <div class="section-icon mood-icon">🎭</div>
                     <div>
-                        <div class="section-info">Mood & Scale</div>
+                        <div class="section-info">Mood</div>
                         <div class="section-status" id="mood-status">Calm</div>
                     </div>
                 </div>
@@ -97,8 +97,13 @@
 
         <!-- Melody Section -->
         <div class="control-section" id="melody-section">
+
             <div class="section-header" onclick="toggleSection('melody')">
                 <div class="section-title">
+                    <div class="toggle-btn" onclick="toggleMelody(event)">
+                        <input type="checkbox" id="melody-toggle" onchange="updateMelodyStatus()" onclick="event.stopPropagation()">
+                        <span class="toggle-indicator"></span>
+                    </div>
                     <div class="section-icon melody-icon">🎹</div>
                     <div>
                         <div class="section-info">Melodic Instruments</div>
@@ -118,7 +123,6 @@
                         <option value="marimba">Marimba</option>
                         <option value="harp">Harp</option>
                         <option value="music-box">Music Box</option>
-                        <option value="none">None</option>
                     </select>
                 </div>
 
@@ -167,6 +171,10 @@
         <div class="control-section" id="waves-section">
             <div class="section-header" onclick="toggleSection('waves')">
                 <div class="section-title">
+                    <div class="toggle-btn" onclick="toggleWaves(event)">
+                        <input type="checkbox" id="noise-toggle" onchange="updateWavesStatus()" onclick="event.stopPropagation()">
+                        <span class="toggle-indicator"></span>
+                    </div>
                     <div class="section-icon waves-icon">🌊</div>
                     <div>
                         <div class="section-info">Ocean Waves</div>
@@ -179,18 +187,10 @@
             </div>
             <div class="section-content" id="waves-content">
                 <div class="control-group">
-                    <label class="control-label" for="noise-toggle">Enable Ocean Waves</label>
-                    <div class="toggle-container">
-                        <input type="checkbox" id="noise-toggle" onchange="updateWavesStatus()">
-                        <label for="noise-toggle" class="toggle-label"></label>
-                    </div>
-                </div>
-
-                <div class="control-group">
                     <label class="control-label" for="noise-volume">Wave Volume</label>
                     <div class="slider-container">
                         <div class="slider-wrapper">
-                            <input type="range" id="noise-volume" min="-40" max="0" step="1" value="-15">
+                            <input type="range" id="noise-volume" min="-15" max="5" step="1" value="-6">
                         </div>
                         <div class="slider-labels">
                             <span>Quiet</span>
@@ -198,7 +198,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -220,7 +219,7 @@
     </div>
 
     <div class="info">
-        <p>By <a href="https://github.com/mrbarge/mood">mrbarge</a> with thanks to <a href="https://tonejs.github.io/">tone.js</a>.</p>
+        <p>By <a href="https://github.com/mrbarge/mood">mrbarge</a>, with ❤️ to <a href="https://tonejs.github.io/">tone.js</a></p>
     </div>
 </div>
 
@@ -377,6 +376,7 @@
     const activeNotesContainer = document.getElementById("active-notes");
 
     // Melody
+    const melodyToggle = document.getElementById("melody-toggle");
     const melodicInstrumentSelect = document.getElementById("melodic-instrument");
     const melodicFrequencySlider = document.getElementById("melodic-frequency");
     const melodicReverbSlider = document.getElementById("melodic-reverb");
@@ -413,6 +413,7 @@
     noiseToggle.addEventListener("change", toggleNoise);
     noiseVolumeSlider.addEventListener("input", updateNoiseVolume);
 
+    melodyToggle.addEventListener("change", toggleMelody);
     melodicReverbSlider.addEventListener("input", function() {
         if (melodicReverbNode) {
             const reverbAmount = parseFloat(this.value);
@@ -562,6 +563,7 @@
         let synth;
 
         switch(type) {
+
             case "piano":
                 synth = new Tone.PolySynth(Tone.Synth, {
                     oscillator: { type: "triangle" },
@@ -786,7 +788,8 @@
         console.debug("Instrument changed to:", selectedInstrument);
 
         // If it's a specific instrument (not random or none)
-        if (selectedInstrument !== "random" && selectedInstrument !== "none") {
+        // if (selectedInstrument !== "random" && selectedInstrument !== "none") {
+        if (selectedInstrument !== "random" && melodyToggle.checked) {
             // Remove any existing melodic synth
             if (synths.length > 4) {
                 const oldSynth = synths.pop();
@@ -817,7 +820,8 @@
             startRandomInstrumentCycle();
         }
         // If it's none, remove the melodic synth if it exists
-        else if (selectedInstrument === "none") {
+        // else if (selectedInstrument === "none") {
+        else if (!melodyToggle.checked) {
             if (synths.length > 4) {
                 const oldSynth = synths.pop();
                 if (oldSynth && oldSynth.timeout) {
@@ -839,7 +843,7 @@
         }
 
         const selectedMood = moodSelect.value;
-        console.log("Mood changed to:", selectedMood);
+        console.debug("Mood changed to:", selectedMood);
 
         if (selectedMood !== "random") {
             // Update all synths with the new scale
@@ -942,8 +946,6 @@
 
     // Function to start random scale cycling
     function startRandomScaleCycle() {
-        console.log("Starting random scale cycle");
-
         // Initial random scale change
         changeToRandomScale();
 
@@ -976,7 +978,7 @@
         // Update the current active mood
         currentActiveMood = newMood;
 
-        console.log("Random mood change to:", currentActiveMood);
+        console.debug("Random mood change to:", currentActiveMood);
 
         // Get the corresponding scale
         const newScale = scales[currentActiveMood];
@@ -1043,7 +1045,6 @@
             frequency: 0.05,
             min: -30,
             max: parseInt(noiseVolumeSlider.value),
-            // max: parseInt(noiseVolumeSlider.max)
         });
 
         // Create a separate reverb with less wet mix for the noise
@@ -1183,7 +1184,7 @@
                 .map(option => option.value);
 
             currentActiveMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
-            console.log("Starting with random mood:", currentActiveMood);
+            console.debug("Starting with random mood:", currentActiveMood);
         }
 
         // Then use currentActiveMood for initial setup
@@ -1195,7 +1196,8 @@
 
         // Create melodic instrument if selected
         const selectedInstrument = melodicInstrumentSelect.value;
-        if (selectedInstrument !== "none") {
+        // if (selectedInstrument !== "none") {
+        if (melodyToggle.checked) {
             if (selectedInstrument === "random") {
                 // Start random cycling mode
                 startRandomInstrumentCycle();
@@ -1557,6 +1559,39 @@
         } else if (!noiseToggle.checked && noiseSource) {
             toggleNoise(); // Stop waves if they were on
         }
-    }    </script>
+    }
+
+    function toggleMelody(event) {
+        // Stop the event from bubbling up to the section header
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        updateMelodyStatus();
+
+        // Apply the toggle if music is playing
+        if (isPlaying) {
+            handleInstrumentChange();
+        }
+    }
+
+    function toggleWaves(event) {
+        // Stop the event from bubbling up to the section header
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        const toggle = document.getElementById('noise-toggle');
+        toggle.checked = !toggle.checked;
+        updateWavesStatus();
+
+        // Apply the toggle if music is playing
+        if (isPlaying) {
+            toggleNoise();
+        }
+    }
+</script>
 </body>
 </html>
