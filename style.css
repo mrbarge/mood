@@ -528,3 +528,29 @@ input:checked + .toggle-label:before {
 .settings-icon {
     background: linear-gradient(45deg, #95a5a6, #34495e);
 }
+
+.mood-header {
+    font-size: 5rem;
+    font-weight: 100;
+    color: white;
+    text-align: center;
+    letter-spacing: 0.5rem;
+    position: relative;
+}
+
+.mood-header::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+    animation: header-expand 3s ease-in-out infinite;
+}
+
+@keyframes header-expand {
+    0%, 100% { width: 60px; opacity: 0.5; }
+    50% { width: 120px; opacity: 1; }
+}
