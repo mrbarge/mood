@@ -23,19 +23,6 @@
             </button>
         </div>
 
-        <!-- Master Volume Section -->
-        <div class="volume-section">
-            <div class="slider-container">
-                <div class="slider-wrapper">
-                    <input type="range" id="volume" min="-30" max="0" step="1" value="-15">
-                </div>
-                <div class="slider-labels">
-                    <span>🔇 Quiet</span>
-                    <span>Loud 🔊</span>
-                </div>
-            </div>
-        </div>
-
         <!-- Mood Section -->
         <div class="control-section" id="mood-section">
             <div class="section-header" onclick="toggleSection('mood')">
@@ -139,19 +126,6 @@
                     </div>
                 </div>
 
-                <div class="control-group" id="random-interval-container" style="display: none;">
-                    <label class="control-label" for="random-interval">Change Interval</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="random-interval" min="1" max="30" step="1" value="5">
-                        </div>
-                        <div class="slider-labels">
-                            <span>1 min</span>
-                            <span>30 min</span>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="control-group">
                     <label class="control-label" for="melodic-reverb">Melodic Reverb</label>
                     <div class="slider-container">
@@ -195,6 +169,48 @@
                         <div class="slider-labels">
                             <span>Quiet</span>
                             <span>Loud</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings section -->
+        <div class="control-section" id="settings-section">
+            <div class="section-header" onclick="toggleSection('settings')">
+                <div class="section-title">
+                    <div class="section-icon settings-icon">⚙️</div>
+                    <div>
+                        <div class="section-info">Settings</div>
+                    </div>
+                </div>
+                <button class="expand-btn" id="settings-expand">
+                    <span>▼</span>
+                </button>
+            </div>
+            <div class="section-content" id="settings-content">
+                <div class="control-group">
+                    <label class="control-label" for="volume">Master Volume</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="volume" min="-30" max="0" step="1" value="-15">
+                        </div>
+                        <div class="slider-labels">
+                            <span>🔇 Quiet</span>
+                            <span>Loud 🔊</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group" id="settings-random-interval">
+                    <label class="control-label" for="random-interval">Random Change Interval</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="random-interval" min="1" max="30" step="1" value="10">
+                        </div>
+                        <div class="slider-labels">
+                            <span>1 min</span>
+                            <span>30 min</span>
                         </div>
                     </div>
                 </div>
@@ -263,16 +279,7 @@
     function updateMelodyStatus() {
         const instrument = document.getElementById('melodic-instrument');
         const status = document.getElementById('melody-status');
-        const randomContainer = document.getElementById('random-interval-container');
-
         status.textContent = instrument.options[instrument.selectedIndex].text;
-
-        // Show/hide random interval slider
-        if (instrument.value === 'random') {
-            randomContainer.style.display = 'block';
-        } else {
-            randomContainer.style.display = 'none';
-        }
     }
 
     function updateWavesStatus() {

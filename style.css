@@ -143,6 +143,7 @@ body {
 }
 
 .control-group {
+    margin-top: 20px;
     margin-bottom: 20px;
 }
 
@@ -383,8 +384,14 @@ input:checked + .toggle-label:before {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.8); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .info {
@@ -516,4 +523,8 @@ input:checked + .toggle-label:before {
 .toggle-btn:has(input:checked) {
     background: rgba(79, 172, 254, 0.2);
     border-color: rgba(79, 172, 254, 0.8);
+}
+
+.settings-icon {
+    background: linear-gradient(45deg, #95a5a6, #34495e);
 }
