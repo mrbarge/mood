@@ -1578,6 +1578,7 @@
 
     function toggleWaves(event) {
         // Stop the event from bubbling up to the section header
+        console.debug("toggleWaves() called");
         if (event) {
             event.stopPropagation();
             event.preventDefault();
@@ -1589,6 +1590,7 @@
 
         // Apply the toggle if music is playing
         if (isPlaying) {
+            console.debug("toggleWaves() is calling toggleNoise()");
             toggleNoise();
         }
     }

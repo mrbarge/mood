@@ -479,6 +479,7 @@ input:checked + .toggle-label:before {
     align-items: center;
     justify-content: center;
     margin-right: 8px;
+    z-index: 10;
 }
 
 .toggle-btn input[type="checkbox"] {
@@ -488,6 +489,7 @@ input:checked + .toggle-label:before {
     height: 100%;
     margin: 0;
     cursor: pointer;
+    z-index: 2;
 }
 
 .toggle-indicator {
