@@ -107,6 +107,8 @@
                     <select id="melodic-instrument" onchange="updateMelodyStatus()">
                         <option value="random">Random (Auto-changing)</option>
                         <option value="piano" selected>Soft Piano</option>
+                        <option value="sampled-piano">Real Piano (Sampled)</option>
+                        <option value="idm-electronic">IDM Electronic</option>
                         <option value="marimba">Marimba</option>
                         <option value="harp">Harp</option>
                         <option value="music-box">Music Box</option>
@@ -762,13 +764,22 @@
 
     melodyToggle.addEventListener("change", toggleMelody);
     melodicReverbSlider.addEventListener("input", function() {
-        if (melodicReverbNode) {
-            const reverbAmount = parseFloat(this.value);
-            console.debug("Setting melodic reverb to:", reverbAmount);
-            melodicReverbNode.wet.value = reverbAmount;
+        const reverbAmount = parseFloat(this.value);
+        console.debug("Setting melodic reverb to:", reverbAmount);
+
+        // Handle different reverb nodes for different instruments
+        if (synths.length > 4) {
+            const melodicSynth = synths[4];
+
+            if (melodicSynth.reverbNode) {
+                // Sampled piano with its own reverb
+                melodicSynth.reverbNode.wet.value = reverbAmount;
+            } else if (melodicReverbNode) {
+                // Synthesized instruments with shared reverb
+                melodicReverbNode.wet.value = reverbAmount;
+            }
         }
     });
-
     melodicInstrumentSelect.addEventListener("change", function() {
         // If we're currently playing, handle instrument change
         if (isPlaying) {
@@ -919,6 +930,230 @@
                 });
                 break;
 
+            case "idm-electronic":
+                // Create a complex FM synth for IDM character
+                synth = new Tone.PolySynth(Tone.FMSynth, {
+                    harmonicity: 2.1,      // Slightly detuned harmonics
+                    modulationIndex: 8,    // Heavy modulation
+                    oscillator: {
+                        type: "sawtooth"   // Bright, digital character
+                    },
+                    envelope: {
+                        attack: 0.001,     // Very fast attack
+                        decay: 0.3,
+                        sustain: 0.4,
+                        release: 2
+                    },
+                    modulation: {
+                        type: "square"     // Digital modulation
+                    },
+                    modulationEnvelope: {
+                        attack: 0.01,
+                        decay: 0.2,
+                        sustain: 0.3,
+                        release: 1.5
+                    },
+                    volume: -1
+                });
+
+                // IDM Effects Chain
+
+                // 1. Bit crusher for digital artifacts
+                const idmBitCrusher = new Tone.BitCrusher({
+                    bits: 6,           // Lo-fi digital sound
+                    wet: 0.3
+                });
+
+                // 2. Ring modulator for metallic, alien textures
+                const idmRingMod = new Tone.FrequencyShifter({
+                    frequency: 47,     // Slightly detuned for weirdness
+                    wet: 0.25
+                });
+
+                // 3. Phaser for movement and sweep
+                const idmPhaser = new Tone.Phaser({
+                    frequency: 0.7,    // Slow sweep
+                    depth: 0.8,        // Deep modulation
+                    baseFrequency: 400,
+                    wet: 0.6
+                });
+
+                // 4. Granular-style choppy delay
+                const idmChopDelay = new Tone.PingPongDelay({
+                    delayTime: "16n",
+                    feedback: 0.6,     // Higher feedback for IDM character
+                    wet: 0.4
+                });
+
+                // 5. Filtered feedback delay
+                const idmFilteredDelay = new Tone.FeedbackDelay({
+                    delayTime: "8n.",
+                    feedback: 0.5,
+                    wet: 0.3
+                });
+
+                // 6. Resonant filter with LFO modulation
+                const idmFilter = new Tone.Filter({
+                    frequency: 1200,
+                    type: "bandpass",
+                    Q: 8,              // High resonance
+                    rolloff: -24
+                });
+
+                // 7. Filter LFO for sweeping movement
+                const idmFilterLFO = new Tone.LFO({
+                    frequency: 0.13,   // Slow irregular sweep
+                    min: 400,
+                    max: 2400,
+                    type: "triangle"
+                });
+
+                // 8. Distortion for grit
+                const idmDistortion = new Tone.Distortion({
+                    distortion: 0.4,
+                    wet: 0.3
+                });
+
+                // 9. Chorus for width and shimmer
+                const idmChorus = new Tone.Chorus({
+                    frequency: 1.2,
+                    delayTime: 2,
+                    depth: 0.4,
+                    wet: 0.35
+                }).start();
+
+                // 10. Compressor to glue it together
+                const idmCompressor = new Tone.Compressor({
+                    threshold: -18,
+                    ratio: 4,
+                    attack: 0.001,
+                    release: 0.2
+                });
+
+                // 11. Final reverb
+                const idmReverb = new Tone.Reverb({
+                    decay: 8,
+                    wet: parseFloat(document.getElementById("melodic-reverb").value) * 0.8, // Less reverb than other instruments
+                    preDelay: 0.02,
+                    roomSize: 0.7
+                });
+
+                // Connect the complex effects chain
+                synth.connect(idmBitCrusher);
+                idmBitCrusher.connect(idmRingMod);
+                idmRingMod.connect(idmDistortion);
+                idmDistortion.connect(idmPhaser);
+                idmPhaser.connect(idmChopDelay);
+                idmChopDelay.connect(idmFilteredDelay);
+                idmFilteredDelay.connect(idmFilter);
+                idmFilter.connect(idmChorus);
+                idmChorus.connect(idmCompressor);
+                idmCompressor.connect(idmReverb);
+                idmReverb.connect(masterVolume);
+
+                // Connect filter LFO
+                idmFilterLFO.connect(idmFilter.frequency);
+                idmFilterLFO.start();
+
+                // Store effect nodes for potential control or disposal
+                synth.reverbNode = idmReverb;
+                synth.filterLFO = idmFilterLFO;
+                synth.effectNodes = [idmBitCrusher, idmRingMod, idmPhaser, idmChopDelay,
+                    idmFilteredDelay, idmFilter, idmDistortion, idmChorus, idmCompressor];
+
+                break;
+
+            case "sampled-piano":
+                // Create sampled piano using publicly available samples
+                synth = new Tone.Sampler({
+                    urls: {
+                        "C4": "C4.mp3",
+                        "D#4": "Ds4.mp3",
+                        "F#4": "Fs4.mp3",
+                        "A4": "A4.mp3",
+                        "C5": "C5.mp3",
+                        "D#5": "Ds5.mp3",
+                        "F#5": "Fs5.mp3",
+                        "A5": "A5.mp3",
+                    },
+                    release: 1,
+                    baseUrl: "https://tonejs.github.io/audio/salamander/",
+                    volume: 0  // Increased from -8 to -2 for more presence
+                });
+
+                // Create ambient effects chain for piano
+
+                // 1. Chorus for richness and movement
+                const pianoChorus = new Tone.Chorus({
+                    frequency: 0.5,  // Slow modulation
+                    delayTime: 3.5,  // Deeper chorus effect
+                    depth: 0.3,      // Moderate depth
+                    wet: 0.4         // 40% wet signal
+                }).start();
+
+                // 2. Stereo widener using ping-pong delay
+                const pianoStereoDelay = new Tone.PingPongDelay({
+                    delayTime: "16n",    // Very short delay
+                    feedback: 0.1,       // Minimal feedback
+                    wet: 0.3            // Subtle stereo widening
+                });
+
+                // 3. Longer delay for ambient tails
+                const pianoAmbientDelay = new Tone.FeedbackDelay({
+                    delayTime: "4n.",    // Dotted quarter note
+                    feedback: 0.3,       // Moderate feedback
+                    wet: 0.25           // 25% wet
+                });
+
+                // 4. Low-pass filter to soften harsh frequencies
+                const pianoFilter = new Tone.Filter({
+                    frequency: 4000,     // Cut above 4kHz
+                    type: "lowpass",
+                    rolloff: -12        // Gentle slope
+                });
+
+                // 5. Compressor for even dynamics
+                const pianoCompressor = new Tone.Compressor({
+                    threshold: -20,
+                    ratio: 3,
+                    attack: 0.003,
+                    release: 0.1
+                });
+
+                // 6. Large reverb for spaciousness
+                const pianoReverb = new Tone.Reverb({
+                    decay: 12,          // Very long decay
+                    wet: parseFloat(document.getElementById("melodic-reverb").value),
+                    preDelay: 0.05,     // Slight pre-delay for separation
+                    roomSize: 0.9       // Large room
+                });
+
+                // 7. Optional: Subtle tremolo for movement
+                const pianoTremolo = new Tone.Tremolo({
+                    frequency: 0.3,     // Very slow tremolo
+                    depth: 0.1,         // Subtle depth
+                    wet: 0.6           // Mix it in
+                }).start();
+
+                // Connect the effects chain
+                synth.connect(pianoChorus);
+                pianoChorus.connect(pianoStereoDelay);
+                pianoStereoDelay.connect(pianoAmbientDelay);
+                pianoAmbientDelay.connect(pianoFilter);
+                pianoFilter.connect(pianoCompressor);
+                pianoCompressor.connect(pianoTremolo);
+                pianoTremolo.connect(pianoReverb);
+                pianoReverb.connect(masterVolume);
+
+                // Store effect nodes for potential control
+                synth.reverbNode = pianoReverb;
+                synth.chorusNode = pianoChorus;
+                synth.filterNode = pianoFilter;
+                synth.tremoloNode = pianoTremolo;
+                synth.delayNode = pianoAmbientDelay;
+
+                break;
+
             case "marimba":
                 synth = new Tone.PolySynth(Tone.Synth, {
                     oscillator: { type: "sine" },
@@ -977,24 +1212,38 @@
                 return null;
         }
 
-        // Add a ping-pong delay before the reverb
-        const pingPongDelay = new Tone.PingPongDelay({
-            delayTime: "8n",
-            feedback: 0.3,
-            wet: 0.25  // 25% wet, subtle
-        });
+        // Only add effects chain for non-sampled instruments
+        if (type === "sampled-piano") {
+            // Sampled piano gets simpler processing
+            const sampledPianoReverb = new Tone.Reverb({
+                decay: 8,
+                wet: parseFloat(document.getElementById("melodic-reverb").value),
+                preDelay: 0.02
+            });
 
-        // Create reverb with a reference kept globally
-        melodicReverbNode = new Tone.Reverb({
-            decay: 10,
-            wet: parseFloat(document.getElementById("melodic-reverb").value),
-            preDelay: 0.03
-        });
+            synth.connect(sampledPianoReverb);
+            sampledPianoReverb.connect(masterVolume);
 
-        // Connect through effect chain
-        synth.connect(pingPongDelay);
-        pingPongDelay.connect(melodicReverbNode);
-        melodicReverbNode.connect(masterVolume);
+            // Store reverb reference for control
+            synth.reverbNode = sampledPianoReverb;
+        } else {
+            // Existing effect chain for synthesized instruments
+            const pingPongDelay = new Tone.PingPongDelay({
+                delayTime: "8n",
+                feedback: 0.3,
+                wet: 0.25
+            });
+
+            melodicReverbNode = new Tone.Reverb({
+                decay: 10,
+                wet: parseFloat(document.getElementById("melodic-reverb").value),
+                preDelay: 0.03
+            });
+
+            synth.connect(pingPongDelay);
+            pingPongDelay.connect(melodicReverbNode);
+            melodicReverbNode.connect(masterVolume);
+        }
 
         // Add custom property for cleanup
         synth.timeout = null;
@@ -1033,8 +1282,28 @@
                     melody.push(scale[currentIndex]);
                 }
 
-                // Play the melody with varying timing
-                playMelodicSequence(synth, melody, instrumentType);
+                // ADD THE IDM MODIFICATIONS HERE - AFTER melody generation, BEFORE playMelodicSequence
+                if (instrumentType === "idm-electronic") {
+                    // IDM-style modifications to the melody
+                    const modifiedMelody = melody.map(note => {
+                        // Occasionally transpose notes to different octaves
+                        if (Math.random() < 0.3) {
+                            const noteBase = note.slice(0, -1);
+                            const octave = parseInt(note.slice(-1));
+                            const newOctave = Math.random() < 0.5 ?
+                                Math.max(2, octave - 1) :
+                                Math.min(6, octave + 1);
+                            return noteBase + newOctave;
+                        }
+                        return note;
+                    });
+
+                    // Play the modified melody with IDM timing variations
+                    playMelodicSequence(synth, modifiedMelody, instrumentType);
+                } else {
+                    // Play the melody with varying timing (existing code)
+                    playMelodicSequence(synth, melody, instrumentType);
+                }
             }
 
             // Calculate next phrase time based on frequency setting
@@ -1065,6 +1334,10 @@
                 noteDuration = 1.5;
                 noteSpacing = 0.8;
                 break;
+            case "sampled-piano":
+                noteDuration = 2.0;  // Longer sustain for realistic piano
+                noteSpacing = 1.0;   // More space between notes
+                break;
             case "marimba":
                 noteDuration = 0.5;
                 noteSpacing = 0.6;
@@ -1077,13 +1350,28 @@
                 noteDuration = 0.3;
                 noteSpacing = 0.4;
                 break;
+            case "idm-electronic":
+                noteDuration = 0.8;     // Shorter, punchier notes
+                noteSpacing = 0.9;      // Slightly irregular spacing
+                break;
             default:
                 noteDuration = 1.0;
                 noteSpacing = 0.7;
         }
 
-        // Play each note in the melody with slight timing variations
+        // Play each note in the melody
         melody.forEach((note, index) => {
+            // Calculate timing with IDM variations
+            let timing = index * noteSpacing * 1000;
+
+            if (instrumentType === "idm-electronic") {
+                // Add more dramatic timing variations for IDM
+                timing += (Math.random() * 0.6 - 0.3) * 1000; // ±300ms variation
+                timing = Math.max(0, timing); // Ensure no negative timing
+            } else {
+                // Standard slight timing variations
+                timing += (Math.random() * 0.2 * 1000);
+            }
             setTimeout(() => {
                 try {
                     if (!isPlaying) return;
@@ -1097,8 +1385,23 @@
                         activeNotes[note].count++;
                     }
 
-                    // Play the note
-                    synth.triggerAttackRelease(note, noteDuration);
+                    // Different trigger methods for different instruments
+                    if (instrumentType === "sampled-piano") {
+                        // Sampled instruments need time to load
+                        if (synth.loaded) {
+                            synth.triggerAttackRelease(note, noteDuration);
+                        } else {
+                            // Wait for samples to load, then play
+                            synth.loaded.then(() => {
+                                if (isPlaying) {
+                                    synth.triggerAttackRelease(note, noteDuration);
+                                }
+                            });
+                        }
+                    } else {
+                        // Regular synths
+                        synth.triggerAttackRelease(note, noteDuration);
+                    }
 
                     // Remove note from active notes after it ends
                     setTimeout(() => {
@@ -1112,7 +1415,7 @@
                 } catch (error) {
                     console.log("Note playback error (ignored):", error.message);
                 }
-            }, index * noteSpacing * 1000 + (Math.random() * 0.2 * 1000)); // Slight random timing variations
+            }, timing); // This is the existing timing
         });
     }
 
