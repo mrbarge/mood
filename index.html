@@ -159,7 +159,9 @@
                     <span>▼</span>
                 </button>
             </div>
+
             <div class="section-content" id="waves-content">
+                <!-- Single column controls -->
                 <div class="control-group">
                     <label class="control-label" for="noise-volume">Wave Volume</label>
                     <div class="slider-container">
@@ -169,6 +171,119 @@
                         <div class="slider-labels">
                             <span>Quiet</span>
                             <span>Loud</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two-column layout for detailed controls -->
+                <div class="waves-grid">
+                    <!-- Left column - Wave Characteristics -->
+                    <div class="waves-column">
+                        <h4 class="column-header">Wave Characteristics</h4>
+
+                        <div class="control-group">
+                            <label class="control-label" for="base-level">Base Level</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="base-level" min="0" max="0.3" step="0.01" value="0.05">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Silent</span>
+                                    <span>Audible</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="peak-level">Peak Level</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="peak-level" min="0.1" max="0.8" step="0.01" value="0.4">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Gentle</span>
+                                    <span>Powerful</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="build-speed">Build Speed</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="build-speed" min="0.5" max="5" step="0.1" value="2">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Slow</span>
+                                    <span>Fast</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="noise-type">Noise Type</label>
+                            <select id="noise-type">
+                                <option value="white">White (Bright)</option>
+                                <option value="pink" selected>Pink (Natural)</option>
+                                <option value="brown">Brown (Deep)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Right column - Timing & Filter -->
+                    <div class="waves-column">
+                        <h4 class="column-header">Timing & Filter</h4>
+
+                        <div class="control-group">
+                            <label class="control-label" for="min-duration">Min Duration (s)</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="min-duration" min="2" max="15" step="0.5" value="4">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>2s</span>
+                                    <span>15s</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="max-duration">Max Duration (s)</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="max-duration" min="5" max="25" step="0.5" value="12">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>5s</span>
+                                    <span>25s</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="pause-between">Pause Between (s)</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="pause-between" min="0.5" max="8" step="0.25" value="2">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>0.5s</span>
+                                    <span>8s</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="filter-freq">Filter Frequency</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="filter-freq" min="200" max="8000" step="50" value="2000">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>200 Hz</span>
+                                    <span>8000 Hz</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -226,7 +341,6 @@
 
     <!-- Visualizer -->
     <div class="visualizer" id="waves">
-        <!-- Waves will be generated by JavaScript -->
     </div>
 
     <div class="info">
@@ -235,6 +349,207 @@
 </div>
 
 <script>
+
+    class OceanWaveSystem {
+        constructor() {
+            this.isActive = false;
+            this.noise = null;
+            this.gain = null;
+            this.filter = null;
+            this.waveTimeout = null;
+            this.currentWavePhase = 'waiting';
+            this.currentNoiseType = 'pink';
+            this.waveStartTime = 0;
+            this.waveDuration = 0;
+        }
+
+        async init() {
+            // Create gain node
+            this.gain = new Tone.Gain(parseFloat(baseLevelSlider.value));
+
+            // Create filter with user-controlled frequency
+            this.filter = new Tone.Filter(parseInt(filterFreqSlider.value), 'lowpass');
+
+            // Create noise source
+            this.noise = new Tone.Noise(this.currentNoiseType);
+
+            // Create wave-specific reverb
+            this.waveReverb = new Tone.Reverb({
+                decay: 3,
+                wet: 0.4,
+                preDelay: 0.02
+            });
+
+            // Connect the audio chain
+            this.noise.connect(this.filter);
+            this.filter.connect(this.gain);
+            this.gain.connect(this.waveReverb);
+            this.waveReverb.connect(masterVolume);
+
+            // Set initial volume from slider
+            this.updateVolume();
+        }
+
+        start() {
+            if (this.isActive) return;
+
+            this.isActive = true;
+            if (this.noise) {
+                this.noise.start();
+                this.scheduleNextWave();
+            }
+        }
+
+        stop() {
+            if (!this.isActive) return;
+
+            this.isActive = false;
+            this.currentWavePhase = 'waiting';
+
+            if (this.waveTimeout) {
+                clearTimeout(this.waveTimeout);
+                this.waveTimeout = null;
+            }
+
+            if (this.noise) {
+                this.noise.stop();
+            }
+        }
+
+        dispose() {
+            this.stop();
+            if (this.noise) this.noise.dispose();
+            if (this.gain) this.gain.dispose();
+            if (this.filter) this.filter.dispose();
+            if (this.waveReverb) this.waveReverb.dispose();
+        }
+
+        scheduleNextWave() {
+            if (!this.isActive) return;
+
+            // Use pause between setting with random variation
+            const pauseDuration = parseFloat(pauseBetweenSlider.value);
+            const randomPause = pauseDuration + (Math.random() - 0.5) * pauseDuration * 0.5;
+
+            this.currentWavePhase = 'waiting';
+
+            this.waveTimeout = setTimeout(() => {
+                if (this.isActive) this.startWave();
+            }, randomPause * 1000);
+        }
+
+        startWave() {
+            if (!this.isActive) return;
+
+            // Get current slider values
+            const minDur = parseFloat(minDurationSlider.value);
+            const maxDur = parseFloat(maxDurationSlider.value);
+            const baseLevel = parseFloat(baseLevelSlider.value);
+            const peakLevel = parseFloat(peakLevelSlider.value);
+            const buildSpeed = parseFloat(buildSpeedSlider.value);
+
+            // Random wave duration within specified range
+            this.waveDuration = minDur + Math.random() * (maxDur - minDur);
+            this.waveStartTime = Tone.now();
+
+            // Calculate phase durations based on build speed
+            const speedFactor = buildSpeed / 2.5; // Normalize around default value of 2.5
+            const buildTime = this.waveDuration * (0.15 + Math.random() * 0.25) * (1 / speedFactor); // Faster speed = shorter build
+            const sustainTime = this.waveDuration * (0.1 + Math.random() * 0.2); // 10-30% of total
+            const recedeTime = this.waveDuration - buildTime - sustainTime; // remainder
+
+            this.currentWavePhase = 'building';
+
+            // Build phase - use peak level with variation
+            const peakVariation = peakLevel * (0.8 + Math.random() * 0.4); // ±20% variation
+            this.gain.gain.rampTo(peakVariation, buildTime);
+
+            // Schedule sustain phase
+            setTimeout(() => {
+                if (!this.isActive) return;
+                this.currentWavePhase = 'sustaining';
+
+                // Add some subtle variation during sustain
+                const sustainVariation = peakVariation * (0.9 + Math.random() * 0.2);
+                this.gain.gain.rampTo(sustainVariation, sustainTime * 0.5);
+
+                // Schedule recede phase
+                setTimeout(() => {
+                    if (!this.isActive) return;
+                    this.currentWavePhase = 'receding';
+
+                    // Recede to base level (with slight variation)
+                    const newBaseLevel = baseLevel * (0.5 + Math.random() * 1);
+                    this.gain.gain.rampTo(newBaseLevel, recedeTime);
+
+                    // Schedule next wave
+                    setTimeout(() => {
+                        if (this.isActive) this.scheduleNextWave();
+                    }, recedeTime * 1000);
+
+                }, sustainTime * 1000);
+
+            }, buildTime * 1000);
+        }
+
+        updateVolume() {
+            if (this.gain) {
+                // Convert dB slider to linear gain and apply it
+                const dbValue = parseInt(noiseVolumeSlider.value);
+                // Use gain.gain instead of gain.volume
+                this.gain.gain.rampTo(Tone.dbToGain(dbValue), 0.1);
+            }
+        }
+
+        updateNoiseType(type) {
+            this.currentNoiseType = type;
+
+            if (this.isActive && this.noise) {
+                // Recreate noise with new type
+                this.noise.stop();
+                this.noise.dispose();
+                this.noise = new Tone.Noise(type);
+                this.noise.connect(this.filter);
+                this.noise.start();
+            }
+        }
+
+        updateFilter(frequency) {
+            if (this.filter) {
+                this.filter.frequency.rampTo(frequency || parseInt(filterFreqSlider.value), 0.5);
+            }
+        }
+
+        updateBaseLevel() {
+            // This affects the next wave cycle, not the current one
+            if (this.currentWavePhase === 'waiting' && this.gain) {
+                const baseLevel = parseFloat(baseLevelSlider.value);
+                this.gain.gain.rampTo(baseLevel, 1);
+            }
+        }
+
+        getCurrentIntensity() {
+            return this.gain ? this.gain.gain.value : 0;
+        }
+
+        getWaveInfo() {
+            if (!this.isActive) return 'Stopped';
+
+            switch(this.currentWavePhase) {
+                case 'waiting':
+                    return 'Waiting for next wave...';
+                case 'building':
+                    return `Building wave (${this.waveDuration.toFixed(1)}s total)`;
+                case 'sustaining':
+                    return 'Wave sustaining...';
+                case 'receding':
+                    return 'Wave receding...';
+                default:
+                    return 'Wave active';
+            }
+        }
+    }
+
     // Initialize wave visualizer elements
     function initializeWaves() {
         const wavesContainer = document.getElementById('waves');
@@ -387,10 +702,23 @@
     const randomIntervalSlider = document.getElementById("random-interval");
     const randomIntervalContainer = document.getElementById("random-interval-container");
 
-    // Noise
-    let noiseSource = null;
+    let waveSystem = null;
     const noiseToggle = document.getElementById("noise-toggle");
     const noiseVolumeSlider = document.getElementById("noise-volume");
+
+    // Wave characteristic controls
+    const baseLevelSlider = document.getElementById("base-level");
+    const peakLevelSlider = document.getElementById("peak-level");
+    const buildSpeedSlider = document.getElementById("build-speed");
+
+    // Timing controls
+    const minDurationSlider = document.getElementById("min-duration");
+    const maxDurationSlider = document.getElementById("max-duration");
+    const pauseBetweenSlider = document.getElementById("pause-between");
+
+    // Audio controls
+    const noiseTypeSelect = document.getElementById("noise-type");
+    const filterFreqSlider = document.getElementById("filter-freq");
 
     // Create wave elements for visualizer
     for (let i = 0; i < 40; i++) {
@@ -411,8 +739,26 @@
         masterVolume.volume.value = parseInt(e.target.value);
     });
 
-    noiseToggle.addEventListener("change", toggleNoise);
-    noiseVolumeSlider.addEventListener("input", updateNoiseVolume);
+    noiseToggle.addEventListener("change", toggleWaves);
+    noiseVolumeSlider.addEventListener("input", updateWaveVolume);
+
+    // Wave characteristic listeners
+    baseLevelSlider.addEventListener("input", () => {
+        if (waveSystem) waveSystem.updateBaseLevel();
+    });
+    peakLevelSlider.addEventListener("input", updateWaveSettings);
+    buildSpeedSlider.addEventListener("input", updateWaveSettings);
+
+    // Timing listeners
+    minDurationSlider.addEventListener("input", updateWaveSettings);
+    maxDurationSlider.addEventListener("input", updateWaveSettings);
+    pauseBetweenSlider.addEventListener("input", updateWaveSettings);
+
+    // Audio listeners
+    noiseTypeSelect.addEventListener("change", updateNoiseType);
+    filterFreqSlider.addEventListener("input", () => {
+        if (waveSystem) waveSystem.updateFilter();
+    });
 
     melodyToggle.addEventListener("change", toggleMelody);
     melodicReverbSlider.addEventListener("input", function() {
@@ -423,8 +769,6 @@
         }
     });
 
-
-    // Update event listener for the instrument dropdown
     melodicInstrumentSelect.addEventListener("change", function() {
         // If we're currently playing, handle instrument change
         if (isPlaying) {
@@ -432,7 +776,6 @@
         }
     });
 
-    // Update mood select change handler
     moodSelect.addEventListener("change", function() {
         if (isPlaying) {
             handleMoodChange();
@@ -460,7 +803,6 @@
         twilight: ["C3", "Eb3", "F3", "Gb3", "G3", "Bb3", "C4", "Eb4", "F4", "Gb4", "G4", "Bb4", "C5"]
     };
 
-    // Add melodic patterns for different moods (near your scales definition)
     const melodicPatterns = {
         calm: ["E4", "G4", "C5"],
         ethereal: ["F#4", "B4", "D5"],
@@ -787,7 +1129,6 @@
         console.debug("Instrument changed to:", selectedInstrument);
 
         // If it's a specific instrument (not random or none)
-        // if (selectedInstrument !== "random" && selectedInstrument !== "none") {
         if (selectedInstrument !== "random" && melodyToggle.checked) {
             // Remove any existing melodic synth
             if (synths.length > 4) {
@@ -819,7 +1160,6 @@
             startRandomInstrumentCycle();
         }
         // If it's none, remove the melodic synth if it exists
-        // else if (selectedInstrument === "none") {
         else if (!melodyToggle.checked) {
             if (synths.length > 4) {
                 const oldSynth = synths.pop();
@@ -1516,11 +1856,18 @@
         // Handle instrument change during playback
         handleInstrumentChange();
 
-        // Handle waves toggle change
-        if (noiseToggle.checked && !noiseSource) {
-            toggleNoise(); // Start waves if they weren't on
-        } else if (!noiseToggle.checked && noiseSource) {
-            toggleNoise(); // Stop waves if they were on
+        if (noiseToggle.checked && (!waveSystem || !waveSystem.isActive)) {
+            toggleWaves(); // Start waves if they weren't on
+        } else if (!noiseToggle.checked && waveSystem && waveSystem.isActive) {
+            toggleWaves(); // Stop waves if they were on
+        }
+
+        // Update all wave system settings if active
+        if (waveSystem && waveSystem.isActive) {
+            waveSystem.updateVolume();
+            waveSystem.updateNoiseType(noiseTypeSelect.value);
+            waveSystem.updateFilter();
+            waveSystem.updateBaseLevel();
         }
     }
 
@@ -1539,24 +1886,49 @@
         }
     }
 
-    function toggleWaves(event) {
-        // Stop the event from bubbling up to the section header
-        console.debug("toggleWaves() called");
-        if (event) {
-            event.stopPropagation();
-            event.preventDefault();
-        }
-
-        const toggle = document.getElementById('noise-toggle');
-        toggle.checked = !toggle.checked;
-        updateWavesStatus();
-
-        // Apply the toggle if music is playing
-        if (isPlaying) {
-            console.debug("toggleWaves() is calling toggleNoise()");
-            toggleNoise();
+    function updateWaveVolume() {
+        if (waveSystem) {
+            waveSystem.updateVolume();
         }
     }
+
+    function updateWaveSettings() {
+        // Settings like duration, timing, and build speed are applied
+        // automatically when the next wave cycle starts.
+        // No immediate action needed - the sliders will be read
+        // by the wave system when it creates the next wave.
+
+        // Optional: You could add immediate feedback here if desired
+        console.debug("Wave settings updated - will apply to next wave cycle");
+    }
+
+    function updateNoiseType() {
+        const selectedType = noiseTypeSelect.value;
+        if (waveSystem) {
+            waveSystem.updateNoiseType(selectedType);
+            waveSystem.updateFilter(); // Also update filter to match noise type
+        }
+    }
+
+    // Enhanced toggle waves function (this replaces the old toggleNoise)
+    async function toggleWaves() {
+        if (noiseToggle.checked) {
+            // Initialize and start wave system
+            if (!waveSystem) {
+                waveSystem = new OceanWaveSystem();
+                await waveSystem.init();
+            }
+
+            waveSystem.start();
+        } else {
+            // Stop wave system
+            if (waveSystem) {
+                waveSystem.stop();
+            }
+        }
+        updateWavesStatus();
+    }
+
 </script>
 </body>
 </html>
