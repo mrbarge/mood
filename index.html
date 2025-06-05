@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mood</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <script src="sound-engines.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -38,6 +39,23 @@
                 </button>
             </div>
             <div class="section-content" id="mood-content">
+                <div class="control-group">
+                    <label class="control-label" for="sound-engine">Sound Engine</label>
+                    <select id="sound-engine">
+                        <option value="standard">Standard Ambient</option>
+                        <option value="ethereal-void">Ethereal Void</option>
+                        <option value="dark-matter">Dark Matter</option>
+                        <option value="aurora-field">Aurora Field</option>
+                        <option value="glass-horizon">Glass Horizon</option>
+                        <option value="nebula-drift">Nebula Drift</option>
+                        <option value="thermal-layers">Thermal Layers</option>
+                        <option value="deep-resonance">Deep Resonance</option>
+                        <option value="cosmic-drift">Cosmic Drift</option>
+                        <option value="underwater-palace">Underwater Palace</option>
+                        <option value="neon-nocturne">Neon Nocturne</option>
+                        <option value="atmospheric-temple">Atmospheric Temple</option>
+                    </select>
+                </div>
                 <div class="control-group">
                     <label class="control-label" for="mood">Musical Mood</label>
                     <select id="mood" onchange="updateMoodStatus()">
@@ -550,6 +568,12 @@
         }
     }
 
+    // Initialize the new sound system
+    const musicManager = new AmbientMusicManager();
+
+    // Sound Engine UI element reference
+    const soundEngineSelect = document.getElementById("sound-engine");
+
     // Initialize wave visualizer elements
     function initializeWaves() {
         const wavesContainer = document.getElementById('waves');
@@ -602,7 +626,6 @@
     function randomizeEverything() {
         const diceButton = document.getElementById('dice-button');
 
-        // Add visual feedback
         diceButton.style.transform = 'scale(0.95)';
         diceButton.innerHTML = '<span class="dice-icon">🎲</span> Rolling...';
 
@@ -612,6 +635,13 @@
             const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
             const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
             moodSelect.value = randomMood.value;
+
+            // Randomize sound engine
+            if (soundEngineSelect) {
+                const engineOptions = Array.from(soundEngineSelect.options);
+                const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
+                soundEngineSelect.value = randomEngine.value;
+            }
 
             // Randomize melody
             const melodySelect = document.getElementById('melodic-instrument');
@@ -645,6 +675,7 @@
     }
 
     // Event listeners
+
     document.getElementById('dice-button').addEventListener('click', randomizeEverything);
 
     // Initialize
@@ -653,12 +684,19 @@
         updateMoodStatus();
         updateMelodyStatus();
         updateWavesStatus();
+
+        musicManager.setSoundEngine('standard', {
+            density: parseInt(densitySlider.value),
+            reverbAmount: parseFloat(reverbSlider.value)
+        });
     });
 
     // Initialize variables
     let isPlaying = false;
     let activeNotes = {};
     let synths = [];
+    let currentMelodicSynth = null;
+
     let visualizerInterval = null;
     let currentActiveMood = "calm"; // Default starting mood
 
@@ -730,8 +768,35 @@
     // Event listeners
     startButton.addEventListener("click", startMusic);
     stopButton.addEventListener("click", stopMusic);
+
+    // Sound engine change handler
+    if (soundEngineSelect) {
+        soundEngineSelect.addEventListener("change", async function() {
+            if (isPlaying) {
+                await handleSoundEngineChange();
+            }
+        });
+    }
+
+    // Function to handle sound engine changes
+    async function handleSoundEngineChange() {
+        const selectedEngine = soundEngineSelect.value;
+        console.debug("Sound engine changed to:", selectedEngine);
+
+        await musicManager.setSoundEngine(selectedEngine, {
+            density: parseInt(densitySlider.value),
+            reverbAmount: parseFloat(reverbSlider.value)
+        });
+    }
+
     reverbSlider.addEventListener("input", (e) => {
         reverb.wet.value = parseFloat(e.target.value);
+        musicManager.updateConfig({ reverbAmount: parseFloat(e.target.value) });
+    });
+
+    // Density slider listener (updates sound engine)
+    densitySlider.addEventListener("input", (e) => {
+        musicManager.updateConfig({ density: parseInt(e.target.value) });
     });
 
     const volumeSlider = document.getElementById("volume");
@@ -827,80 +892,6 @@
     // Scale randomization
     let randomScaleInterval = null;
 
-    // Synth presets
-    function createPad() {
-        const synth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: {
-                type: "sine"
-            },
-            envelope: {
-                attack: 3,
-                decay: 2,
-                sustain: 0.8,
-                release: 8
-            }
-        }).connect(filter);
-
-        // Add custom methods for cleanup
-        synth.timeout = null;
-        return synth;
-    }
-
-    function createChimes() {
-        const synth = new Tone.PolySynth(Tone.FMSynth, {
-            harmonicity: 8,
-            modulationIndex: 2,
-            oscillator: {
-                type: "sine"
-            },
-            envelope: {
-                attack: 0.1,
-                decay: 2,
-                sustain: 0.1,
-                release: 2
-            },
-            modulation: {
-                type: "square"
-            },
-            modulationEnvelope: {
-                attack: 0.5,
-                decay: 0.5,
-                sustain: 0.2,
-                release: 2
-            }
-        }).connect(filter);
-
-        // Add custom methods for cleanup
-        synth.timeout = null;
-        return synth;
-    }
-
-    function createBass() {
-        const synth = new Tone.MonoSynth({
-            oscillator: {
-                type: "sine"
-            },
-            envelope: {
-                attack: 0.1,
-                decay: 0.3,
-                sustain: 0.9,
-                release: 5
-            },
-            filterEnvelope: {
-                attack: 0.1,
-                decay: 0.2,
-                sustain: 0.9,
-                release: 5,
-                baseFrequency: 200,
-                octaves: 2.5
-            }
-        }).connect(filter);
-
-        // Add custom methods for cleanup
-        synth.timeout = null;
-        return synth;
-    }
-
     // Function to create different melodic instruments
     function createMelodicInstrument(type) {
         let synth;
@@ -954,7 +945,7 @@
                         sustain: 0.2,
                         release: 0.5
                     },
-                    volume: -5
+                    volume: -1
                 });
                 break;
 
@@ -1118,80 +1109,69 @@
 
     // Function to handle instrument changes during playback
     function handleInstrumentChange() {
-        // Clear any existing random interval
         if (randomMelodyInterval) {
             clearInterval(randomMelodyInterval);
             randomMelodyInterval = null;
         }
 
-        // Get the currently selected instrument
         const selectedInstrument = melodicInstrumentSelect.value;
         console.debug("Instrument changed to:", selectedInstrument);
 
-        // If it's a specific instrument (not random or none)
-        if (selectedInstrument !== "random" && melodyToggle.checked) {
-            // Remove any existing melodic synth
-            if (synths.length > 4) {
-                const oldSynth = synths.pop();
-                if (oldSynth && oldSynth.timeout) {
-                    clearTimeout(oldSynth.timeout);
-                }
-                setTimeout(() => {
-                    if (oldSynth) oldSynth.dispose();
-                }, 500);
+        if (currentMelodicSynth) {
+            if (currentMelodicSynth.timeout) {
+                clearTimeout(currentMelodicSynth.timeout);
             }
 
-            // Create new synth with selected instrument
+            // Immediately stop playing
+            try {
+                if (currentMelodicSynth.releaseAll) {
+                    currentMelodicSynth.releaseAll();
+                }
+            } catch (error) {
+                console.debug("Error releasing melodic synth:", error);
+            }
+
+            // Dispose after delay
+            const oldSynth = currentMelodicSynth;
+            setTimeout(() => {
+                try {
+                    oldSynth.dispose();
+                } catch (error) {
+                    console.debug("Error disposing melodic synth:", error);
+                }
+            }, 500);
+
+            currentMelodicSynth = null;
+        }
+
+        if (selectedInstrument !== "random" && melodyToggle.checked) {
+            // Create new melodic synth
             const melodicSynth = createMelodicInstrument(selectedInstrument);
             if (melodicSynth) {
-                synths.push(melodicSynth);
+                currentMelodicSynth = melodicSynth;
                 melodicSynth.volume.value = -5;
 
-                // Get current scale and start scheduling
                 const effectiveMood = moodSelect.value === "random" ? currentActiveMood : moodSelect.value;
                 const currentScale = scales[effectiveMood];
                 const melodicPattern = melodicPatterns[effectiveMood];
 
                 scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
             }
-        }
-        // If it's set to random, start the random cycling
-        else if (selectedInstrument === "random") {
+        } else if (selectedInstrument === "random") {
             startRandomInstrumentCycle();
-        }
-        // If it's none, remove the melodic synth if it exists
-        else if (!melodyToggle.checked) {
-            if (synths.length > 4) {
-                const oldSynth = synths.pop();
-                if (oldSynth && oldSynth.timeout) {
-                    clearTimeout(oldSynth.timeout);
-                }
-                setTimeout(() => {
-                    if (oldSynth) oldSynth.dispose();
-                }, 500);
-            }
         }
     }
 
     // Function to handle mood changes
     function handleMoodChange() {
-        // Clear any existing random interval
-        if (randomScaleInterval) {
-            clearInterval(randomScaleInterval);
-            randomScaleInterval = null;
-        }
-
         const selectedMood = moodSelect.value;
         console.debug("Mood changed to:", selectedMood);
 
         if (selectedMood !== "random") {
-            // Update all synths with the new scale
             currentActiveMood = selectedMood;
-            const newScale = scales[selectedMood];
-            updateAllSynthsWithNewScale(newScale, selectedMood);
+            musicManager.setMood(selectedMood);
         } else {
-            // Start random scale cycling
-            startRandomScaleCycle();
+            musicManager.startRandomMoodCycle();
         }
     }
 
@@ -1223,20 +1203,16 @@
         }, milliseconds);
     }
 
-    // Function to change to a random instrument
     function changeToRandomInstrument() {
-        // Get all regular instrument options (excluding "none" and "random")
         const instrumentOptions = Array.from(melodicInstrumentSelect.options)
             .filter(option => option.value !== "none" && option.value !== "random")
             .map(option => option.value);
 
-        // Get current actual instrument (or last used if in random mode)
         let currentInstrument = "";
-        if (synths.length > 4) {
-            currentInstrument = synths[4].instrumentType || ""; // We'll need to store this property
+        if (currentMelodicSynth) {
+            currentInstrument = currentMelodicSynth.instrumentType || "";
         }
 
-        // Select a random instrument different from the current one
         let newInstrument;
         do {
             const randomIndex = Math.floor(Math.random() * instrumentOptions.length);
@@ -1245,21 +1221,17 @@
 
         console.debug(`Random change: ${currentInstrument} → ${newInstrument}`);
 
-        // Remove current melodic synth if it exists
-        if (synths.length > 4) {
-            const oldSynth = synths.pop();
-
-            // Clear any pending timeouts
-            if (oldSynth.timeout) {
-                clearTimeout(oldSynth.timeout);
+        // Clean disposal of current melodic synth
+        if (currentMelodicSynth) {
+            if (currentMelodicSynth.timeout) {
+                clearTimeout(currentMelodicSynth.timeout);
             }
 
-            // Wait a moment before disposing to let any in-progress notes complete
+            const oldSynth = currentMelodicSynth;
             setTimeout(() => {
                 try {
                     oldSynth.dispose();
                 } catch (error) {
-                    // Silently catch any errors
                     console.debug("Note: synth already disposed");
                 }
             }, 500);
@@ -1268,13 +1240,10 @@
         // Create new synth
         const melodicSynth = createMelodicInstrument(newInstrument);
         if (melodicSynth) {
-            // Store the instrument type for reference
             melodicSynth.instrumentType = newInstrument;
-
-            synths.push(melodicSynth);
+            currentMelodicSynth = melodicSynth;
             melodicSynth.volume.value = -5;
 
-            // Get current scale and start scheduling
             const currentMood = moodSelect.value === "random" ? currentActiveMood : moodSelect.value;
             const currentScale = scales[currentMood];
             const melodicPattern = melodicPatterns[currentMood];
@@ -1425,150 +1394,64 @@
         };
     }
 
-    // Toggle noise on/off
-    function toggleNoise() {
-        console.debug("Toggle noise called, checked:", noiseToggle.checked);
-        if (noiseToggle.checked) {
-            // Start noise if checked and not already running
-            console.debug("Creating noise generator");
-            if (!noiseSource) {
-                console.debug("Starting noise");
-                noiseSource = createNoiseGenerator();
-                noiseSource.noise.start();
-                console.debug("noise volume current value is ", noiseSource.noiseVolume.volume.value);
-            }
-        } else {
-            // Stop noise if unchecked and running
-            if (noiseSource) {
-                noiseSource.noise.stop();
-                noiseSource.volumeLFO.stop();
-
-                // Clean up
-                setTimeout(() => {
-                    if (noiseSource) {
-                        noiseSource.noise.dispose();
-                        noiseSource.noiseFilter.dispose();
-                        noiseSource.noiseVolume.dispose();
-                        noiseSource.volumeLFO.dispose();
-                        noiseSource = null;
-                    }
-                }, 100);
-            }
-        }
-    }
-
-    // Update noise volume
-    function updateNoiseVolume() {
-        if (noiseSource && noiseSource.volumeLFO) {
-            const volume = parseInt(noiseVolumeSlider.value);
-            console.debug("Updating noise volume: ", volume, " where current value is ", noiseSource.noiseVolume.volume.value);
-            // Set volume directly on the volume node
-            noiseSource.noiseVolume.volume.value = volume;
-            // Important: We need to make sure this takes effect immediately
-            noiseSource.noiseVolume.volume.rampTo(volume, 0.1); // Smooth transition
-            noiseSource.volumeLFO.max = volume;
-        }
-    }
-
-    // Main function to start generating music
     async function startMusic() {
         if (isPlaying) return;
 
-        // Start audio context
         await Tone.start();
 
-        // Reset state
         isPlaying = true;
         activeNotes = {};
 
-        // Update UI
         startButton.disabled = true;
         stopButton.disabled = false;
 
-        // Clean up any previous synths
-        synths.forEach(synth => synth.dispose());
-        synths = [];
-
-        // Create new synths
-        const pad1 = createPad();
-        const pad2 = createPad();
-        const chimes = createChimes();
-        const bass = createBass();
-
-        synths.push(pad1, pad2, chimes, bass);
-
-        // Setup volume levels
-        pad1.volume.value = -8;
-        pad2.volume.value = -10;
-        chimes.volume.value = -15;
-        bass.volume.value = -5;
-
-        // Update reverb
-        reverb.wet.value = parseFloat(reverbSlider.value);
-
-        // Update master volume
-        masterVolume.volume.value = parseInt(volumeSlider.value);
-
-        // Start transport
-        Tone.Transport.bpm.value = 60;
-        Tone.Transport.start();
+        // Set initial sound engine if none selected
+        if (!musicManager.currentSoundEngine) {
+            const selectedEngine = soundEngineSelect?.value || 'standard';
+            console.debug("I picked ", selectedEngine);
+            await musicManager.setSoundEngine(selectedEngine, {
+                density: parseInt(densitySlider.value),
+                reverbAmount: parseFloat(reverbSlider.value)
+            });
+        } else {
+            const selectedEngine = soundEngineSelect?.value || 'standard';
+            console.debug("I picked ", selectedEngine);
+            await musicManager.setSoundEngine(selectedEngine, {
+                density: parseInt(densitySlider.value),
+                reverbAmount: parseFloat(reverbSlider.value)
+            });
+        }
 
         // Initialize currentActiveMood
         if (moodSelect.value !== "random") {
             currentActiveMood = moodSelect.value;
         } else {
-            // Pick a random initial mood
-            const moodOptions = Array.from(moodSelect.options)
-                .filter(option => option.value !== "random")
-                .map(option => option.value);
-
-            currentActiveMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
-            console.debug("Starting with random mood:", currentActiveMood);
+            const availableMoods = musicManager.getAvailableMoods();
+            currentActiveMood = availableMoods[Math.floor(Math.random() * availableMoods.length)];
         }
 
-        // Then use currentActiveMood for initial setup
-        const currentScale = scales[currentActiveMood];
+        // Set mood
+        musicManager.setMood(currentActiveMood);
 
         if (moodSelect.value === "random") {
-            startRandomScaleCycle();
+            musicManager.startRandomMoodCycle();
         }
 
-        // Create melodic instrument if selected
-        const selectedInstrument = melodicInstrumentSelect.value;
-        // if (selectedInstrument !== "none") {
+        // Update audio settings
+        reverb.wet.value = parseFloat(reverbSlider.value);
+        masterVolume.volume.value = parseInt(document.getElementById("volume").value);
+
+        Tone.Transport.bpm.value = 60;
+        Tone.Transport.start();
+
+        // Start the sound engine
+        await musicManager.start();
+
+        // Handle melodic instruments (unchanged)
         if (melodyToggle.checked) {
-            if (selectedInstrument === "random") {
-                // Start random cycling mode
-                startRandomInstrumentCycle();
-            } else {
-                // Create specific instrument
-                const melodicSynth = createMelodicInstrument(selectedInstrument);
-                if (melodicSynth) {
-                    melodicSynth.instrumentType = selectedInstrument; // Store type
-                    synths.push(melodicSynth);
-                    melodicSynth.volume.value = -5;
-
-                    const melodicPattern = melodicPatterns[currentActiveMood];
-                    scheduleMelodicPhrases(melodicSynth, currentScale, melodicPattern, selectedInstrument);
-                }
-            }
+            handleInstrumentChange();
         }
 
-        // Generate ambient pad sounds
-        schedulePadNotes(pad1, currentScale);
-
-        // Wait a bit before adding the second pad for texture
-        setTimeout(() => {
-            schedulePadNotes(pad2, currentScale);
-        }, 5000);
-
-        // Add occasional chime sounds
-        scheduleChimes(chimes, currentScale);
-
-        // Add bass notes
-        scheduleBassNotes(bass, currentScale);
-
-        // Start visualizer
         startVisualizer();
     }
 
@@ -1740,15 +1623,28 @@
     function stopMusic() {
         isPlaying = false;
 
-        // Stop all synths
+        // Stop the sound engine
+        musicManager.stop();
+
+        // Clean up melodic synth
+        if (currentMelodicSynth) {
+            if (currentMelodicSynth.timeout) {
+                clearTimeout(currentMelodicSynth.timeout);
+            }
+            try {
+                currentMelodicSynth.dispose();
+            } catch (error) {
+                console.debug("Error disposing melodic synth:", error);
+            }
+            currentMelodicSynth = null;
+        }
+
+        // Stop all melodic synths (unchanged behavior)
         synths.forEach(synth => {
-            // Clear any pending timeouts
             if (synth.timeout) {
                 clearTimeout(synth.timeout);
                 synth.timeout = null;
             }
-
-            // Properly release synth notes
             try {
                 if (typeof synth.releaseAll === 'function') {
                     synth.releaseAll();
@@ -1758,8 +1654,6 @@
             } catch (error) {
                 console.error("Error releasing synth:", error);
             }
-
-            // Dispose after a short delay to allow release to complete
             setTimeout(() => {
                 try {
                     synth.dispose();
@@ -1769,23 +1663,18 @@
             }, 500);
         });
 
-        // Clear the synths array
         synths = [];
 
-        // Stop transport
         Tone.Transport.stop();
 
-        // Update UI
         startButton.disabled = false;
         stopButton.disabled = true;
 
-        // Stop visualizer
         if (visualizerInterval) {
             clearInterval(visualizerInterval);
             visualizerInterval = null;
         }
 
-        // Clear active notes
         activeNotes = {};
 
         if (randomMelodyInterval) {
@@ -1842,33 +1731,36 @@
     function applySettingsGradually() {
         if (!isPlaying) return;
 
-        // Gradually ramp reverb changes instead of instant jumps
+        // Gradually ramp reverb changes
         const targetReverb = parseFloat(reverbSlider.value);
         reverb.wet.rampTo(targetReverb, 1.5);
-
-        // Handle mood/scale change during playback
+        // Handle mood change during playback
         if (moodSelect.value !== "random") {
             currentActiveMood = moodSelect.value;
-            const newScale = scales[currentActiveMood];
-            updateAllSynthsWithNewScale(newScale, currentActiveMood);
+            musicManager.setMood(currentActiveMood);
         }
 
-        // Handle instrument change during playback
+        // Handle sound engine change during playback
+        if (soundEngineSelect) {
+            handleSoundEngineChange();
+        }
+
+        // Handle instrument change during playback (unchanged)
         handleInstrumentChange();
 
-        if (noiseToggle.checked && (!waveSystem || !waveSystem.isActive)) {
-            toggleWaves(); // Start waves if they weren't on
-        } else if (!noiseToggle.checked && waveSystem && waveSystem.isActive) {
-            toggleWaves(); // Stop waves if they were on
-        }
-
-        // Update all wave system settings if active
+        // Update wave system settings if active (unchanged)
         if (waveSystem && waveSystem.isActive) {
             waveSystem.updateVolume();
             waveSystem.updateNoiseType(noiseTypeSelect.value);
             waveSystem.updateFilter();
             waveSystem.updateBaseLevel();
         }
+
+        // Update configuration
+        musicManager.updateConfig({
+            density: parseInt(densitySlider.value),
+            reverbAmount: parseFloat(reverbSlider.value)
+        });
     }
 
     function toggleMelody(event) {
@@ -1897,8 +1789,6 @@
         // automatically when the next wave cycle starts.
         // No immediate action needed - the sliders will be read
         // by the wave system when it creates the next wave.
-
-        // Optional: You could add immediate feedback here if desired
         console.debug("Wave settings updated - will apply to next wave cycle");
     }
 
@@ -1910,7 +1800,7 @@
         }
     }
 
-    // Enhanced toggle waves function (this replaces the old toggleNoise)
+    // Enhanced toggle waves function
     async function toggleWaves() {
         if (noiseToggle.checked) {
             // Initialize and start wave system
