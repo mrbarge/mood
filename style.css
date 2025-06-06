@@ -429,6 +429,7 @@ input:checked + .toggle-label:before {
 
     .section-content.expanded {
         padding: 0 15px 15px 15px;
+        max-height: 1100px;
     }
 
     .dice-button {
