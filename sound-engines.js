@@ -1093,6 +1093,526 @@ class AuroraFieldEngine extends BaseSoundEngine {
     }
 }
 
+class StoneFocusEngine extends BaseSoundEngine {
+    constructor() {
+        super('Stone in Focus');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        // Abstract pad with unconventional processing
+        this.abstractPad = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "square",
+                detune: 12 // Slight detuning for character
+            },
+            envelope: {
+                attack: 4,
+                decay: 2,
+                sustain: 0.6,
+                release: 8
+            }
+        });
+
+        // Mysterious bandpass filter with high Q
+        this.mysteriousFilter = new Tone.Filter({
+            frequency: 1200,
+            type: "bandpass",
+            Q: 8
+        });
+
+        // Unconventional LFO for filter modulation
+        this.unconventionalLFO = new Tone.LFO({
+            frequency: 0.37, // Prime number for non-repetitive cycles
+            min: 600,
+            max: 1800,
+            type: "triangle"
+        }).start();
+
+        // Beautiful distortion - adds warmth while maintaining clarity
+        this.beautifulDistortion = new Tone.Distortion(0.2);
+
+        // Abstract reverb
+        this.abstractReverb = new Tone.Reverb({
+            decay: 12,
+            wet: this.config.reverbAmount,
+            roomSize: 0.8
+        });
+
+        // Connect audio chain
+        this.abstractPad.connect(this.beautifulDistortion);
+        this.beautifulDistortion.connect(this.mysteriousFilter);
+        this.mysteriousFilter.connect(this.abstractReverb);
+        this.abstractReverb.connect(this.masterVolume);
+
+        this.unconventionalLFO.connect(this.mysteriousFilter.frequency);
+
+        this.synths.push(this.abstractPad);
+        this.effects.push(this.mysteriousFilter, this.unconventionalLFO, this.beautifulDistortion, this.abstractReverb);
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.abstractPad.triggerAttackRelease(chord, Math.random() * 6 + 4);
+
+            this.scheduleNext(playPattern, 3000, 5000);
+        };
+
+        playPattern();
+    }
+
+    updateReverb(value) {
+        super.updateReverb(value);
+        if (this.abstractReverb) {
+            this.abstractReverb.wet.value = value;
+        }
+    }
+}
+
+class StringTheoryEngine extends BaseSoundEngine {
+    constructor() {
+        super('String Theory');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        // Orchestral string ensemble simulation
+        this.stringEnsemble = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "sawtooth" // Rich harmonics like strings
+            },
+            envelope: {
+                attack: 10,  // Very slow attack like bowed strings
+                decay: 4,
+                sustain: 0.8,
+                release: 15  // Long release for sustained notes
+            }
+        });
+
+        // Orchestral filter - removes harshness, keeps warmth
+        this.orchestralFilter = new Tone.Filter({
+            frequency: 2000,
+            type: "lowpass",
+            Q: 3
+        });
+
+        // Emotional chorus for ensemble width
+        this.emotionalChorus = new Tone.Chorus(0.1, 2, 0.6).start();
+
+        // Cinematic reverb - large hall sound
+        this.cinematicReverb = new Tone.Reverb({
+            decay: 20,
+            wet: this.config.reverbAmount,
+            roomSize: 0.95
+        });
+
+        // Connect audio chain
+        this.stringEnsemble.connect(this.orchestralFilter);
+        this.orchestralFilter.connect(this.emotionalChorus);
+        this.emotionalChorus.connect(this.cinematicReverb);
+        this.cinematicReverb.connect(this.masterVolume);
+
+        this.synths.push(this.stringEnsemble);
+        this.effects.push(this.orchestralFilter, this.emotionalChorus, this.cinematicReverb);
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            // Use 4-note chords for rich orchestral harmony
+            const chord = this.getRandomChord(4);
+            this.stringEnsemble.triggerAttackRelease(chord, Math.random() * 15 + 12);
+
+            // Longer intervals between notes for slow evolution
+            this.scheduleNext(playPattern, 8000, 10000);
+        };
+
+        playPattern();
+    }
+
+    updateReverb(value) {
+        super.updateReverb(value);
+        if (this.cinematicReverb) {
+            this.cinematicReverb.wet.value = value;
+        }
+    }
+}
+
+class HexagonSunEngine extends BaseSoundEngine {
+    constructor() {
+        super('Hexagon Sun');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        // Geometric precision with analog warmth
+        this.geometricPad = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "sine" // Pure waveform for mathematical precision
+            },
+            envelope: {
+                attack: 5,
+                decay: 2,
+                sustain: 0.7,
+                release: 8
+            }
+        });
+
+        // Precision bandpass filter for resonant peaks
+        this.precisionFilter = new Tone.Filter({
+            frequency: 1800,
+            type: "bandpass",
+            Q: 6
+        });
+
+        // Golden ratio modulation (1.618) for mathematical beauty
+        this.goldenRatio = new Tone.LFO({
+            frequency: 0.618, // Golden ratio as frequency
+            min: 1200,
+            max: 2400,
+            type: "sine"
+        }).start();
+
+        // Sacred geometry reverb
+        this.sacredReverb = new Tone.Reverb({
+            decay: 10,
+            wet: this.config.reverbAmount,
+            roomSize: 0.8
+        });
+
+        // Connect audio chain
+        this.geometricPad.connect(this.precisionFilter);
+        this.precisionFilter.connect(this.sacredReverb);
+        this.sacredReverb.connect(this.masterVolume);
+
+        this.goldenRatio.connect(this.precisionFilter.frequency);
+
+        this.synths.push(this.geometricPad);
+        this.effects.push(this.precisionFilter, this.goldenRatio, this.sacredReverb);
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.geometricPad.triggerAttackRelease(chord, Math.random() * 6 + 5);
+
+            // Regular intervals for geometric precision
+            this.scheduleNext(playPattern, 3000, 5000);
+        };
+
+        playPattern();
+    }
+
+    updateReverb(value) {
+        super.updateReverb(value);
+        if (this.sacredReverb) {
+            this.sacredReverb.wet.value = value;
+        }
+    }
+}
+
+class ParallelDimensionEngine extends BaseSoundEngine {
+    constructor() {
+        super('Parallel Dimension');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        // Interdimensional pad with heavy detuning
+        this.dimensionalPad = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "triangle",
+                detune: 20 // Heavy detuning for otherworldly character
+            },
+            envelope: {
+                attack: 6,
+                decay: 4,
+                sustain: 0.8,
+                release: 11
+            }
+        });
+
+        // Dual phase shifters for multi-dimensional effect
+        this.phaseShifter1 = new Tone.Phaser({
+            frequency: 0.15,
+            depth: 0.8,
+            baseFrequency: 400
+        });
+
+        this.phaseShifter2 = new Tone.Phaser({
+            frequency: 0.08, // Different rate for complex interaction
+            depth: 0.6,
+            baseFrequency: 800
+        });
+
+        // Quantum filter for interdimensional filtering
+        this.quantumFilter = new Tone.Filter({
+            frequency: 1500,
+            type: "bandpass",
+            Q: 6
+        });
+
+        // Multi-dimensional reverb
+        this.multiReverb = new Tone.Reverb({
+            decay: 16,
+            wet: this.config.reverbAmount,
+            roomSize: 0.92
+        });
+
+        // Connect audio chain
+        this.dimensionalPad.connect(this.phaseShifter1);
+        this.phaseShifter1.connect(this.phaseShifter2);
+        this.phaseShifter2.connect(this.quantumFilter);
+        this.quantumFilter.connect(this.multiReverb);
+        this.multiReverb.connect(this.masterVolume);
+
+        this.synths.push(this.dimensionalPad);
+        this.effects.push(this.phaseShifter1, this.phaseShifter2, this.quantumFilter, this.multiReverb);
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.dimensionalPad.triggerAttackRelease(chord, Math.random() * 9 + 7);
+
+            this.scheduleNext(playPattern, 5000, 7000);
+        };
+
+        playPattern();
+    }
+
+    updateReverb(value) {
+        super.updateReverb(value);
+        if (this.multiReverb) {
+            this.multiReverb.wet.value = value;
+        }
+    }
+}
+
+class GentleRhubarbEngine extends BaseSoundEngine {
+    constructor() {
+        super('Gentle Rhubarb');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        // Gentle hybrid pad with reduced detuning
+        this.hybridPad = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "sawtooth",
+                detune: 8 // Reduced from 15 for gentleness
+            },
+            envelope: {
+                attack: 6,  // Slower attack for smoothness
+                decay: 3,
+                sustain: 0.7,
+                release: 12 // Longer release for flowing character
+            }
+        });
+
+        // Warm low-pass filter instead of harsh high-pass
+        this.gentleFilter = new Tone.Filter({
+            frequency: 1200, // Low-pass at 1200Hz
+            type: "lowpass",
+            Q: 2 // Lower Q for gentle filtering
+        });
+
+        // Slower, more organic LFO
+        this.organicLFO = new Tone.LFO({
+            frequency: 0.15, // Slower modulation
+            min: 800,
+            max: 1600,
+            type: "triangle" // Smoother than square wave
+        }).start();
+
+        // Reduced frequency shifting for subtlety
+        this.subtleShifter = new Tone.FrequencyShifter({
+            frequency: 3, // Much gentler shift
+            wet: 0.15    // Less pronounced effect
+        });
+
+        // Warm saturation for analog character
+        this.warmSaturation = new Tone.Distortion(0.05); // Very subtle
+
+        // Soft high-frequency roll-off
+        this.softFilter = new Tone.Filter({
+            frequency: 3000,
+            type: "lowpass",
+            Q: 0.8 // Very gentle slope
+        });
+
+        // Smoothing chorus
+        this.smoothChorus = new Tone.Chorus({
+            frequency: 1.5,
+            delayTime: 3.5,
+            depth: 0.5, // Increased depth for smoothing
+            wet: 0.4
+        }).start();
+
+        // Warm, enveloping reverb
+        this.gentleReverb = new Tone.Reverb({
+            decay: 18, // Longer decay
+            wet: this.config.reverbAmount,
+            roomSize: 0.9
+        });
+
+        // Connect gentle audio chain
+        this.hybridPad.connect(this.subtleShifter);
+        this.subtleShifter.connect(this.gentleFilter);
+        this.gentleFilter.connect(this.warmSaturation);
+        this.warmSaturation.connect(this.softFilter);
+        this.softFilter.connect(this.smoothChorus);
+        this.smoothChorus.connect(this.gentleReverb);
+        this.gentleReverb.connect(this.masterVolume);
+
+        this.organicLFO.connect(this.gentleFilter.frequency);
+
+        this.synths.push(this.hybridPad);
+        this.effects.push(this.gentleFilter, this.organicLFO, this.subtleShifter,
+            this.warmSaturation, this.softFilter, this.smoothChorus, this.gentleReverb);
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(2);
+            this.hybridPad.triggerAttackRelease(chord, Math.random() * 10 + 6); // Longer notes
+
+            // Slightly longer intervals for gentle pacing
+            this.scheduleNext(playPattern, 5000, 8000);
+        };
+
+        playPattern();
+    }
+
+    updateReverb(value) {
+        super.updateReverb(value);
+        if (this.gentleReverb) {
+            this.gentleReverb.wet.value = value;
+        }
+    }
+}
+
+class EtherealRhubarbEngine extends BaseSoundEngine {
+    constructor() {
+        super('Ethereal Rhubarb');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        // Ethereal pad with moderate detuning
+        this.etherealPad = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "sawtooth",
+                detune: 12 // Moderate detuning for character
+            },
+            envelope: {
+                attack: 8,  // Very slow attack for ethereal emergence
+                decay: 4,
+                sustain: 0.8, // Higher sustain for floating quality
+                release: 15 // Very long release for ethereal trails
+            }
+        });
+
+        // Ethereal bandpass filter for focused resonance
+        this.etherealFilter = new Tone.Filter({
+            frequency: 1500,
+            type: "bandpass",
+            Q: 3 // Moderate Q for smooth resonance
+        });
+
+        // Very slow LFO for gentle movement
+        this.floatingLFO = new Tone.LFO({
+            frequency: 0.1, // Very slow modulation
+            min: 1200,
+            max: 1800,
+            type: "sine" // Smoothest modulation
+        }).start();
+
+        // Minimal frequency shifting
+        this.whisperShifter = new Tone.FrequencyShifter({
+            frequency: 2, // Very subtle
+            wet: 0.1    // Barely noticeable
+        });
+
+        // No saturation for pure ethereal quality
+
+        // Ethereal high-frequency softening
+        this.cloudFilter = new Tone.Filter({
+            frequency: 4500, // Higher cutoff, gentler slope
+            type: "lowpass",
+            Q: 0.6 // Very gentle
+        });
+
+        // Wide, atmospheric chorus
+        this.atmosphericChorus = new Tone.Chorus({
+            frequency: 0.8, // Slower chorus rate
+            delayTime: 5,   // Longer delay time
+            depth: 0.6,     // Deep modulation for width
+            wet: 0.5
+        }).start();
+
+        // Massive ethereal reverb
+        this.celestialReverb = new Tone.Reverb({
+            decay: 22, // Very long decay
+            wet: this.config.reverbAmount,
+            roomSize: 0.95 // Huge space
+        });
+
+        // Connect ethereal audio chain
+        this.etherealPad.connect(this.whisperShifter);
+        this.whisperShifter.connect(this.etherealFilter);
+        this.etherealFilter.connect(this.cloudFilter);
+        this.cloudFilter.connect(this.atmosphericChorus);
+        this.atmosphericChorus.connect(this.celestialReverb);
+        this.celestialReverb.connect(this.masterVolume);
+
+        this.floatingLFO.connect(this.etherealFilter.frequency);
+
+        this.synths.push(this.etherealPad);
+        this.effects.push(this.etherealFilter, this.floatingLFO, this.whisperShifter,
+            this.cloudFilter, this.atmosphericChorus, this.celestialReverb);
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            // Often single notes for ethereal simplicity
+            const noteCount = Math.random() < 0.3 ? 1 : 2;
+            const chord = this.getRandomChord(noteCount);
+            this.etherealPad.triggerAttackRelease(chord, Math.random() * 12 + 8); // Long, floating notes
+
+            // Longer intervals for spacious, ethereal timing
+            this.scheduleNext(playPattern, 7000, 12000);
+        };
+
+        playPattern();
+    }
+
+    updateReverb(value) {
+        super.updateReverb(value);
+        if (this.celestialReverb) {
+            this.celestialReverb.wet.value = value;
+        }
+    }
+}
+
 class SoundEngineRegistry {
     constructor() {
         this.engines = new Map();
@@ -1112,6 +1632,12 @@ class SoundEngineRegistry {
         this.register('underwater-palace', UnderwaterPalaceEngine);
         this.register('neon-nocturne', NeonNocturneEngine);
         this.register('atmospheric-temple', AtmosphericTempleEngine);
+        this.register('stone-focus', StoneFocusEngine);
+        this.register('string-theory', StringTheoryEngine);
+        this.register('hexagon-sun', HexagonSunEngine);
+        this.register('parallel-dimension', ParallelDimensionEngine);
+        this.register('gentle-rhubarb', GentleRhubarbEngine);
+        this.register('ethereal-rhubarb', EtherealRhubarbEngine);
     }
 
     register(key, EngineClass) {
@@ -1244,3 +1770,4 @@ class AmbientMusicManager {
         console.debug("Random mood change to:", newMood);
     }
 }
+

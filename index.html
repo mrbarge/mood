@@ -6,6 +6,7 @@
     <title>Mood</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <script src="sound-engines.js"></script>
+    <script src="ocean-waves.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -54,6 +55,12 @@
                         <option value="underwater-palace">Underwater Palace</option>
                         <option value="neon-nocturne">Neon Nocturne</option>
                         <option value="atmospheric-temple">Atmospheric Temple</option>
+                        <option value="stone-focus">Stone in Focus</option>
+                        <option value="string-theory">String Theory</option>
+                        <option value="hexagon-sun">Hexagon Sun</option>
+                        <option value="parallel-dimension">Parallel Dimension</option>
+                        <option value="gentle-rhubarb">Gentle Rhubarb</option>
+                        <option value="ethereal-rhubarb">Ethereal Rhubarb</option>
                     </select>
                 </div>
                 <div class="control-group">
@@ -163,7 +170,7 @@
         <div class="control-section" id="waves-section">
             <div class="section-header" onclick="toggleSection('waves')">
                 <div class="section-title">
-                    <div class="toggle-btn" onclick="toggleWaves(event)">
+                    <div class="toggle-btn" onclick="toggleWaves()">
                         <input type="checkbox" id="noise-toggle" onchange="updateWavesStatus()" onclick="event.stopPropagation()">
                         <span class="toggle-indicator"></span>
                     </div>
@@ -368,208 +375,10 @@
 
 <script>
 
-    class OceanWaveSystem {
-        constructor() {
-            this.isActive = false;
-            this.noise = null;
-            this.gain = null;
-            this.filter = null;
-            this.waveTimeout = null;
-            this.currentWavePhase = 'waiting';
-            this.currentNoiseType = 'pink';
-            this.waveStartTime = 0;
-            this.waveDuration = 0;
-        }
-
-        async init() {
-            // Create gain node
-            this.gain = new Tone.Gain(parseFloat(baseLevelSlider.value));
-
-            // Create filter with user-controlled frequency
-            this.filter = new Tone.Filter(parseInt(filterFreqSlider.value), 'lowpass');
-
-            // Create noise source
-            this.noise = new Tone.Noise(this.currentNoiseType);
-
-            // Create wave-specific reverb
-            this.waveReverb = new Tone.Reverb({
-                decay: 3,
-                wet: 0.4,
-                preDelay: 0.02
-            });
-
-            // Connect the audio chain
-            this.noise.connect(this.filter);
-            this.filter.connect(this.gain);
-            this.gain.connect(this.waveReverb);
-            this.waveReverb.connect(masterVolume);
-
-            // Set initial volume from slider
-            this.updateVolume();
-        }
-
-        start() {
-            if (this.isActive) return;
-
-            this.isActive = true;
-            if (this.noise) {
-                this.noise.start();
-                this.scheduleNextWave();
-            }
-        }
-
-        stop() {
-            if (!this.isActive) return;
-
-            this.isActive = false;
-            this.currentWavePhase = 'waiting';
-
-            if (this.waveTimeout) {
-                clearTimeout(this.waveTimeout);
-                this.waveTimeout = null;
-            }
-
-            if (this.noise) {
-                this.noise.stop();
-            }
-        }
-
-        dispose() {
-            this.stop();
-            if (this.noise) this.noise.dispose();
-            if (this.gain) this.gain.dispose();
-            if (this.filter) this.filter.dispose();
-            if (this.waveReverb) this.waveReverb.dispose();
-        }
-
-        scheduleNextWave() {
-            if (!this.isActive) return;
-
-            // Use pause between setting with random variation
-            const pauseDuration = parseFloat(pauseBetweenSlider.value);
-            const randomPause = pauseDuration + (Math.random() - 0.5) * pauseDuration * 0.5;
-
-            this.currentWavePhase = 'waiting';
-
-            this.waveTimeout = setTimeout(() => {
-                if (this.isActive) this.startWave();
-            }, randomPause * 1000);
-        }
-
-        startWave() {
-            if (!this.isActive) return;
-
-            // Get current slider values
-            const minDur = parseFloat(minDurationSlider.value);
-            const maxDur = parseFloat(maxDurationSlider.value);
-            const baseLevel = parseFloat(baseLevelSlider.value);
-            const peakLevel = parseFloat(peakLevelSlider.value);
-            const buildSpeed = parseFloat(buildSpeedSlider.value);
-
-            // Random wave duration within specified range
-            this.waveDuration = minDur + Math.random() * (maxDur - minDur);
-            this.waveStartTime = Tone.now();
-
-            // Calculate phase durations based on build speed
-            const speedFactor = buildSpeed / 2.5; // Normalize around default value of 2.5
-            const buildTime = this.waveDuration * (0.15 + Math.random() * 0.25) * (1 / speedFactor); // Faster speed = shorter build
-            const sustainTime = this.waveDuration * (0.1 + Math.random() * 0.2); // 10-30% of total
-            const recedeTime = this.waveDuration - buildTime - sustainTime; // remainder
-
-            this.currentWavePhase = 'building';
-
-            // Build phase - use peak level with variation
-            const peakVariation = peakLevel * (0.8 + Math.random() * 0.4); // ±20% variation
-            this.gain.gain.rampTo(peakVariation, buildTime);
-
-            // Schedule sustain phase
-            setTimeout(() => {
-                if (!this.isActive) return;
-                this.currentWavePhase = 'sustaining';
-
-                // Add some subtle variation during sustain
-                const sustainVariation = peakVariation * (0.9 + Math.random() * 0.2);
-                this.gain.gain.rampTo(sustainVariation, sustainTime * 0.5);
-
-                // Schedule recede phase
-                setTimeout(() => {
-                    if (!this.isActive) return;
-                    this.currentWavePhase = 'receding';
-
-                    // Recede to base level (with slight variation)
-                    const newBaseLevel = baseLevel * (0.5 + Math.random() * 1);
-                    this.gain.gain.rampTo(newBaseLevel, recedeTime);
-
-                    // Schedule next wave
-                    setTimeout(() => {
-                        if (this.isActive) this.scheduleNextWave();
-                    }, recedeTime * 1000);
-
-                }, sustainTime * 1000);
-
-            }, buildTime * 1000);
-        }
-
-        updateVolume() {
-            if (this.gain) {
-                // Convert dB slider to linear gain and apply it
-                const dbValue = parseInt(noiseVolumeSlider.value);
-                // Use gain.gain instead of gain.volume
-                this.gain.gain.rampTo(Tone.dbToGain(dbValue), 0.1);
-            }
-        }
-
-        updateNoiseType(type) {
-            this.currentNoiseType = type;
-
-            if (this.isActive && this.noise) {
-                // Recreate noise with new type
-                this.noise.stop();
-                this.noise.dispose();
-                this.noise = new Tone.Noise(type);
-                this.noise.connect(this.filter);
-                this.noise.start();
-            }
-        }
-
-        updateFilter(frequency) {
-            if (this.filter) {
-                this.filter.frequency.rampTo(frequency || parseInt(filterFreqSlider.value), 0.5);
-            }
-        }
-
-        updateBaseLevel() {
-            // This affects the next wave cycle, not the current one
-            if (this.currentWavePhase === 'waiting' && this.gain) {
-                const baseLevel = parseFloat(baseLevelSlider.value);
-                this.gain.gain.rampTo(baseLevel, 1);
-            }
-        }
-
-        getCurrentIntensity() {
-            return this.gain ? this.gain.gain.value : 0;
-        }
-
-        getWaveInfo() {
-            if (!this.isActive) return 'Stopped';
-
-            switch(this.currentWavePhase) {
-                case 'waiting':
-                    return 'Waiting for next wave...';
-                case 'building':
-                    return `Building wave (${this.waveDuration.toFixed(1)}s total)`;
-                case 'sustaining':
-                    return 'Wave sustaining...';
-                case 'receding':
-                    return 'Wave receding...';
-                default:
-                    return 'Wave active';
-            }
-        }
-    }
-
     // Initialize the new sound system
     const musicManager = new AmbientMusicManager();
+
+    let waveManager = null;
 
     // Sound Engine UI element reference
     const soundEngineSelect = document.getElementById("sound-engine");
@@ -652,6 +461,9 @@
             // Randomize waves
             const wavesToggle = document.getElementById('noise-toggle');
             wavesToggle.checked = Math.random() > 0.5;
+            if (waveManager) {
+                waveManager.updateStatus();
+            }
 
             // Randomize some sliders
             document.getElementById('density').value = Math.floor(Math.random() * 8) + 2;
@@ -680,10 +492,11 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-        initializeWaves();
+        waveManager = new OceanWaveManager();
+        // initializeWaves();
         updateMoodStatus();
         updateMelodyStatus();
-        updateWavesStatus();
+        // updateWavesStatus();
 
         musicManager.setSoundEngine('standard', {
             density: parseInt(densitySlider.value),
@@ -805,26 +618,6 @@
     });
 
     noiseToggle.addEventListener("change", toggleWaves);
-    noiseVolumeSlider.addEventListener("input", updateWaveVolume);
-
-    // Wave characteristic listeners
-    baseLevelSlider.addEventListener("input", () => {
-        if (waveSystem) waveSystem.updateBaseLevel();
-    });
-    peakLevelSlider.addEventListener("input", updateWaveSettings);
-    buildSpeedSlider.addEventListener("input", updateWaveSettings);
-
-    // Timing listeners
-    minDurationSlider.addEventListener("input", updateWaveSettings);
-    maxDurationSlider.addEventListener("input", updateWaveSettings);
-    pauseBetweenSlider.addEventListener("input", updateWaveSettings);
-
-    // Audio listeners
-    noiseTypeSelect.addEventListener("change", updateNoiseType);
-    filterFreqSlider.addEventListener("input", () => {
-        if (waveSystem) waveSystem.updateFilter();
-    });
-
     melodyToggle.addEventListener("change", toggleMelody);
     melodicReverbSlider.addEventListener("input", function() {
         if (melodicReverbNode) {
@@ -1745,15 +1538,15 @@
             handleSoundEngineChange();
         }
 
-        // Handle instrument change during playback (unchanged)
+        // Handle instrument change during playback
         handleInstrumentChange();
 
-        // Update wave system settings if active (unchanged)
-        if (waveSystem && waveSystem.isActive) {
-            waveSystem.updateVolume();
-            waveSystem.updateNoiseType(noiseTypeSelect.value);
-            waveSystem.updateFilter();
-            waveSystem.updateBaseLevel();
+        // Update wave system settings if active
+        if (waveManager && waveManager.isActive()) {
+            waveManager.updateVolume();
+            waveManager.updateNoiseType();
+            waveManager.updateFilter();
+            waveManager.updateBaseLevel();
         }
 
         // Update configuration
@@ -1778,45 +1571,11 @@
         }
     }
 
-    function updateWaveVolume() {
-        if (waveSystem) {
-            waveSystem.updateVolume();
-        }
-    }
-
-    function updateWaveSettings() {
-        // Settings like duration, timing, and build speed are applied
-        // automatically when the next wave cycle starts.
-        // No immediate action needed - the sliders will be read
-        // by the wave system when it creates the next wave.
-        console.debug("Wave settings updated - will apply to next wave cycle");
-    }
-
-    function updateNoiseType() {
-        const selectedType = noiseTypeSelect.value;
-        if (waveSystem) {
-            waveSystem.updateNoiseType(selectedType);
-            waveSystem.updateFilter(); // Also update filter to match noise type
-        }
-    }
-
-    // Enhanced toggle waves function
     async function toggleWaves() {
-        if (noiseToggle.checked) {
-            // Initialize and start wave system
-            if (!waveSystem) {
-                waveSystem = new OceanWaveSystem();
-                await waveSystem.init();
-            }
-
-            waveSystem.start();
-        } else {
-            // Stop wave system
-            if (waveSystem) {
-                waveSystem.stop();
-            }
+        if (!waveManager) {
+            waveManager = new OceanWaveManager();
         }
-        updateWavesStatus();
+        await waveManager.toggle();
     }
 
 </script>
