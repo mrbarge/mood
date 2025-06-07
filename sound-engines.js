@@ -1120,20 +1120,28 @@ class AmbientMusicManager {
         this.currentMood = 'calm';
         this.isPlaying = false;
         this.randomMoodInterval = null;
+        this.randomEngineInterval = null; // For engine randomization
     }
 
     async setSoundEngine(engineKey, config = {}) {
+        console.debug("Setting sound engine to:", engineKey);
+
         if (this.currentSoundEngine) {
             this.currentSoundEngine.stop();
         }
 
         this.currentSoundEngine = this.soundEngineRegistry.create(engineKey, config);
 
-        // Initialize with global audio nodes (these should be available globally)
-        await this.currentSoundEngine.initialize(masterVolume, reverb, delay, filter);
+        // Initialize with global audio nodes
+        await this.currentSoundEngine.initialize(
+            typeof masterVolume !== 'undefined' ? masterVolume : null,
+            typeof reverb !== 'undefined' ? reverb : null,
+            typeof delay !== 'undefined' ? delay : null,
+            typeof filter !== 'undefined' ? filter : null
+        );
 
-        // Set the current scale (scales should be available globally)
-        if (typeof scales !== 'undefined') {
+        // Set the current scale
+        if (typeof scales !== 'undefined' && this.currentMood && scales[this.currentMood]) {
             this.currentSoundEngine.setScale(scales[this.currentMood]);
         }
 
@@ -1145,9 +1153,10 @@ class AmbientMusicManager {
     }
 
     setMood(moodKey) {
+        console.debug("Setting mood to:", moodKey);
         this.currentMood = moodKey;
 
-        if (this.currentSoundEngine && typeof scales !== 'undefined') {
+        if (this.currentSoundEngine && typeof scales !== 'undefined' && scales[moodKey]) {
             this.currentSoundEngine.setScale(scales[moodKey]);
         }
     }
@@ -1157,18 +1166,27 @@ class AmbientMusicManager {
             throw new Error('No sound engine selected');
         }
 
+        console.debug("Starting music manager");
         this.isPlaying = true;
         this.currentSoundEngine.start();
     }
 
     stop() {
+        console.debug("Stopping music manager");
         this.isPlaying = false;
+
         if (this.currentSoundEngine) {
             this.currentSoundEngine.stop();
         }
+
+        // Stop all random intervals
         if (this.randomMoodInterval) {
             clearInterval(this.randomMoodInterval);
             this.randomMoodInterval = null;
+        }
+        if (this.randomEngineInterval) {
+            clearInterval(this.randomEngineInterval);
+            this.randomEngineInterval = null;
         }
     }
 
@@ -1193,12 +1211,17 @@ class AmbientMusicManager {
         return typeof scales !== 'undefined' ? Object.keys(scales) : [];
     }
 
+    // ===============================================
+    // MOOD RANDOMIZATION (EXISTING)
+    // ===============================================
+
     startRandomMoodCycle() {
+        console.debug("Starting random mood cycle");
+
         if (this.randomMoodInterval) {
             clearInterval(this.randomMoodInterval);
         }
 
-        // Get interval from global slider (should be available globally)
         const minutesValue = typeof randomIntervalSlider !== 'undefined' ?
             parseInt(randomIntervalSlider.value) : 10;
         const milliseconds = minutesValue * 60 * 1000;
@@ -1215,13 +1238,154 @@ class AmbientMusicManager {
 
     changeToRandomMood() {
         const availableMoods = this.getAvailableMoods();
-        const randomIndex = Math.floor(Math.random() * availableMoods.length);
-        const newMood = availableMoods[randomIndex];
+        if (availableMoods.length === 0) return;
+
+        let newMood;
+        do {
+            const randomIndex = Math.floor(Math.random() * availableMoods.length);
+            newMood = availableMoods[randomIndex];
+        } while (newMood === this.currentMood && availableMoods.length > 1);
+
+        console.debug("Random mood change to:", newMood);
 
         this.setMood(newMood);
         if (typeof currentActiveMood !== 'undefined') {
             currentActiveMood = newMood;
         }
-        console.debug("Random mood change to:", newMood);
+    }
+
+    // ===============================================
+    // SOUND ENGINE RANDOMIZATION (NEW)
+    // ===============================================
+
+    startRandomEngineCycle() {
+        console.debug("Starting random engine cycle");
+
+        if (this.randomEngineInterval) {
+            clearInterval(this.randomEngineInterval);
+        }
+
+        const minutesValue = typeof randomIntervalSlider !== 'undefined' ?
+            parseInt(randomIntervalSlider.value) : 10;
+        const milliseconds = minutesValue * 60 * 1000;
+
+        this.randomEngineInterval = setInterval(() => {
+            if (this.isPlaying && typeof soundEngineSelect !== 'undefined' && soundEngineSelect.value === "random") {
+                this.changeToRandomEngine();
+            } else {
+                clearInterval(this.randomEngineInterval);
+                this.randomEngineInterval = null;
+            }
+        }, milliseconds);
+    }
+
+    async changeToRandomEngine() {
+        console.debug("Changing to random engine");
+
+        const availableEngines = this.soundEngineRegistry.getAvailableEngines();
+        if (availableEngines.length === 0) return;
+
+        // Get current engine to avoid repeating
+        let currentEngine = "";
+        if (this.currentSoundEngine) {
+            currentEngine = this.getCurrentEngineKey();
+        }
+
+        // Pick a different engine
+        let newEngine;
+        do {
+            const randomIndex = Math.floor(Math.random() * availableEngines.length);
+            newEngine = availableEngines[randomIndex];
+        } while (newEngine === currentEngine && availableEngines.length > 1);
+
+        console.debug(`Random engine change: ${currentEngine} → ${newEngine}`);
+
+        try {
+            // Set new engine with current configuration
+            await this.setSoundEngine(newEngine, {
+                density: typeof densitySlider !== 'undefined' ? parseInt(densitySlider.value) : 5,
+                reverbAmount: typeof reverbSlider !== 'undefined' ? parseFloat(reverbSlider.value) : 0.5
+            });
+
+            // Update UI to show the current engine (but keep "Random" selected)
+            this.updateEngineStatusDisplay(newEngine);
+
+        } catch (error) {
+            console.error("Error during random engine change:", error);
+        }
+    }
+
+    getCurrentEngineKey() {
+        if (!this.currentSoundEngine) return "";
+
+        // Find the engine key by matching the class name
+        const availableEngines = this.soundEngineRegistry.getAvailableEngines();
+        for (const engineKey of availableEngines) {
+            const engineInfo = this.soundEngineRegistry.getEngineInfo(engineKey);
+            if (engineInfo && this.currentSoundEngine.name === engineInfo.name) {
+                return engineKey;
+            }
+        }
+        return "";
+    }
+
+    updateEngineStatusDisplay(engineKey) {
+        // Update the status display to show current engine while keeping "Random" selected
+        const engineInfo = this.soundEngineRegistry.getEngineInfo(engineKey);
+        if (engineInfo && typeof updateSoundEngineStatus === 'function') {
+            updateSoundEngineStatus(engineInfo.name);
+        }
+    }
+
+    // ===============================================
+    // ENHANCED RANDOM CYCLE MANAGEMENT
+    // ===============================================
+
+    startRandomCycles() {
+        console.debug("Starting all random cycles");
+
+        // Start mood randomization if mood is set to random
+        if (typeof moodSelect !== 'undefined' && moodSelect.value === "random") {
+            this.startRandomMoodCycle();
+        }
+
+        // Start engine randomization if engine is set to random
+        if (typeof soundEngineSelect !== 'undefined' && soundEngineSelect.value === "random") {
+            this.startRandomEngineCycle();
+        }
+    }
+
+    stopRandomCycles() {
+        console.debug("Stopping all random cycles");
+
+        if (this.randomMoodInterval) {
+            clearInterval(this.randomMoodInterval);
+            this.randomMoodInterval = null;
+        }
+        if (this.randomEngineInterval) {
+            clearInterval(this.randomEngineInterval);
+            this.randomEngineInterval = null;
+        }
+    }
+
+    // Check if any randomization is active
+    isRandomizationActive() {
+        return this.randomMoodInterval !== null || this.randomEngineInterval !== null;
+    }
+
+    // Restart random cycles with new interval
+    restartRandomCycles() {
+        console.debug("Restarting random cycles with new interval");
+        this.stopRandomCycles();
+        setTimeout(() => {
+            this.startRandomCycles();
+        }, 100);
     }
 }
+
+// Make sure the class is available globally
+if (typeof window !== 'undefined') {
+    window.AmbientMusicManager = AmbientMusicManager;
+}
+
+console.log("✅ AmbientMusicManager class loaded with randomization support");

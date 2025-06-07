@@ -19,9 +19,10 @@
     </div>
 
     <div class="main-controls">
+
         <!-- Dice Randomizer -->
         <div class="dice-section">
-            <button class="dice-button" id="dice-button">
+            <button class="dice-button" id="dice-button" title="Randomizes mood, sound engine, melody instrument, wave settings, and sliders">
                 <span class="dice-icon">🎲</span>
                 Randomize Everything
             </button>
@@ -33,8 +34,11 @@
                 <div class="section-title">
                     <div class="section-icon mood-icon">🎭</div>
                     <div>
-                        <div class="section-info">Mood</div>
-                        <div class="section-status" id="mood-status">Calm</div>
+                        <div class="section-info">Mood & Engine</div>
+                        <div class="section-status">
+                            <span id="mood-status">Calm</span> •
+                            <span id="sound-engine-status">Standard Ambient</span>
+                        </div>
                     </div>
                 </div>
                 <button class="expand-btn" id="mood-expand">
@@ -42,10 +46,12 @@
                 </button>
             </div>
             <div class="section-content" id="mood-content">
+                <!-- Updated Sound Engine Control with Random Option -->
                 <div class="control-group">
                     <label class="control-label" for="sound-engine">Sound Engine</label>
-                    <select id="sound-engine">
-                        <option value="standard">Standard Ambient</option>
+                    <select id="sound-engine" onchange="handleSoundEngineChange()">
+                        <option value="random">Random (Auto-changing)</option>
+                        <option value="standard" selected>Standard Ambient</option>
                         <option value="cathedral-ethereal">Ethereal Cathedral</option>
                         <option value="glacial-ethereal">Glacial Ethereal</option>
                         <option value="dark-matter">Dark Matter</option>
@@ -66,11 +72,12 @@
                         <option value="ethereal-rhubarb">Ethereal Rhubarb</option>
                     </select>
                 </div>
+
                 <div class="control-group">
                     <label class="control-label" for="mood">Musical Mood</label>
                     <select id="mood" onchange="updateMoodStatus()">
                         <option value="random">Random (Auto-changing)</option>
-                        <option value="calm">Calm</option>
+                        <option value="calm" selected>Calm</option>
                         <option value="ethereal">Ethereal</option>
                         <option value="mysterious">Mysterious</option>
                         <option value="melancholic">Melancholic</option>
@@ -109,6 +116,88 @@
                 </div>
             </div>
         </div>
+<!--        -->
+<!--        <div class="control-section" id="mood-section">-->
+<!--            <div class="section-header" onclick="toggleSection('mood')">-->
+<!--                <div class="section-title">-->
+<!--                    <div class="section-icon mood-icon">🎭</div>-->
+<!--                    <div>-->
+<!--                        <div class="section-info">Mood</div>-->
+<!--                        <div class="section-status" id="mood-status">Calm</div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <button class="expand-btn" id="mood-expand">-->
+<!--                    <span>▼</span>-->
+<!--                </button>-->
+<!--            </div>-->
+<!--            <div class="section-content" id="mood-content">-->
+<!--                <div class="control-group">-->
+<!--                    <label class="control-label" for="sound-engine">Sound Engine</label>-->
+<!--                    <select id="sound-engine">-->
+<!--                        <option value="standard">Standard Ambient</option>-->
+<!--                        <option value="cathedral-ethereal">Ethereal Cathedral</option>-->
+<!--                        <option value="glacial-ethereal">Glacial Ethereal</option>-->
+<!--                        <option value="dark-matter">Dark Matter</option>-->
+<!--                        <option value="aurora-field">Aurora Field</option>-->
+<!--                        <option value="glass-horizon">Glass Horizon</option>-->
+<!--                        <option value="nebula-drift">Nebula Drift</option>-->
+<!--                        <option value="thermal-layers">Thermal Layers</option>-->
+<!--                        <option value="deep-resonance">Deep Resonance</option>-->
+<!--                        <option value="cosmic-drift">Cosmic Drift</option>-->
+<!--                        <option value="underwater-palace">Underwater Palace</option>-->
+<!--                        <option value="neon-nocturne">Neon Nocturne</option>-->
+<!--                        <option value="atmospheric-temple">Atmospheric Temple</option>-->
+<!--                        <option value="stone-focus">Stone in Focus</option>-->
+<!--                        <option value="string-theory">String Theory</option>-->
+<!--                        <option value="hexagon-sun">Hexagon Sun</option>-->
+<!--                        <option value="parallel-dimension">Parallel Dimension</option>-->
+<!--                        <option value="gentle-rhubarb">Gentle Rhubarb</option>-->
+<!--                        <option value="ethereal-rhubarb">Ethereal Rhubarb</option>-->
+<!--                    </select>-->
+<!--                </div>-->
+<!--                <div class="control-group">-->
+<!--                    <label class="control-label" for="mood">Musical Mood</label>-->
+<!--                    <select id="mood" onchange="updateMoodStatus()">-->
+<!--                        <option value="random">Random (Auto-changing)</option>-->
+<!--                        <option value="calm">Calm</option>-->
+<!--                        <option value="ethereal">Ethereal</option>-->
+<!--                        <option value="mysterious">Mysterious</option>-->
+<!--                        <option value="melancholic">Melancholic</option>-->
+<!--                        <option value="hopeful">Hopeful</option>-->
+<!--                        <option value="dreamy">Dreamy</option>-->
+<!--                        <option value="nostalgic">Nostalgic</option>-->
+<!--                        <option value="peaceful">Peaceful</option>-->
+<!--                        <option value="serene">Serene</option>-->
+<!--                    </select>-->
+<!--                </div>-->
+
+<!--                <div class="control-group">-->
+<!--                    <label class="control-label" for="density">Note Density</label>-->
+<!--                    <div class="slider-container">-->
+<!--                        <div class="slider-wrapper">-->
+<!--                            <input type="range" id="density" min="1" max="10" value="5">-->
+<!--                        </div>-->
+<!--                        <div class="slider-labels">-->
+<!--                            <span>Sparse</span>-->
+<!--                            <span>Dense</span>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div class="control-group">-->
+<!--                    <label class="control-label" for="reverb">Reverb Amount</label>-->
+<!--                    <div class="slider-container">-->
+<!--                        <div class="slider-wrapper">-->
+<!--                            <input type="range" id="reverb" min="0" max="1" step="0.1" value="0.5">-->
+<!--                        </div>-->
+<!--                        <div class="slider-labels">-->
+<!--                            <span>Dry</span>-->
+<!--                            <span>Wet</span>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
 
         <!-- Melody Section -->
         <div class="control-section" id="melody-section">
@@ -377,134 +466,21 @@
 </div>
 
 <script>
+    // ===============================================
+    // COMPLETE MAIN JAVASCRIPT FILE
+    // This should be in your index.html <script> section
+    // ===============================================
 
-    // Initialize the new sound system
-    const musicManager = new AmbientMusicManager();
-
+    // Global variables
+    let musicManager = null;
+    let melodyManager = null;
     let waveManager = null;
-
-    // Sound Engine UI element reference
-    const soundEngineSelect = document.getElementById("sound-engine");
-
-    // Toggle section expansion
-    function toggleSection(sectionName) {
-        const section = document.getElementById(`${sectionName}-section`);
-        const content = document.getElementById(`${sectionName}-content`);
-        const expandBtn = document.getElementById(`${sectionName}-expand`);
-
-        const isExpanded = section.classList.contains('expanded');
-
-        if (isExpanded) {
-            section.classList.remove('expanded');
-            content.classList.remove('expanded');
-            expandBtn.classList.remove('expanded');
-        } else {
-            section.classList.add('expanded');
-            content.classList.add('expanded');
-            expandBtn.classList.add('expanded');
-        }
-    }
-
-    // Update status displays
-    function updateMoodStatus() {
-        const mood = document.getElementById('mood');
-        const status = document.getElementById('mood-status');
-        status.textContent = mood.options[mood.selectedIndex].text;
-    }
-
-    function updateMelodyStatus() {
-        const instrument = document.getElementById('melodic-instrument');
-        const status = document.getElementById('melody-status');
-        status.textContent = instrument.options[instrument.selectedIndex].text;
-    }
-
-    function updateWavesStatus() {
-        const toggle = document.getElementById('noise-toggle');
-        const status = document.getElementById('waves-status');
-        status.textContent = toggle.checked ? 'On' : 'Off';
-    }
-
-    // Dice randomizer
-    function randomizeEverything() {
-        const diceButton = document.getElementById('dice-button');
-
-        diceButton.style.transform = 'scale(0.95)';
-        diceButton.innerHTML = '<span class="dice-icon">🎲</span> Rolling...';
-
-        setTimeout(() => {
-            // Randomize mood
-            const moodSelect = document.getElementById('mood');
-            const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
-            const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
-            moodSelect.value = randomMood.value;
-
-            // Randomize sound engine
-            if (soundEngineSelect) {
-                const engineOptions = Array.from(soundEngineSelect.options);
-                const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
-                soundEngineSelect.value = randomEngine.value;
-            }
-
-            // Randomize melody
-            const melodySelect = document.getElementById('melodic-instrument');
-            const melodyOptions = Array.from(melodySelect.options);
-            const randomMelody = melodyOptions[Math.floor(Math.random() * melodyOptions.length)];
-            melodySelect.value = randomMelody.value;
-
-            // Randomize waves
-            const wavesToggle = document.getElementById('noise-toggle');
-            wavesToggle.checked = Math.random() > 0.5;
-            if (waveManager) {
-                waveManager.updateStatus();
-            }
-
-            // Randomize some sliders
-            document.getElementById('density').value = Math.floor(Math.random() * 8) + 2;
-            document.getElementById('reverb').value = (Math.random() * 0.8 + 0.2).toFixed(1);
-            document.getElementById('melodic-frequency').value = Math.floor(Math.random() * 8) + 2;
-
-            // Apply changes gradually if music is playing
-            if (isPlaying) {
-                applySettingsGradually();
-            }
-
-            // Update status displays
-            updateMoodStatus();
-            updateMelodyStatus();
-            updateWavesStatus();
-
-            // Reset button
-            diceButton.style.transform = 'scale(1)';
-            diceButton.innerHTML = '<span class="dice-icon">🎲</span> Randomize Everything';
-        }, 500);
-    }
-
-    // Event listeners
-
-    document.getElementById('dice-button').addEventListener('click', randomizeEverything);
-
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        waveManager = new OceanWaveManager();
-        updateMoodStatus();
-        updateMelodyStatus();
-
-        melodyManager = new MelodyManager();
-        musicManager.setSoundEngine('standard', {
-            density: parseInt(densitySlider.value),
-            reverbAmount: parseFloat(reverbSlider.value)
-        });
-    });
-
-    // Initialize variables
     let isPlaying = false;
     let activeNotes = {};
-    let currentMelodicSynth = null;
-
+    let currentActiveMood = "calm";
     let visualizerInterval = null;
-    let currentActiveMood = "calm"; // Default starting mood
 
-    // Create audio context and effects
+    // Create audio context and effects (global audio nodes)
     const masterVolume = new Tone.Volume(-15).toDestination();
 
     const reverb = new Tone.Reverb({
@@ -531,93 +507,21 @@
     const moodSelect = document.getElementById("mood");
     const densitySlider = document.getElementById("density");
     const reverbSlider = document.getElementById("reverb");
+    const volumeSlider = document.getElementById("volume");
+    const randomIntervalSlider = document.getElementById("random-interval");
     const wavesContainer = document.getElementById("waves");
 
-    // Melody
+    // Melody elements
     const melodyToggle = document.getElementById("melody-toggle");
     const melodicInstrumentSelect = document.getElementById("melodic-instrument");
     const melodicFrequencySlider = document.getElementById("melodic-frequency");
     const melodicReverbSlider = document.getElementById("melodic-reverb");
 
-    // Control random-ness
-    const randomIntervalSlider = document.getElementById("random-interval");
-
+    // Wave elements
     const noiseToggle = document.getElementById("noise-toggle");
 
-    // Create wave elements for visualizer
-    for (let i = 0; i < 40; i++) {
-        const wave = document.createElement("div");
-        wave.className = "wave";
-        wavesContainer.appendChild(wave);
-    }
-
-    // Event listeners
-    startButton.addEventListener("click", startMusic);
-    stopButton.addEventListener("click", stopMusic);
-
-    // Sound engine change handler
-    if (soundEngineSelect) {
-        soundEngineSelect.addEventListener("change", async function() {
-            if (isPlaying) {
-                await handleSoundEngineChange();
-            }
-        });
-    }
-
-    // Function to handle sound engine changes
-    async function handleSoundEngineChange() {
-        const selectedEngine = soundEngineSelect.value;
-        console.debug("Sound engine changed to:", selectedEngine);
-
-        await musicManager.setSoundEngine(selectedEngine, {
-            density: parseInt(densitySlider.value),
-            reverbAmount: parseFloat(reverbSlider.value)
-        });
-    }
-
-    reverbSlider.addEventListener("input", (e) => {
-        reverb.wet.value = parseFloat(e.target.value);
-        musicManager.updateConfig({ reverbAmount: parseFloat(e.target.value) });
-    });
-
-    // Density slider listener (updates sound engine)
-    densitySlider.addEventListener("input", (e) => {
-        musicManager.updateConfig({ density: parseInt(e.target.value) });
-    });
-
-    const volumeSlider = document.getElementById("volume");
-    volumeSlider.addEventListener("input", (e) => {
-        masterVolume.volume.value = parseInt(e.target.value);
-    });
-
-    noiseToggle.addEventListener("change", toggleWaves);
-    melodyToggle.addEventListener("change", toggleMelody);
-    melodicReverbSlider.addEventListener("input", function() {
-        const reverbAmount = parseFloat(this.value);
-        console.debug("Setting melodic reverb to:", reverbAmount);
-        if (melodyManager) {
-            melodyManager.updateReverbAmount(reverbAmount);
-        }
-    });
-
-    melodicInstrumentSelect.addEventListener("change", function() {
-        // If we're currently playing, handle instrument change
-        if (isPlaying) {
-            handleInstrumentChange();
-        }
-    });
-
-    moodSelect.addEventListener("change", function() {
-        if (isPlaying) {
-            handleMoodChange();
-        }
-    });
-
-    window.addEventListener('beforeunload', function() {
-        if (melodyManager) {
-            melodyManager.dispose();
-        }
-    });
+    // Sound engine element
+    const soundEngineSelect = document.getElementById("sound-engine");
 
     // Scale definitions for different moods
     const scales = {
@@ -629,15 +533,7 @@
         dreamy: ["C3", "D3", "E3", "F#3", "G3", "A3", "B3", "C4", "D4", "E4", "F#4", "G4", "A4", "B4", "C5"],
         nostalgic: ["A2", "B2", "C3", "D3", "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4"],
         peaceful: ["D3", "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5"],
-        mystical: ["E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5"],
-        celestial: ["C3", "D3", "E3", "F#3", "G#3", "A#3", "C4", "D4", "E4", "F#4", "G#4", "A#4", "C5"],
-        contemplative: ["A2", "C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5"],
-        serene: ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5", "G5"],
-        wandering: ["G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5", "G5"],
-        introspective: ["A2", "B2", "C3", "D3", "E3", "F3", "G#3", "A3", "B3", "C4", "D4", "E4", "F4", "G#4", "A4"],
-        minimalist: ["C3", "E3", "G3", "D4", "F4", "A4", "C5", "E5", "G5"],
-        suspended: ["C3", "D3", "F3", "G3", "C4", "D4", "F4", "G4", "C5", "D5", "F5"],
-        twilight: ["C3", "Eb3", "F3", "Gb3", "G3", "Bb3", "C4", "Eb4", "F4", "Gb4", "G4", "Bb4", "C5"]
+        serene: ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5", "G5"]
     };
 
     const melodicPatterns = {
@@ -649,57 +545,276 @@
         dreamy: ["E4", "F#4", "A4", "B4"],
         nostalgic: ["C4", "E4", "F4", "A4"],
         peaceful: ["D4", "F4", "A4", "C5"],
-        mystical: ["F4", "G4", "C5", "D5"],
-        celestial: ["D4", "F#4", "A#4", "C5"],
-        contemplative: ["C4", "E4", "G4"],
-        serene: ["E4", "G4", "C5"],
-        wandering: ["G4", "C5", "F5"],
-        introspective: ["E4", "F4", "G#4"],
-        minimalist: ["E4", "G4"],
-        suspended: ["D4", "F4", "G4"],
-        twilight: ["Eb4", "Gb4", "Bb4"]
+        serene: ["E4", "G4", "C5"]
     };
 
-    let melodyManager = null;
+    // ===============================================
+    // CORE UI FUNCTIONS
+    // ===============================================
 
-    // Function to handle mood changes
+    // Toggle section expansion
+    function toggleSection(sectionName) {
+        const section = document.getElementById(`${sectionName}-section`);
+        const content = document.getElementById(`${sectionName}-content`);
+        const expandBtn = document.getElementById(`${sectionName}-expand`);
+
+        if (!section || !content || !expandBtn) return;
+
+        const isExpanded = section.classList.contains('expanded');
+
+        if (isExpanded) {
+            section.classList.remove('expanded');
+            content.classList.remove('expanded');
+            expandBtn.classList.remove('expanded');
+        } else {
+            section.classList.add('expanded');
+            content.classList.add('expanded');
+            expandBtn.classList.add('expanded');
+        }
+    }
+
+    // Update status displays
+    function updateMoodStatus() {
+        const status = document.getElementById('mood-status');
+        if (!status || !moodSelect) return;
+
+        const selectedOption = moodSelect.options[moodSelect.selectedIndex];
+        if (selectedOption && selectedOption.value === 'random') {
+            status.textContent = 'Random Mode';
+        } else {
+            status.textContent = selectedOption ? selectedOption.text : 'Calm';
+        }
+    }
+
+    function updateMelodyStatus() {
+        const status = document.getElementById('melody-status');
+        if (!status || !melodicInstrumentSelect) return;
+
+        const selectedOption = melodicInstrumentSelect.options[melodicInstrumentSelect.selectedIndex];
+        status.textContent = selectedOption ? selectedOption.text : 'Soft Piano';
+    }
+
+    function updateWavesStatus() {
+        const status = document.getElementById('waves-status');
+        if (!status) return;
+
+        status.textContent = (noiseToggle && noiseToggle.checked) ? 'On' : 'Off';
+    }
+
+    function updateSoundEngineStatus(engineName = null) {
+        const status = document.getElementById('sound-engine-status');
+        if (!status) return;
+
+        if (engineName) {
+            status.textContent = engineName;
+        } else if (soundEngineSelect) {
+            const selectedOption = soundEngineSelect.options[soundEngineSelect.selectedIndex];
+            if (selectedOption && selectedOption.value === 'random') {
+                status.textContent = 'Random Mode';
+            } else {
+                status.textContent = selectedOption ? selectedOption.text : 'Standard Ambient';
+            }
+        }
+    }
+
+    function updateRandomizationStatus() {
+        const moodStatus = document.getElementById('mood-random-status');
+        const engineStatus = document.getElementById('engine-random-status');
+        const melodyStatus = document.getElementById('melody-random-status');
+
+        // Update mood randomization status
+        if (moodStatus) {
+            const isRandom = moodSelect && moodSelect.value === 'random';
+            moodStatus.textContent = isRandom ? 'Auto' : 'Manual';
+            moodStatus.className = isRandom ? 'status-value active' : 'status-value';
+        }
+
+        // Update engine randomization status
+        if (engineStatus) {
+            const isRandom = soundEngineSelect && soundEngineSelect.value === 'random';
+            engineStatus.textContent = isRandom ? 'Auto' : 'Manual';
+            engineStatus.className = isRandom ? 'status-value active' : 'status-value';
+        }
+
+        // Update melody randomization status
+        if (melodyStatus) {
+            const isRandom = melodicInstrumentSelect && melodicInstrumentSelect.value === 'random';
+            melodyStatus.textContent = isRandom ? 'Auto' : 'Manual';
+            melodyStatus.className = isRandom ? 'status-value active' : 'status-value';
+        }
+    }
+
+    // ===============================================
+    // DICE RANDOMIZER
+    // ===============================================
+
+    function randomizeEverything() {
+        const diceButton = document.getElementById('dice-button');
+        if (!diceButton) return;
+
+        console.log('🎲 Starting complete randomization...');
+
+        diceButton.style.transform = 'scale(0.95)';
+        diceButton.innerHTML = '<span class="dice-icon">🎲</span> Rolling...';
+
+        setTimeout(() => {
+            // Randomize mood (exclude random option)
+            if (moodSelect) {
+                const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
+                const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
+                moodSelect.value = randomMood.value;
+                console.log('🎭 Randomized mood to:', randomMood.value);
+            }
+
+            // Randomize sound engine (exclude random option)
+            if (soundEngineSelect) {
+                const engineOptions = Array.from(soundEngineSelect.options).filter(option => option.value !== 'random');
+                const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
+                soundEngineSelect.value = randomEngine.value;
+                console.log('🔧 Randomized engine to:', randomEngine.value);
+            }
+
+            // Randomize melody instrument
+            if (melodicInstrumentSelect) {
+                const melodyOptions = Array.from(melodicInstrumentSelect.options);
+                const randomMelody = melodyOptions[Math.floor(Math.random() * melodyOptions.length)];
+                melodicInstrumentSelect.value = randomMelody.value;
+                console.log('🎹 Randomized instrument to:', randomMelody.value);
+            }
+
+            // Randomize waves
+            if (noiseToggle) {
+                noiseToggle.checked = Math.random() > 0.5;
+                if (waveManager) {
+                    waveManager.updateStatus();
+                }
+                console.log('🌊 Randomized waves to:', noiseToggle.checked ? 'On' : 'Off');
+            }
+
+            // Randomize sliders
+            if (densitySlider) {
+                densitySlider.value = Math.floor(Math.random() * 8) + 2;
+                console.log('🎵 Randomized density to:', densitySlider.value);
+            }
+            if (reverbSlider) {
+                reverbSlider.value = (Math.random() * 0.8 + 0.2).toFixed(1);
+                console.log('🔊 Randomized reverb to:', reverbSlider.value);
+            }
+            if (melodicFrequencySlider) {
+                melodicFrequencySlider.value = Math.floor(Math.random() * 8) + 2;
+                console.log('🎼 Randomized melody frequency to:', melodicFrequencySlider.value);
+            }
+
+            // Apply changes gradually if music is playing
+            if (isPlaying) {
+                applySettingsGradually();
+            }
+
+            // Update status displays
+            updateMoodStatus();
+            updateMelodyStatus();
+            updateWavesStatus();
+            updateSoundEngineStatus();
+            updateRandomizationStatus();
+
+            // Reset button
+            diceButton.style.transform = 'scale(1)';
+            diceButton.innerHTML = '<span class="dice-icon">🎲</span> Randomize Everything';
+
+            console.log('✅ Complete randomization finished!');
+        }, 500);
+    }
+
+    // ===============================================
+    // EVENT HANDLERS
+    // ===============================================
+
+    async function handleSoundEngineChange() {
+        if (!soundEngineSelect || !musicManager) return;
+
+        const selectedEngine = soundEngineSelect.value;
+        console.debug("🔧 Sound engine changed to:", selectedEngine);
+
+        try {
+            if (selectedEngine !== "random") {
+                await musicManager.setSoundEngine(selectedEngine, {
+                    density: densitySlider ? parseInt(densitySlider.value) : 5,
+                    reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+                });
+
+                if (musicManager.randomEngineInterval) {
+                    clearInterval(musicManager.randomEngineInterval);
+                    musicManager.randomEngineInterval = null;
+                }
+
+                updateSoundEngineStatus();
+            } else {
+                console.debug("🎲 Starting random engine cycle");
+                musicManager.startRandomEngineCycle();
+                updateSoundEngineStatus('Random Mode');
+            }
+
+            updateRandomizationStatus();
+
+        } catch (error) {
+            console.error("Error changing sound engine:", error);
+        }
+    }
+
     function handleMoodChange() {
+        if (!moodSelect || !musicManager) return;
+
         const selectedMood = moodSelect.value;
-        console.debug("Mood changed to:", selectedMood);
+        console.debug("🎭 Mood changed to:", selectedMood);
 
         if (selectedMood !== "random") {
             currentActiveMood = selectedMood;
             musicManager.setMood(selectedMood);
+
+            if (musicManager.randomMoodInterval) {
+                clearInterval(musicManager.randomMoodInterval);
+                musicManager.randomMoodInterval = null;
+            }
         } else {
+            console.debug("🎲 Starting random mood cycle");
             musicManager.startRandomMoodCycle();
         }
+
+        updateMoodStatus();
+        updateRandomizationStatus();
     }
 
     async function handleInstrumentChange() {
-        if (!melodyManager) return;
+        if (!melodyManager || !melodicInstrumentSelect) return;
 
         const selectedInstrument = melodicInstrumentSelect.value;
-        console.debug("Instrument changed to:", selectedInstrument);
+        console.debug("🎹 Instrument changed to:", selectedInstrument);
 
-        if (selectedInstrument !== "random" && melodyToggle.checked) {
-            // Set specific instrument
-            await melodyManager.setInstrument(selectedInstrument, {
-                volume: -5,
-                reverbAmount: parseFloat(melodicReverbSlider.value)
-            });
+        try {
+            if (selectedInstrument !== "random" && melodyToggle?.checked) {
+                await melodyManager.setInstrument(selectedInstrument, {
+                    volume: -5,
+                    reverbAmount: melodicReverbSlider ? parseFloat(melodicReverbSlider.value) : 0.8
+                });
 
-            // Start if currently playing
-            if (isPlaying) {
-                const effectiveMood = moodSelect.value === "random" ? currentActiveMood : moodSelect.value;
-                const currentScale = scales[effectiveMood];
-                const melodicPattern = melodicPatterns[effectiveMood];
+                if (isPlaying) {
+                    const effectiveMood = moodSelect?.value === "random" ? currentActiveMood : (moodSelect?.value || 'calm');
+                    const currentScale = scales[effectiveMood];
+                    const melodicPattern = melodicPatterns[effectiveMood];
 
-                await melodyManager.start(currentScale, melodicPattern);
+                    await melodyManager.start(currentScale, melodicPattern);
+                }
+            } else if (selectedInstrument === "random") {
+                melodyManager.startRandomCycle();
+            } else if (!melodyToggle?.checked) {
+                melodyManager.stop();
             }
-        } else if (selectedInstrument === "random") {
-            melodyManager.startRandomCycle();
-        } else if (!melodyToggle.checked) {
-            melodyManager.stop();
+
+            updateMelodyStatus();
+            updateRandomizationStatus();
+
+        } catch (error) {
+            console.error("Error changing instrument:", error);
         }
     }
 
@@ -709,74 +824,137 @@
             event.preventDefault();
         }
 
-        console.debug("toggleMelody() called");
+        console.debug("🎹 toggleMelody() called");
         updateMelodyStatus();
 
-        // Update melody manager state
-        melodyManager.setEnabled(melodyToggle.checked);
+        if (melodyManager) {
+            melodyManager.setEnabled(melodyToggle?.checked || false);
+        }
 
         if (isPlaying) {
             handleInstrumentChange();
         }
     }
 
+    async function toggleWaves() {
+        console.log('🌊 Toggling ocean waves...');
+
+        if (!waveManager) {
+            waveManager = new OceanWaveManager();
+        }
+
+        try {
+            await waveManager.toggle();
+            updateWavesStatus();
+            console.log('✅ Waves toggled successfully');
+        } catch (error) {
+            console.error('❌ Error toggling waves:', error);
+        }
+    }
+
+    // ===============================================
+    // START/STOP MUSIC
+    // ===============================================
+
     async function startMusic() {
         if (isPlaying) return;
 
-        await Tone.start();
+        console.log('🎵 Starting ambient music system...');
 
-        isPlaying = true;
-        activeNotes = {};
+        try {
+            await Tone.start();
 
-        startButton.disabled = true;
-        stopButton.disabled = false;
+            isPlaying = true;
+            activeNotes = {};
 
-        // Set initial sound engine if none selected
-        const selectedEngine = soundEngineSelect?.value || 'standard';
-        console.debug("I picked ", selectedEngine);
-        await musicManager.setSoundEngine(selectedEngine, {
-            density: parseInt(densitySlider.value),
-            reverbAmount: parseFloat(reverbSlider.value)
-        });
+            if (startButton) startButton.disabled = true;
+            if (stopButton) stopButton.disabled = false;
 
-        // Initialize currentActiveMood
-        if (moodSelect.value !== "random") {
-            currentActiveMood = moodSelect.value;
-        } else {
-            const availableMoods = musicManager.getAvailableMoods();
-            currentActiveMood = availableMoods[Math.floor(Math.random() * availableMoods.length)];
+            // Set initial sound engine if none selected
+            const selectedEngine = soundEngineSelect?.value || 'standard';
+            console.debug("Starting with engine:", selectedEngine);
+
+            // Initialize music manager if not already done
+            if (!musicManager) {
+                musicManager = new AmbientMusicManager();
+            }
+
+            if (selectedEngine !== "random") {
+                await musicManager.setSoundEngine(selectedEngine, {
+                    density: densitySlider ? parseInt(densitySlider.value) : 5,
+                    reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+                });
+            } else {
+                // Start with a random engine, then begin random cycle
+                const availableEngines = musicManager.getAvailableSoundEngines();
+                const randomEngine = availableEngines[Math.floor(Math.random() * availableEngines.length)];
+                console.log('🎲 Starting with random engine:', randomEngine.key);
+
+                await musicManager.setSoundEngine(randomEngine.key, {
+                    density: densitySlider ? parseInt(densitySlider.value) : 5,
+                    reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+                });
+
+                updateSoundEngineStatus(randomEngine.name);
+            }
+
+            // Initialize currentActiveMood
+            if (moodSelect?.value !== "random") {
+                currentActiveMood = moodSelect.value;
+            } else {
+                const availableMoods = musicManager.getAvailableMoods();
+                currentActiveMood = availableMoods[Math.floor(Math.random() * availableMoods.length)];
+            }
+
+            // Set mood
+            musicManager.setMood(currentActiveMood);
+
+            // Start random cycles if needed
+            if (moodSelect?.value === "random") {
+                musicManager.startRandomMoodCycle();
+            }
+            if (soundEngineSelect?.value === "random") {
+                musicManager.startRandomEngineCycle();
+            }
+
+            // Update audio settings
+            if (reverbSlider) reverb.wet.value = parseFloat(reverbSlider.value);
+            if (volumeSlider) masterVolume.volume.value = parseInt(volumeSlider.value);
+
+            Tone.Transport.bpm.value = 60;
+            Tone.Transport.start();
+
+            // Start the sound engine
+            await musicManager.start();
+
+            // Handle melodic instruments
+            if (melodyToggle?.checked) {
+                await handleInstrumentChange();
+            }
+
+            startVisualizer();
+
+            console.log('✅ Music started successfully!');
+
+        } catch (error) {
+            console.error('❌ Error starting music:', error);
+
+            // Reset UI on error
+            isPlaying = false;
+            if (startButton) startButton.disabled = false;
+            if (stopButton) stopButton.disabled = true;
         }
-
-        // Set mood
-        musicManager.setMood(currentActiveMood);
-
-        if (moodSelect.value === "random") {
-            musicManager.startRandomMoodCycle();
-        }
-
-        // Update audio settings
-        reverb.wet.value = parseFloat(reverbSlider.value);
-        masterVolume.volume.value = parseInt(document.getElementById("volume").value);
-
-        Tone.Transport.bpm.value = 60;
-        Tone.Transport.start();
-
-        // Start the sound engine
-        await musicManager.start();
-
-        // Handle melodic instruments (unchanged)
-        if (melodyToggle.checked) {
-            await handleInstrumentChange();
-        }
-
-        startVisualizer();
     }
 
     function stopMusic() {
+        console.log('🛑 Stopping ambient music system...');
+
         isPlaying = false;
 
         // Stop the sound engine
-        musicManager.stop();
+        if (musicManager) {
+            musicManager.stop();
+        }
 
         if (melodyManager) {
             melodyManager.stop();
@@ -784,8 +962,8 @@
 
         Tone.Transport.stop();
 
-        startButton.disabled = false;
-        stopButton.disabled = true;
+        if (startButton) startButton.disabled = false;
+        if (stopButton) stopButton.disabled = true;
 
         if (visualizerInterval) {
             clearInterval(visualizerInterval);
@@ -794,8 +972,12 @@
 
         activeNotes = {};
 
-        console.log("Music stopped successfully");
+        console.log("✅ Music stopped successfully");
     }
+
+    // ===============================================
+    // VISUALIZER
+    // ===============================================
 
     function startVisualizer() {
         // Clear any existing interval
@@ -809,12 +991,11 @@
             // Update each wave based on audio activity
             waves.forEach((wave, index) => {
                 if (isPlaying) {
-
                     // Change color based on active instruments
-                    if (noiseToggle.checked && index % 4 === 0) {
+                    if (noiseToggle?.checked && index % 4 === 0) {
                         // Blue-green for ocean waves
                         wave.style.backgroundColor = `hsla(${180 + Math.random() * 40}, 80%, 70%, 0.2)`;
-                    } else if (melodicInstrumentSelect.value !== "none" && index % 5 === 0) {
+                    } else if (melodicInstrumentSelect?.value !== "none" && index % 5 === 0) {
                         // Gold/yellow for melodic instruments
                         wave.style.backgroundColor = `hsla(${40 + Math.random() * 20}, 90%, 65%, 0.25)`;
                     } else {
@@ -826,7 +1007,6 @@
                         const hue = (index * 9) % 360;
                         wave.style.backgroundColor = `hsla(${hue}, 80%, 70%, 0.2)`;
                     }
-
                 } else {
                     wave.style.height = "30%";
                     wave.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
@@ -835,47 +1015,155 @@
         }, 200);
     }
 
-    function applySettingsGradually() {
+    // ===============================================
+    // SETTINGS APPLICATION
+    // ===============================================
+
+    async function applySettingsGradually() {
         if (!isPlaying) return;
 
-        // Gradually ramp reverb changes
-        const targetReverb = parseFloat(reverbSlider.value);
-        reverb.wet.rampTo(targetReverb, 1.5);
-        // Handle mood change during playback
-        if (moodSelect.value !== "random") {
-            currentActiveMood = moodSelect.value;
-            musicManager.setMood(currentActiveMood);
+        console.log('🔄 Applying settings changes gradually...');
+
+        try {
+            // Gradually ramp reverb changes
+            if (reverbSlider) {
+                const targetReverb = parseFloat(reverbSlider.value);
+                reverb.wet.rampTo(targetReverb, 1.5);
+            }
+
+            // Handle mood change during playback
+            if (moodSelect?.value !== "random" && musicManager) {
+                currentActiveMood = moodSelect.value;
+                musicManager.setMood(currentActiveMood);
+            }
+
+            // Handle sound engine change during playback
+            await handleSoundEngineChange();
+
+            // Handle instrument change during playback
+            await handleInstrumentChange();
+
+            // Update wave system settings if active
+            if (waveManager && waveManager.isActive()) {
+                waveManager.updateVolume();
+                waveManager.updateNoiseType();
+                waveManager.updateFilter();
+                waveManager.updateBaseLevel();
+            }
+
+            // Update configuration
+            if (musicManager) {
+                musicManager.updateConfig({
+                    density: densitySlider ? parseInt(densitySlider.value) : 5,
+                    reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+                });
+            }
+
+            console.log('✅ Settings applied successfully');
+
+        } catch (error) {
+            console.error('❌ Error applying settings:', error);
         }
-
-        // Handle sound engine change during playback
-        if (soundEngineSelect) {
-            handleSoundEngineChange();
-        }
-
-        // Handle instrument change during playback
-        handleInstrumentChange();
-
-        // Update wave system settings if active
-        if (waveManager && waveManager.isActive()) {
-            waveManager.updateVolume();
-            waveManager.updateNoiseType();
-            waveManager.updateFilter();
-            waveManager.updateBaseLevel();
-        }
-
-        // Update configuration
-        musicManager.updateConfig({
-            density: parseInt(densitySlider.value),
-            reverbAmount: parseFloat(reverbSlider.value)
-        });
     }
 
-    async function toggleWaves() {
-        if (!waveManager) {
-            waveManager = new OceanWaveManager();
+    // ===============================================
+    // INITIALIZATION
+    // ===============================================
+
+    // Initialize the new sound system
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🎵 Initializing Ambient Music System...');
+
+        // Initialize managers
+        musicManager = new AmbientMusicManager();
+        melodyManager = new MelodyManager();
+        waveManager = new OceanWaveManager();
+
+        // Set initial sound engine
+        if (musicManager) {
+            musicManager.setSoundEngine('standard', {
+                density: densitySlider ? parseInt(densitySlider.value) : 5,
+                reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+            });
         }
-        await waveManager.toggle();
-    }
+
+        // Create wave elements for visualizer
+        if (wavesContainer) {
+            for (let i = 0; i < 40; i++) {
+                const wave = document.createElement("div");
+                wave.className = "wave";
+                wavesContainer.appendChild(wave);
+            }
+        }
+
+        // Update status displays
+        updateMoodStatus();
+        updateMelodyStatus();
+        updateWavesStatus();
+        updateSoundEngineStatus();
+        updateRandomizationStatus();
+
+        // Set up event listeners
+        if (startButton) startButton.addEventListener("click", startMusic);
+        if (stopButton) stopButton.addEventListener("click", stopMusic);
+        if (soundEngineSelect) soundEngineSelect.addEventListener("change", handleSoundEngineChange);
+        if (moodSelect) moodSelect.addEventListener("change", handleMoodChange);
+        if (melodicInstrumentSelect) melodicInstrumentSelect.addEventListener("change", handleInstrumentChange);
+        if (noiseToggle) noiseToggle.addEventListener("change", toggleWaves);
+        if (melodyToggle) melodyToggle.addEventListener("change", toggleMelody);
+
+        // Slider event listeners
+        if (reverbSlider) {
+            reverbSlider.addEventListener("input", (e) => {
+                reverb.wet.value = parseFloat(e.target.value);
+                if (musicManager) {
+                    musicManager.updateConfig({ reverbAmount: parseFloat(e.target.value) });
+                }
+            });
+        }
+
+        if (densitySlider) {
+            densitySlider.addEventListener("input", (e) => {
+                if (musicManager) {
+                    musicManager.updateConfig({ density: parseInt(e.target.value) });
+                }
+            });
+        }
+
+        if (volumeSlider) {
+            volumeSlider.addEventListener("input", (e) => {
+                masterVolume.volume.value = parseInt(e.target.value);
+            });
+        }
+
+        if (melodicReverbSlider) {
+            melodicReverbSlider.addEventListener("input", function() {
+                const reverbAmount = parseFloat(this.value);
+                console.debug("Setting melodic reverb to:", reverbAmount);
+                if (melodyManager) {
+                    melodyManager.updateReverbAmount(reverbAmount);
+                }
+            });
+        }
+
+        // Dice button event listener
+        const diceButton = document.getElementById('dice-button');
+        if (diceButton) {
+            diceButton.addEventListener('click', randomizeEverything);
+        }
+
+        console.log('✅ Ambient Music System initialized successfully');
+    });
+
+    // Handle page unload
+    window.addEventListener('beforeunload', function() {
+        if (melodyManager) {
+            melodyManager.dispose();
+        }
+        if (musicManager) {
+            musicManager.stop();
+        }
+    });
 
 </script>
 </body>
