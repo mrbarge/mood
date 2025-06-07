@@ -1,4 +1,3 @@
-// Base Sound Engine class
 class BaseSoundEngine {
     constructor(name, config = {}) {
         this.name = name;
@@ -9,6 +8,7 @@ class BaseSoundEngine {
         };
         this.synths = [];
         this.effects = [];
+        this.lfos = [];
         this.isActive = false;
         this.scheduledCallbacks = [];
         this.currentScale = [];
@@ -58,8 +58,27 @@ class BaseSoundEngine {
     }
 
     dispose() {
+        // Dispose LFOs first
+        this.lfos.forEach(lfo => {
+            if (lfo && lfo.dispose) {
+                try {
+                    lfo.dispose();
+                } catch (error) {
+                    console.debug("Error disposing LFO:", error);
+                }
+            }
+        });
+        this.lfos = [];
+
+        // Then dispose other effects and synths
         [...this.synths, ...this.effects].forEach(node => {
-            if (node && node.dispose) node.dispose();
+            if (node && node.dispose) {
+                try {
+                    node.dispose();
+                } catch (error) {
+                    console.debug("Error disposing audio node:", error);
+                }
+            }
         });
         this.synths = [];
         this.effects = [];
@@ -104,286 +123,17 @@ class BaseSoundEngine {
     updateReverb(value) {
         this.config.reverbAmount = value;
         this.effects.forEach(effect => {
-            if (effect.wet) effect.wet.value = value;
-        });
-    }
-}
-
-// Cosmic Drift Sound Engine
-class CosmicDriftEngine extends BaseSoundEngine {
-    constructor() {
-        super('Cosmic Drift');
-    }
-
-    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
-        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
-
-        // Main cosmic pad with heavy detuning
-        this.cosmicPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: {
-                type: "sawtooth",
-                detune: 15 // Heavy detuning for cosmic character
-            },
-            envelope: {
-                attack: 8,
-                decay: 2,
-                sustain: 0.7,
-                release: 12
+            if (effect.wet && (effect.decay !== undefined || effect.roomSize !== undefined)) {
+                effect.wet.value = value;
             }
         });
-
-        // Chorus for width and cosmic movement
-        this.cosmicChorus = new Tone.Chorus(0.2, 4, 0.8).start();
-
-        // Deep space reverb
-        this.spaceReverb = new Tone.Reverb({
-            decay: 15,
-            wet: this.config.reverbAmount,
-            roomSize: 0.9
-        });
-
-        // Sub bass drone for depth
-        this.subBass = new Tone.MonoSynth({
-            oscillator: { type: "sine" },
-            envelope: { attack: 5, decay: 0, sustain: 1, release: 8 }
-        });
-
-        // Connect audio chain
-        this.cosmicPad.connect(this.cosmicChorus);
-        this.cosmicChorus.connect(this.spaceReverb);
-        this.spaceReverb.connect(this.masterVolume);
-
-        this.subBass.connect(this.spaceReverb);
-
-        this.synths.push(this.cosmicPad, this.subBass);
-        this.effects.push(this.cosmicChorus, this.spaceReverb);
-    }
-
-    startGenerativePattern() {
-        const playCosmicPattern = () => {
-            if (!this.isActive) return;
-
-            const chord = this.getRandomChord(3);
-            this.cosmicPad.triggerAttackRelease(chord, Math.random() * 8 + 6);
-
-            // Occasional sub bass
-            if (Math.random() < 0.3) {
-                const bassNote = this.currentScale[Math.floor(Math.random() * 3)]; // Lower notes
-                this.subBass.triggerAttackRelease(bassNote, Math.random() * 12 + 8);
-            }
-
-            this.scheduleNext(playCosmicPattern, 4000, 8000);
-        };
-
-        playCosmicPattern();
-    }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.spaceReverb) {
-            this.spaceReverb.wet.value = value;
-        }
     }
 }
 
-// Underwater Palace Sound Engine
-class UnderwaterPalaceEngine extends BaseSoundEngine {
-    constructor() {
-        super('Underwater Palace');
-    }
+// ===============================================
+// 1. STANDARD AMBIENT ENGINE
+// ===============================================
 
-    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
-        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
-
-        // Heavily filtered pad for underwater feel
-        this.underwaterPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "sine" },
-            envelope: { attack: 6, decay: 2, sustain: 0.8, release: 8 }
-        });
-
-        // Heavy low-pass filter for underwater effect
-        this.depthFilter = new Tone.Filter({
-            frequency: 400,
-            type: "lowpass",
-            Q: 8
-        });
-
-        // Liquid LFO for swimming modulation
-        this.liquidLFO = new Tone.LFO({
-            frequency: 0.15,
-            min: 200,
-            max: 600,
-            type: "sine"
-        }).start();
-
-        // Aquatic reverb
-        this.aquaticReverb = new Tone.Reverb({
-            decay: 12,
-            wet: this.config.reverbAmount,
-            roomSize: 0.85
-        });
-
-        // Connect audio chain
-        this.underwaterPad.connect(this.depthFilter);
-        this.depthFilter.connect(this.aquaticReverb);
-        this.aquaticReverb.connect(this.masterVolume);
-
-        this.liquidLFO.connect(this.depthFilter.frequency);
-
-        this.synths.push(this.underwaterPad);
-        this.effects.push(this.depthFilter, this.liquidLFO, this.aquaticReverb);
-    }
-
-    startGenerativePattern() {
-        const playUnderwaterPattern = () => {
-            if (!this.isActive) return;
-
-            const chord = this.getRandomChord(3);
-            this.underwaterPad.triggerAttackRelease(chord, Math.random() * 10 + 6);
-
-            this.scheduleNext(playUnderwaterPattern, 4000, 7000);
-        };
-
-        playUnderwaterPattern();
-    }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.aquaticReverb) {
-            this.aquaticReverb.wet.value = value;
-        }
-    }
-}
-
-// Neon Nocturne Sound Engine
-class NeonNocturneEngine extends BaseSoundEngine {
-    constructor() {
-        super('Neon Nocturne');
-    }
-
-    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
-        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
-
-        // Vintage-style synth with synthwave character
-        this.neonSynth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "sawtooth" },
-            envelope: { attack: 2, decay: 1, sustain: 0.5, release: 4 }
-        });
-
-        // Vintage chorus for width
-        this.vintageChorus = new Tone.Chorus(0.5, 2.5, 0.5).start();
-
-        // Tape-style saturation using distortion
-        this.tapeSaturation = new Tone.Distortion(0.4);
-
-        // 80s-style reverb
-        this.retroReverb = new Tone.Reverb({
-            decay: 6,
-            wet: this.config.reverbAmount,
-            roomSize: 0.7
-        });
-
-        // Connect audio chain
-        this.neonSynth.connect(this.tapeSaturation);
-        this.tapeSaturation.connect(this.vintageChorus);
-        this.vintageChorus.connect(this.retroReverb);
-        this.retroReverb.connect(this.masterVolume);
-
-        this.synths.push(this.neonSynth);
-        this.effects.push(this.vintageChorus, this.tapeSaturation, this.retroReverb);
-    }
-
-    startGenerativePattern() {
-        const playNeonPattern = () => {
-            if (!this.isActive) return;
-
-            const chord = this.getRandomChord(3);
-            this.neonSynth.triggerAttackRelease(chord, Math.random() * 4 + 3);
-
-            this.scheduleNext(playNeonPattern, 3000, 5000);
-        };
-
-        playNeonPattern();
-    }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.retroReverb) {
-            this.retroReverb.wet.value = value;
-        }
-    }
-}
-
-// Atmospheric Temple Sound Engine (Wind Temple without the wind)
-class AtmosphericTempleEngine extends BaseSoundEngine {
-    constructor() {
-        super('Atmospheric Temple');
-    }
-
-    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
-        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
-
-        // Airy, atmospheric pad without wind noise
-        this.templePad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "triangle" },
-            envelope: { attack: 4, decay: 2, sustain: 0.7, release: 6 }
-        });
-
-        // Atmospheric filter with gentle movement
-        this.atmosphereFilter = new Tone.Filter({
-            frequency: 1500,
-            type: "lowpass",
-            Q: 2
-        });
-
-        // Movement LFO for gentle flow
-        this.movementLFO = new Tone.LFO({
-            frequency: 0.08,
-            min: 1000,
-            max: 2000,
-            type: "triangle"
-        }).start();
-
-        // Spatial reverb for temple acoustics
-        this.spatialReverb = new Tone.Reverb({
-            decay: 12,
-            wet: this.config.reverbAmount,
-            roomSize: 0.85
-        });
-
-        // Connect audio chain
-        this.templePad.connect(this.atmosphereFilter);
-        this.atmosphereFilter.connect(this.spatialReverb);
-        this.spatialReverb.connect(this.masterVolume);
-
-        this.movementLFO.connect(this.atmosphereFilter.frequency);
-
-        this.synths.push(this.templePad);
-        this.effects.push(this.atmosphereFilter, this.movementLFO, this.spatialReverb);
-    }
-
-    startGenerativePattern() {
-        const playTemplePattern = () => {
-            if (!this.isActive) return;
-
-            const chord = this.getRandomChord(2);
-            this.templePad.triggerAttackRelease(chord, Math.random() * 8 + 4);
-
-            this.scheduleNext(playTemplePattern, 3000, 6000);
-        };
-
-        playTemplePattern();
-    }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.spatialReverb) {
-            this.spatialReverb.wet.value = value;
-        }
-    }
-}
-
-// Standard Sound Engine
 class StandardSoundEngine extends BaseSoundEngine {
     constructor() {
         super('Standard Ambient');
@@ -392,60 +142,26 @@ class StandardSoundEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        this.pad1 = this.createPad();
-        this.pad2 = this.createPad();
-        this.chimes = this.createChimes();
-        this.bass = this.createBass();
+        // Create four distinct synths
+        this.pad1 = SynthFactory.createPad("sine", 'SLOW_ETHEREAL', -8);
+        this.pad2 = SynthFactory.createPad("sine", 'SLOW_ETHEREAL', -10);
+        this.chimes = SynthFactory.createFMSynth(8, 2, 'FAST_TRANSIENT', -15);
+        this.bass = SynthFactory.createMonoSynth("sine", 'LONG_SUSTAIN', -5);
 
-        this.pad1.volume.value = -8;
-        this.pad2.volume.value = -10;
-        this.chimes.volume.value = -15;
-        this.bass.volume.value = -5;
+        // Simple routing to global filter
+        [this.pad1, this.pad2, this.chimes, this.bass].forEach(synth => {
+            synth.connect(this.globalFilter);
+            synth.timeout = null;
+        });
 
         this.synths.push(this.pad1, this.pad2, this.chimes, this.bass);
     }
 
-    createPad() {
-        const synth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "sine" },
-            envelope: { attack: 3, decay: 2, sustain: 0.8, release: 8 }
-        }).connect(this.globalFilter);
-        synth.timeout = null;
-        return synth;
-    }
-
-    createChimes() {
-        const synth = new Tone.PolySynth(Tone.FMSynth, {
-            harmonicity: 8,
-            modulationIndex: 2,
-            oscillator: { type: "sine" },
-            envelope: { attack: 0.1, decay: 2, sustain: 0.1, release: 2 },
-            modulation: { type: "square" },
-            modulationEnvelope: { attack: 0.5, decay: 0.5, sustain: 0.2, release: 2 }
-        }).connect(this.globalFilter);
-        synth.timeout = null;
-        return synth;
-    }
-
-    createBass() {
-        const synth = new Tone.MonoSynth({
-            oscillator: { type: "sine" },
-            envelope: { attack: 0.1, decay: 0.3, sustain: 0.9, release: 5 },
-            filterEnvelope: { attack: 0.1, decay: 0.2, sustain: 0.9, release: 5, baseFrequency: 200, octaves: 2.5 }
-        }).connect(this.globalFilter);
-        synth.timeout = null;
-        return synth;
-    }
-
     startGenerativePattern() {
         this.schedulePadNotes(this.pad1);
-
         setTimeout(() => {
-            if (this.isActive) {
-                this.schedulePadNotes(this.pad2);
-            }
+            if (this.isActive) this.schedulePadNotes(this.pad2);
         }, 5000);
-
         this.scheduleChimes(this.chimes);
         this.scheduleBassNotes(this.bass);
     }
@@ -464,12 +180,12 @@ class StandardSoundEngine extends BaseSoundEngine {
             for (let i = 0; i < numNotes; i++) {
                 const note = this.getRandomNote();
                 notes.push(note);
-
-                // Track for visualization
-                if (!activeNotes[note]) {
-                    activeNotes[note] = { count: 1, type: 'pad' };
-                } else {
-                    activeNotes[note].count++;
+                if (typeof activeNotes !== 'undefined') {
+                    if (!activeNotes[note]) {
+                        activeNotes[note] = { count: 1, type: 'pad' };
+                    } else {
+                        activeNotes[note].count++;
+                    }
                 }
             }
 
@@ -506,16 +222,19 @@ class StandardSoundEngine extends BaseSoundEngine {
                 if (highNotes.length > 0) {
                     const note = highNotes[Math.floor(Math.random() * highNotes.length)];
 
-                    if (!activeNotes[note]) {
-                        activeNotes[note] = { count: 1, type: 'chime' };
-                    } else {
-                        activeNotes[note].count++;
+                    if (typeof activeNotes !== 'undefined') {
+                        if (!activeNotes[note]) {
+                            activeNotes[note] = { count: 1, type: 'chime' };
+                        } else {
+                            activeNotes[note].count++;
+                        }
                     }
 
                     synth.triggerAttackRelease(note, "16n");
 
                     setTimeout(() => {
-                        if (isPlaying && activeNotes[note]) {
+                        if (typeof isPlaying !== 'undefined' && isPlaying &&
+                            typeof activeNotes !== 'undefined' && activeNotes[note]) {
                             activeNotes[note].count--;
                             if (activeNotes[note].count <= 0) {
                                 delete activeNotes[note];
@@ -556,10 +275,12 @@ class StandardSoundEngine extends BaseSoundEngine {
             if (bassNotes.length > 0) {
                 const note = bassNotes[Math.floor(Math.random() * bassNotes.length)];
 
-                if (!activeNotes[note]) {
-                    activeNotes[note] = { count: 1, type: 'bass' };
-                } else {
-                    activeNotes[note].count++;
+                if (typeof activeNotes !== 'undefined') {
+                    if (!activeNotes[note]) {
+                        activeNotes[note] = { count: 1, type: 'bass' };
+                    } else {
+                        activeNotes[note].count++;
+                    }
                 }
 
                 synth.triggerAttackRelease(note, Math.random() * 6 + 4);
@@ -578,111 +299,28 @@ class StandardSoundEngine extends BaseSoundEngine {
     }
 }
 
-// Glass Horizon Sound Engine
-class GlassHorizonEngine extends BaseSoundEngine {
+// ===============================================
+// 2. CATHEDRAL ETHEREAL ENGINE
+// ===============================================
+
+class CathedralEtherealEngine extends BaseSoundEngine {
     constructor() {
-        super('Glass Horizon');
+        super('Cathedral Ethereal');
     }
 
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        // Glassy, shimmering pad
-        this.glassPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "triangle" },
-            envelope: { attack: 8, decay: 4, sustain: 0.8, release: 12 }
-        });
+        this.cathedralPad = SynthFactory.createPad("sine", 'CATHEDRAL');
 
-        // Shimmer effect using chorus and modulation
-        this.shimmerChorus = new Tone.Chorus(0.3, 3, 0.7).start();
+        const audioChain = new AudioChainBuilder(this.cathedralPad)
+            .addCathedralChain()
+            .addReverb('CATHEDRAL', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
-        // Glass-like filter (high-pass for brightness)
-        this.glassFilter = new Tone.Filter({
-            frequency: 2500,
-            type: "highpass",
-            Q: 4
-        });
-
-        // Horizon reverb
-        this.horizonReverb = new Tone.Reverb({
-            decay: 18,
-            wet: this.config.reverbAmount,
-            roomSize: 0.9
-        });
-
-        // Connect audio chain
-        this.glassPad.connect(this.glassFilter);
-        this.glassFilter.connect(this.shimmerChorus);
-        this.shimmerChorus.connect(this.horizonReverb);
-        this.horizonReverb.connect(this.masterVolume);
-
-        this.synths.push(this.glassPad);
-        this.effects.push(this.shimmerChorus, this.glassFilter, this.horizonReverb);
-    }
-
-    startGenerativePattern() {
-        const playPattern = () => {
-            if (!this.isActive) return;
-
-            const chord = this.getRandomChord(3);
-            this.glassPad.triggerAttackRelease(chord, Math.random() * 10 + 8);
-
-            this.scheduleNext(playPattern, 5000, 8000);
-        };
-
-        playPattern();
-    }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.horizonReverb) {
-            this.horizonReverb.wet.value = value;
-        }
-    }
-}
-
-// Nebula Drift Sound Engine
-class NebulaDriftEngine extends BaseSoundEngine {
-    constructor() {
-        super('Nebula Drift');
-    }
-
-    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
-        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
-
-        // Soft, cloudy pad
-        this.nebulaPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "sine" },
-            envelope: { attack: 10, decay: 3, sustain: 0.9, release: 15 }
-        });
-
-        // Gentle swell modulation
-        this.swellLFO = new Tone.LFO({
-            frequency: 0.05,
-            min: 0.3,
-            max: 1,
-            type: "triangle"
-        }).start();
-
-        // Nebula gain for swell effect
-        this.nebulaGain = new Tone.Gain(0.6);
-
-        // Stellar reverb
-        this.stellarReverb = new Tone.Reverb({
-            decay: 20,
-            wet: this.config.reverbAmount,
-            roomSize: 0.95
-        });
-
-        // Connect audio chain
-        this.nebulaPad.connect(this.nebulaGain);
-        this.nebulaGain.connect(this.stellarReverb);
-        this.stellarReverb.connect(this.masterVolume);
-
-        this.swellLFO.connect(this.nebulaGain.gain);
-
-        this.synths.push(this.nebulaPad);
-        this.effects.push(this.nebulaGain, this.swellLFO, this.stellarReverb);
+        this.synths.push(this.cathedralPad);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
@@ -690,227 +328,37 @@ class NebulaDriftEngine extends BaseSoundEngine {
             if (!this.isActive) return;
 
             const chord = this.getRandomChord(4);
-            this.nebulaPad.triggerAttackRelease(chord, Math.random() * 14 + 10);
+            this.cathedralPad.triggerAttackRelease(chord, Math.random() * 6 + 12);
 
-            this.scheduleNext(playPattern, 6000, 9000);
+            this.scheduleNext(playPattern, 10000, 15000);
         };
 
         playPattern();
     }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.stellarReverb) {
-            this.stellarReverb.wet.value = value;
-        }
-    }
 }
 
-// Thermal Layers Sound Engine
-class ThermalLayersEngine extends BaseSoundEngine {
+// ===============================================
+// 3. GLACIAL ETHEREAL ENGINE
+// ===============================================
+
+class GlacialEtherealEngine extends BaseSoundEngine {
     constructor() {
-        super('Thermal Layers');
+        super('Glacial Ethereal');
     }
 
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        // Warm, layered pad
-        this.thermalPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "sawtooth" },
-            envelope: { attack: 6, decay: 2, sustain: 0.8, release: 8 }
-        });
+        this.glacialPad = SynthFactory.createPad("triangle", 'GLACIAL');
 
-        // Layer modulation for thermal effect
-        this.layerLFO = new Tone.LFO({
-            frequency: 0.12,
-            min: 0.4,
-            max: 1.2,
-            type: "sine"
-        }).start();
+        const audioChain = new AudioChainBuilder(this.glacialPad)
+            .addGlacialChain()
+            .addReverb('GLACIAL', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
-        // Warm filter
-        this.warmFilter = new Tone.Filter({
-            frequency: 1200,
-            type: "lowpass",
-            Q: 3
-        });
-
-        // Thermal gain
-        this.thermalGain = new Tone.Gain(0.7);
-
-        // Depth reverb
-        this.depthReverb = new Tone.Reverb({
-            decay: 12,
-            wet: this.config.reverbAmount,
-            roomSize: 0.8
-        });
-
-        // Connect audio chain
-        this.thermalPad.connect(this.warmFilter);
-        this.warmFilter.connect(this.thermalGain);
-        this.thermalGain.connect(this.depthReverb);
-        this.depthReverb.connect(this.masterVolume);
-
-        this.layerLFO.connect(this.thermalGain.gain);
-
-        this.synths.push(this.thermalPad);
-        this.effects.push(this.layerLFO, this.warmFilter, this.thermalGain, this.depthReverb);
-    }
-
-    startGenerativePattern() {
-        const playPattern = () => {
-            if (!this.isActive) return;
-
-            const chord = this.getRandomChord(3);
-            this.thermalPad.triggerAttackRelease(chord, Math.random() * 8 + 6);
-
-            this.scheduleNext(playPattern, 4000, 7000);
-        };
-
-        playPattern();
-    }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.depthReverb) {
-            this.depthReverb.wet.value = value;
-        }
-    }
-}
-
-// Deep Resonance Sound Engine
-class DeepResonanceEngine extends BaseSoundEngine {
-    constructor() {
-        super('Deep Resonance');
-    }
-
-    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
-        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
-
-        // Resonant core drone
-        this.resonantCore = new Tone.MonoSynth({
-            oscillator: { type: "sawtooth" },
-            envelope: { attack: 8, decay: 0, sustain: 1, release: 12 }
-        });
-
-        // Harmonic overtones
-        this.harmonicSynth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "sine" },
-            envelope: { attack: 6, decay: 4, sustain: 0.6, release: 10 }
-        });
-
-        // Deep resonant filter
-        this.resonantFilter = new Tone.Filter({
-            frequency: 400,
-            type: "bandpass",
-            Q: 12
-        });
-
-        // Sonic cavern reverb
-        this.cavernReverb = new Tone.Reverb({
-            decay: 22,
-            wet: this.config.reverbAmount,
-            roomSize: 0.95
-        });
-
-        // Connect audio chain
-        this.resonantCore.connect(this.resonantFilter);
-        this.resonantFilter.connect(this.cavernReverb);
-        this.harmonicSynth.connect(this.cavernReverb);
-        this.cavernReverb.connect(this.masterVolume);
-
-        this.synths.push(this.resonantCore, this.harmonicSynth);
-        this.effects.push(this.resonantFilter, this.cavernReverb);
-    }
-
-    startGenerativePattern() {
-        // Start resonant core
-        if (this.currentScale.length > 0) {
-            const baseNote = this.currentScale[0];
-            this.resonantCore.triggerAttack(baseNote);
-        }
-
-        const playResonancePattern = () => {
-            if (!this.isActive) return;
-
-            const chord = this.getRandomChord(3);
-            this.harmonicSynth.triggerAttackRelease(chord, Math.random() * 12 + 8);
-
-            this.scheduleNext(playResonancePattern, 5000, 8000);
-        };
-
-        playResonancePattern();
-    }
-
-    onScaleChange(newScale) {
-        // Restart the resonant core on the new base note
-        if (this.resonantCore && this.isActive && newScale.length > 0) {
-            this.resonantCore.triggerRelease();
-            setTimeout(() => {
-                if (this.isActive) {
-                    this.resonantCore.triggerAttack(newScale[0]);
-                }
-            }, 500);
-        }
-    }
-
-    stop() {
-        // Release the continuous drone before stopping
-        if (this.resonantCore) {
-            this.resonantCore.triggerRelease();
-        }
-        super.stop();
-    }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.cavernReverb) {
-            this.cavernReverb.wet.value = value;
-        }
-    }
-}
-
-// Ethereal Void Sound Engine
-class EtherealVoidEngine extends BaseSoundEngine {
-    constructor() {
-        super('Ethereal Void');
-    }
-
-    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
-        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
-
-        this.etherealPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "triangle" },
-            envelope: { attack: 6, decay: 3, sustain: 0.9, release: 10 }
-        });
-
-        this.atmosphericFilter = new Tone.Filter({
-            frequency: 1200,
-            type: "lowpass",
-            Q: 2
-        });
-
-        this.floatingLFO = new Tone.LFO({
-            frequency: 0.08,
-            min: 800,
-            max: 1600,
-            type: "sine"
-        }).start();
-
-        this.etherealReverb = new Tone.Reverb({
-            decay: 15,
-            wet: this.config.reverbAmount,
-            roomSize: 0.95
-        });
-
-        this.etherealPad.connect(this.atmosphericFilter);
-        this.atmosphericFilter.connect(this.etherealReverb);
-        this.etherealReverb.connect(this.masterVolume);
-        this.floatingLFO.connect(this.atmosphericFilter.frequency);
-
-        this.synths.push(this.etherealPad);
-        this.effects.push(this.atmosphericFilter, this.floatingLFO, this.etherealReverb);
+        this.synths.push(this.glacialPad);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
@@ -918,23 +366,19 @@ class EtherealVoidEngine extends BaseSoundEngine {
             if (!this.isActive) return;
 
             const chord = this.getRandomChord(2);
-            this.etherealPad.triggerAttackRelease(chord, Math.random() * 12 + 8);
+            this.glacialPad.triggerAttackRelease(chord, Math.random() * 8 + 18);
 
-            this.scheduleNext(playPattern, 6000, 10000);
+            this.scheduleNext(playPattern, 12000, 18000);
         };
 
         playPattern();
     }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.etherealReverb) {
-            this.etherealReverb.wet.value = value;
-        }
-    }
 }
 
-// Dark Matter Sound Engine
+// ===============================================
+// 4. DARK MATTER ENGINE
+// ===============================================
+
 class DarkMatterEngine extends BaseSoundEngine {
     constructor() {
         super('Dark Matter');
@@ -943,35 +387,21 @@ class DarkMatterEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        this.darkDrone = new Tone.MonoSynth({
-            oscillator: { type: "sawtooth" },
-            envelope: { attack: 10, decay: 0, sustain: 1, release: 15 }
-        });
+        this.darkDrone = SynthFactory.createMonoSynth("sawtooth", 'CONTINUOUS_DRONE');
+        this.harmonicLayer = SynthFactory.createPad("sine", 'LONG_SUSTAIN');
 
-        this.harmonicLayer = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "sine" },
-            envelope: { attack: 8, decay: 4, sustain: 0.3, release: 12 }
-        });
+        const droneChain = new AudioChainBuilder(this.darkDrone)
+            .addFilter('DEEP_LOWPASS')
+            .addReverb('CAVERNOUS', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
-        this.deepFilter = new Tone.Filter({
-            frequency: 300,
-            type: "lowpass",
-            Q: 6
-        });
-
-        this.gravityReverb = new Tone.Reverb({
-            decay: 25,
-            wet: this.config.reverbAmount,
-            roomSize: 0.98
-        });
-
-        this.darkDrone.connect(this.deepFilter);
-        this.deepFilter.connect(this.gravityReverb);
-        this.harmonicLayer.connect(this.gravityReverb);
-        this.gravityReverb.connect(this.masterVolume);
+        const harmonicChain = new AudioChainBuilder(this.harmonicLayer)
+            .addReverb('CAVERNOUS', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
         this.synths.push(this.darkDrone, this.harmonicLayer);
-        this.effects.push(this.deepFilter, this.gravityReverb);
+        this.effects.push(...droneChain.effects, ...harmonicChain.effects);
+        this.lfos = [...(droneChain.lfos || []), ...(harmonicChain.lfos || [])];
     }
 
     startGenerativePattern() {
@@ -1009,16 +439,12 @@ class DarkMatterEngine extends BaseSoundEngine {
         }
         super.stop();
     }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.gravityReverb) {
-            this.gravityReverb.wet.value = value;
-        }
-    }
 }
 
-// Aurora Field Sound Engine
+// ===============================================
+// 5. AURORA FIELD ENGINE
+// ===============================================
+
 class AuroraFieldEngine extends BaseSoundEngine {
     constructor() {
         super('Aurora Field');
@@ -1027,49 +453,16 @@ class AuroraFieldEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        this.auroraPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "triangle" },
-            envelope: { attack: 5, decay: 3, sustain: 0.7, release: 8 }
-        });
+        this.auroraPad = SynthFactory.createPad("triangle", 'LONG_SUSTAIN');
 
-        this.colorLFO1 = new Tone.LFO({
-            frequency: 0.15,
-            min: 800,
-            max: 2000,
-            type: "sine"
-        }).start();
-
-        this.colorLFO2 = new Tone.LFO({
-            frequency: 0.08,
-            min: 0.5,
-            max: 1.5,
-            type: "triangle"
-        }).start();
-
-        this.magneticFilter = new Tone.Filter({
-            frequency: 1500,
-            type: "bandpass",
-            Q: 5
-        });
-
-        this.auroraGain = new Tone.Gain(0.8);
-
-        this.polarReverb = new Tone.Reverb({
-            decay: 16,
-            wet: this.config.reverbAmount,
-            roomSize: 0.9
-        });
-
-        this.auroraPad.connect(this.magneticFilter);
-        this.magneticFilter.connect(this.auroraGain);
-        this.auroraGain.connect(this.polarReverb);
-        this.polarReverb.connect(this.masterVolume);
-
-        this.colorLFO1.connect(this.magneticFilter.frequency);
-        this.colorLFO2.connect(this.auroraGain.gain);
+        const audioChain = new AudioChainBuilder(this.auroraPad)
+            .addAuroraChain()
+            .addReverb('LARGE_HALL', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
         this.synths.push(this.auroraPad);
-        this.effects.push(this.colorLFO1, this.colorLFO2, this.magneticFilter, this.auroraGain, this.polarReverb);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
@@ -1084,14 +477,355 @@ class AuroraFieldEngine extends BaseSoundEngine {
 
         playPattern();
     }
+}
 
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.polarReverb) {
-            this.polarReverb.wet.value = value;
-        }
+// ===============================================
+// 6. GLASS HORIZON ENGINE
+// ===============================================
+
+class GlassHorizonEngine extends BaseSoundEngine {
+    constructor() {
+        super('Glass Horizon');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        this.glassPad = SynthFactory.createPad("triangle", 'VERY_SLOW_ETHEREAL');
+
+        const audioChain = new AudioChainBuilder(this.glassPad)
+            .addGlassChain()
+            .addReverb('LARGE_HALL', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        this.synths.push(this.glassPad);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.glassPad.triggerAttackRelease(chord, Math.random() * 10 + 8);
+
+            this.scheduleNext(playPattern, 5000, 8000);
+        };
+
+        playPattern();
     }
 }
+
+// ===============================================
+// 7. NEBULA DRIFT ENGINE
+// ===============================================
+
+class NebulaDriftEngine extends BaseSoundEngine {
+    constructor() {
+        super('Nebula Drift');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        this.nebulaPad = SynthFactory.createPad("sine", 'ULTRA_SLOW_ETHEREAL');
+
+        const audioChain = new AudioChainBuilder(this.nebulaPad)
+            .addNebulaChain()
+            .addReverb('CAVERNOUS', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        this.synths.push(this.nebulaPad);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(4);
+            this.nebulaPad.triggerAttackRelease(chord, Math.random() * 14 + 10);
+
+            this.scheduleNext(playPattern, 6000, 9000);
+        };
+
+        playPattern();
+    }
+}
+
+// ===============================================
+// 8. THERMAL LAYERS ENGINE
+// ===============================================
+
+class ThermalLayersEngine extends BaseSoundEngine {
+    constructor() {
+        super('Thermal Layers');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        this.thermalPad = SynthFactory.createPad("sawtooth", 'LONG_SUSTAIN');
+
+        const audioChain = new AudioChainBuilder(this.thermalPad)
+            .addThermalChain()
+            .addReverb('STANDARD', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        this.synths.push(this.thermalPad);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
+    }
+
+    startGenerativePattern() {
+        const playPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.thermalPad.triggerAttackRelease(chord, Math.random() * 8 + 6);
+
+            this.scheduleNext(playPattern, 4000, 7000);
+        };
+
+        playPattern();
+    }
+}
+
+// ===============================================
+// 9. DEEP RESONANCE ENGINE
+// ===============================================
+
+class DeepResonanceEngine extends BaseSoundEngine {
+    constructor() {
+        super('Deep Resonance');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        this.resonantCore = SynthFactory.createMonoSynth("sawtooth", 'CONTINUOUS_DRONE');
+        this.harmonicSynth = SynthFactory.createPad("sine", 'LONG_SUSTAIN');
+
+        const coreChain = new AudioChainBuilder(this.resonantCore)
+            .addFilter('RESONANT_BANDPASS')
+            .addReverb('CAVERNOUS', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        const harmonicChain = new AudioChainBuilder(this.harmonicSynth)
+            .addReverb('CAVERNOUS', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        this.synths.push(this.resonantCore, this.harmonicSynth);
+        this.effects.push(...coreChain.effects, ...harmonicChain.effects);
+        this.lfos = [...(coreChain.lfos || []), ...(harmonicChain.lfos || [])];
+    }
+
+    startGenerativePattern() {
+        if (this.currentScale.length > 0) {
+            const baseNote = this.currentScale[0];
+            this.resonantCore.triggerAttack(baseNote);
+        }
+
+        const playResonancePattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.harmonicSynth.triggerAttackRelease(chord, Math.random() * 12 + 8);
+
+            this.scheduleNext(playResonancePattern, 5000, 8000);
+        };
+
+        playResonancePattern();
+    }
+
+    onScaleChange(newScale) {
+        if (this.resonantCore && this.isActive && newScale.length > 0) {
+            this.resonantCore.triggerRelease();
+            setTimeout(() => {
+                if (this.isActive) {
+                    this.resonantCore.triggerAttack(newScale[0]);
+                }
+            }, 500);
+        }
+    }
+
+    stop() {
+        if (this.resonantCore) {
+            this.resonantCore.triggerRelease();
+        }
+        super.stop();
+    }
+}
+
+// ===============================================
+// 10. COSMIC DRIFT ENGINE
+// ===============================================
+
+class CosmicDriftEngine extends BaseSoundEngine {
+    constructor() {
+        super('Cosmic Drift');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        this.cosmicPad = SynthFactory.createPad("sawtooth", 'SLOW_ETHEREAL');
+        this.cosmicPad.set({ oscillator: { detune: 15 } });
+
+        this.subBass = SynthFactory.createMonoSynth("sine", 'CONTINUOUS_DRONE');
+
+        const padChain = new AudioChainBuilder(this.cosmicPad)
+            .addCosmicChain()
+            .addReverb('DEEP_SPACE', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        const bassChain = new AudioChainBuilder(this.subBass)
+            .addReverb('DEEP_SPACE', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        this.synths.push(this.cosmicPad, this.subBass);
+        this.effects.push(...padChain.effects, ...bassChain.effects);
+        this.lfos = [...(padChain.lfos || []), ...(bassChain.lfos || [])];
+    }
+
+    startGenerativePattern() {
+        const playCosmicPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.cosmicPad.triggerAttackRelease(chord, Math.random() * 8 + 6);
+
+            if (Math.random() < 0.3) {
+                const bassNote = this.currentScale[Math.floor(Math.random() * 3)];
+                this.subBass.triggerAttackRelease(bassNote, Math.random() * 12 + 8);
+            }
+
+            this.scheduleNext(playCosmicPattern, 4000, 8000);
+        };
+
+        playCosmicPattern();
+    }
+}
+
+// ===============================================
+// 11. UNDERWATER PALACE ENGINE
+// ===============================================
+
+class UnderwaterPalaceEngine extends BaseSoundEngine {
+    constructor() {
+        super('Underwater Palace');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        this.underwaterPad = SynthFactory.createPad("sine", 'LONG_SUSTAIN');
+
+        const audioChain = new AudioChainBuilder(this.underwaterPad)
+            .addUnderwaterChain()
+            .addReverb('LARGE_HALL', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        this.synths.push(this.underwaterPad);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
+    }
+
+    startGenerativePattern() {
+        const playUnderwaterPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.underwaterPad.triggerAttackRelease(chord, Math.random() * 10 + 6);
+
+            this.scheduleNext(playUnderwaterPattern, 4000, 7000);
+        };
+
+        playUnderwaterPattern();
+    }
+}
+
+// ===============================================
+// 12. NEON NOCTURNE ENGINE
+// ===============================================
+
+class NeonNocturneEngine extends BaseSoundEngine {
+    constructor() {
+        super('Neon Nocturne');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        this.neonSynth = SynthFactory.createPad("sawtooth", 'MEDIUM_SUSTAIN');
+
+        const audioChain = new AudioChainBuilder(this.neonSynth)
+            .addNeonChain()
+            .addReverb('INTIMATE', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        this.synths.push(this.neonSynth);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
+    }
+
+    startGenerativePattern() {
+        const playNeonPattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(3);
+            this.neonSynth.triggerAttackRelease(chord, Math.random() * 4 + 3);
+
+            this.scheduleNext(playNeonPattern, 3000, 5000);
+        };
+
+        playNeonPattern();
+    }
+}
+
+// ===============================================
+// 13. ATMOSPHERIC TEMPLE ENGINE
+// ===============================================
+
+class AtmosphericTempleEngine extends BaseSoundEngine {
+    constructor() {
+        super('Atmospheric Temple');
+    }
+
+    async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
+        super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
+
+        this.templePad = SynthFactory.createPad("triangle", 'LONG_SUSTAIN');
+
+        const audioChain = new AudioChainBuilder(this.templePad)
+            .addAtmosphericChain()
+            .addReverb('LARGE_HALL', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
+
+        this.synths.push(this.templePad);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
+    }
+
+    startGenerativePattern() {
+        const playTemplePattern = () => {
+            if (!this.isActive) return;
+
+            const chord = this.getRandomChord(2);
+            this.templePad.triggerAttackRelease(chord, Math.random() * 8 + 4);
+
+            this.scheduleNext(playTemplePattern, 3000, 6000);
+        };
+
+        playTemplePattern();
+    }
+}
+
+// ===============================================
+// 14. STONE IN FOCUS ENGINE
+// ===============================================
 
 class StoneFocusEngine extends BaseSoundEngine {
     constructor() {
@@ -1101,55 +835,18 @@ class StoneFocusEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        // Abstract pad with unconventional processing
-        this.abstractPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: {
-                type: "square",
-                detune: 12 // Slight detuning for character
-            },
-            envelope: {
-                attack: 4,
-                decay: 2,
-                sustain: 0.6,
-                release: 8
-            }
-        });
+        this.abstractPad = SynthFactory.createPad("square", 'MEDIUM_SUSTAIN');
+        this.abstractPad.set({ oscillator: { detune: 12 } });
 
-        // Mysterious bandpass filter with high Q
-        this.mysteriousFilter = new Tone.Filter({
-            frequency: 1200,
-            type: "bandpass",
-            Q: 8
-        });
-
-        // Unconventional LFO for filter modulation
-        this.unconventionalLFO = new Tone.LFO({
-            frequency: 0.37, // Prime number for non-repetitive cycles
-            min: 600,
-            max: 1800,
-            type: "triangle"
-        }).start();
-
-        // Beautiful distortion - adds warmth while maintaining clarity
-        this.beautifulDistortion = new Tone.Distortion(0.2);
-
-        // Abstract reverb
-        this.abstractReverb = new Tone.Reverb({
-            decay: 12,
-            wet: this.config.reverbAmount,
-            roomSize: 0.8
-        });
-
-        // Connect audio chain
-        this.abstractPad.connect(this.beautifulDistortion);
-        this.beautifulDistortion.connect(this.mysteriousFilter);
-        this.mysteriousFilter.connect(this.abstractReverb);
-        this.abstractReverb.connect(this.masterVolume);
-
-        this.unconventionalLFO.connect(this.mysteriousFilter.frequency);
+        const audioChain = new AudioChainBuilder(this.abstractPad)
+            .addDistortion(0.2)
+            .addFilterWithLFO('BRIGHT_BANDPASS', 'SLOW_FILTER_SWEEP', 600, 1800)
+            .addReverb('STANDARD', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
         this.synths.push(this.abstractPad);
-        this.effects.push(this.mysteriousFilter, this.unconventionalLFO, this.beautifulDistortion, this.abstractReverb);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
@@ -1164,14 +861,11 @@ class StoneFocusEngine extends BaseSoundEngine {
 
         playPattern();
     }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.abstractReverb) {
-            this.abstractReverb.wet.value = value;
-        }
-    }
 }
+
+// ===============================================
+// 15. STRING THEORY ENGINE
+// ===============================================
 
 class StringTheoryEngine extends BaseSoundEngine {
     constructor() {
@@ -1181,68 +875,35 @@ class StringTheoryEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        // Orchestral string ensemble simulation
-        this.stringEnsemble = new Tone.PolySynth(Tone.Synth, {
-            oscillator: {
-                type: "sawtooth" // Rich harmonics like strings
-            },
-            envelope: {
-                attack: 10,  // Very slow attack like bowed strings
-                decay: 4,
-                sustain: 0.8,
-                release: 15  // Long release for sustained notes
-            }
-        });
+        this.stringEnsemble = SynthFactory.createPad("sawtooth", 'ORCHESTRAL');
 
-        // Orchestral filter - removes harshness, keeps warmth
-        this.orchestralFilter = new Tone.Filter({
-            frequency: 2000,
-            type: "lowpass",
-            Q: 3
-        });
-
-        // Emotional chorus for ensemble width
-        this.emotionalChorus = new Tone.Chorus(0.1, 2, 0.6).start();
-
-        // Cinematic reverb - large hall sound
-        this.cinematicReverb = new Tone.Reverb({
-            decay: 20,
-            wet: this.config.reverbAmount,
-            roomSize: 0.95
-        });
-
-        // Connect audio chain
-        this.stringEnsemble.connect(this.orchestralFilter);
-        this.orchestralFilter.connect(this.emotionalChorus);
-        this.emotionalChorus.connect(this.cinematicReverb);
-        this.cinematicReverb.connect(this.masterVolume);
+        const audioChain = new AudioChainBuilder(this.stringEnsemble)
+            .addStringChain()
+            .addReverb('CAVERNOUS', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
         this.synths.push(this.stringEnsemble);
-        this.effects.push(this.orchestralFilter, this.emotionalChorus, this.cinematicReverb);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
         const playPattern = () => {
             if (!this.isActive) return;
 
-            // Use 4-note chords for rich orchestral harmony
             const chord = this.getRandomChord(4);
             this.stringEnsemble.triggerAttackRelease(chord, Math.random() * 15 + 12);
 
-            // Longer intervals between notes for slow evolution
             this.scheduleNext(playPattern, 8000, 10000);
         };
 
         playPattern();
     }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.cinematicReverb) {
-            this.cinematicReverb.wet.value = value;
-        }
-    }
 }
+
+// ===============================================
+// 16. HEXAGON SUN ENGINE
+// ===============================================
 
 class HexagonSunEngine extends BaseSoundEngine {
     constructor() {
@@ -1252,50 +913,16 @@ class HexagonSunEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        // Geometric precision with analog warmth
-        this.geometricPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: {
-                type: "sine" // Pure waveform for mathematical precision
-            },
-            envelope: {
-                attack: 5,
-                decay: 2,
-                sustain: 0.7,
-                release: 8
-            }
-        });
+        this.geometricPad = SynthFactory.createPad("sine", 'MEDIUM_SUSTAIN');
 
-        // Precision bandpass filter for resonant peaks
-        this.precisionFilter = new Tone.Filter({
-            frequency: 1800,
-            type: "bandpass",
-            Q: 6
-        });
-
-        // Golden ratio modulation (1.618) for mathematical beauty
-        this.goldenRatio = new Tone.LFO({
-            frequency: 0.618, // Golden ratio as frequency
-            min: 1200,
-            max: 2400,
-            type: "sine"
-        }).start();
-
-        // Sacred geometry reverb
-        this.sacredReverb = new Tone.Reverb({
-            decay: 10,
-            wet: this.config.reverbAmount,
-            roomSize: 0.8
-        });
-
-        // Connect audio chain
-        this.geometricPad.connect(this.precisionFilter);
-        this.precisionFilter.connect(this.sacredReverb);
-        this.sacredReverb.connect(this.masterVolume);
-
-        this.goldenRatio.connect(this.precisionFilter.frequency);
+        const audioChain = new AudioChainBuilder(this.geometricPad)
+            .addHexagonChain()
+            .addReverb('STANDARD', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
         this.synths.push(this.geometricPad);
-        this.effects.push(this.precisionFilter, this.goldenRatio, this.sacredReverb);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
@@ -1305,20 +932,16 @@ class HexagonSunEngine extends BaseSoundEngine {
             const chord = this.getRandomChord(3);
             this.geometricPad.triggerAttackRelease(chord, Math.random() * 6 + 5);
 
-            // Regular intervals for geometric precision
             this.scheduleNext(playPattern, 3000, 5000);
         };
 
         playPattern();
     }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.sacredReverb) {
-            this.sacredReverb.wet.value = value;
-        }
-    }
 }
+
+// ===============================================
+// 17. PARALLEL DIMENSION ENGINE
+// ===============================================
 
 class ParallelDimensionEngine extends BaseSoundEngine {
     constructor() {
@@ -1328,56 +951,17 @@ class ParallelDimensionEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        // Interdimensional pad with heavy detuning
-        this.dimensionalPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: {
-                type: "triangle",
-                detune: 20 // Heavy detuning for otherworldly character
-            },
-            envelope: {
-                attack: 6,
-                decay: 4,
-                sustain: 0.8,
-                release: 11
-            }
-        });
+        this.dimensionalPad = SynthFactory.createPad("triangle", 'LONG_SUSTAIN');
+        this.dimensionalPad.set({ oscillator: { detune: 20 } });
 
-        // Dual phase shifters for multi-dimensional effect
-        this.phaseShifter1 = new Tone.Phaser({
-            frequency: 0.15,
-            depth: 0.8,
-            baseFrequency: 400
-        });
-
-        this.phaseShifter2 = new Tone.Phaser({
-            frequency: 0.08, // Different rate for complex interaction
-            depth: 0.6,
-            baseFrequency: 800
-        });
-
-        // Quantum filter for interdimensional filtering
-        this.quantumFilter = new Tone.Filter({
-            frequency: 1500,
-            type: "bandpass",
-            Q: 6
-        });
-
-        // Multi-dimensional reverb
-        this.multiReverb = new Tone.Reverb({
-            decay: 16,
-            wet: this.config.reverbAmount,
-            roomSize: 0.92
-        });
-
-        // Connect audio chain
-        this.dimensionalPad.connect(this.phaseShifter1);
-        this.phaseShifter1.connect(this.phaseShifter2);
-        this.phaseShifter2.connect(this.quantumFilter);
-        this.quantumFilter.connect(this.multiReverb);
-        this.multiReverb.connect(this.masterVolume);
+        const audioChain = new AudioChainBuilder(this.dimensionalPad)
+            .addParallelDimensionChain()
+            .addReverb('LARGE_HALL', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
         this.synths.push(this.dimensionalPad);
-        this.effects.push(this.phaseShifter1, this.phaseShifter2, this.quantumFilter, this.multiReverb);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
@@ -1392,14 +976,11 @@ class ParallelDimensionEngine extends BaseSoundEngine {
 
         playPattern();
     }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.multiReverb) {
-            this.multiReverb.wet.value = value;
-        }
-    }
 }
+
+// ===============================================
+// 18. GENTLE RHUBARB ENGINE
+// ===============================================
 
 class GentleRhubarbEngine extends BaseSoundEngine {
     constructor() {
@@ -1409,80 +990,17 @@ class GentleRhubarbEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        // Gentle hybrid pad with reduced detuning
-        this.hybridPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: {
-                type: "sawtooth",
-                detune: 8 // Reduced from 15 for gentleness
-            },
-            envelope: {
-                attack: 6,  // Slower attack for smoothness
-                decay: 3,
-                sustain: 0.7,
-                release: 12 // Longer release for flowing character
-            }
-        });
+        this.hybridPad = SynthFactory.createPad("sawtooth", 'SLOW_ETHEREAL');
+        this.hybridPad.set({ oscillator: { detune: 8 } });
 
-        // Warm low-pass filter instead of harsh high-pass
-        this.gentleFilter = new Tone.Filter({
-            frequency: 1200, // Low-pass at 1200Hz
-            type: "lowpass",
-            Q: 2 // Lower Q for gentle filtering
-        });
-
-        // Slower, more organic LFO
-        this.organicLFO = new Tone.LFO({
-            frequency: 0.15, // Slower modulation
-            min: 800,
-            max: 1600,
-            type: "triangle" // Smoother than square wave
-        }).start();
-
-        // Reduced frequency shifting for subtlety
-        this.subtleShifter = new Tone.FrequencyShifter({
-            frequency: 3, // Much gentler shift
-            wet: 0.15    // Less pronounced effect
-        });
-
-        // Warm saturation for analog character
-        this.warmSaturation = new Tone.Distortion(0.05); // Very subtle
-
-        // Soft high-frequency roll-off
-        this.softFilter = new Tone.Filter({
-            frequency: 3000,
-            type: "lowpass",
-            Q: 0.8 // Very gentle slope
-        });
-
-        // Smoothing chorus
-        this.smoothChorus = new Tone.Chorus({
-            frequency: 1.5,
-            delayTime: 3.5,
-            depth: 0.5, // Increased depth for smoothing
-            wet: 0.4
-        }).start();
-
-        // Warm, enveloping reverb
-        this.gentleReverb = new Tone.Reverb({
-            decay: 18, // Longer decay
-            wet: this.config.reverbAmount,
-            roomSize: 0.9
-        });
-
-        // Connect gentle audio chain
-        this.hybridPad.connect(this.subtleShifter);
-        this.subtleShifter.connect(this.gentleFilter);
-        this.gentleFilter.connect(this.warmSaturation);
-        this.warmSaturation.connect(this.softFilter);
-        this.softFilter.connect(this.smoothChorus);
-        this.smoothChorus.connect(this.gentleReverb);
-        this.gentleReverb.connect(this.masterVolume);
-
-        this.organicLFO.connect(this.gentleFilter.frequency);
+        const audioChain = new AudioChainBuilder(this.hybridPad)
+            .addGentleRhubarbChain()
+            .addReverb('LARGE_HALL', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
         this.synths.push(this.hybridPad);
-        this.effects.push(this.gentleFilter, this.organicLFO, this.subtleShifter,
-            this.warmSaturation, this.softFilter, this.smoothChorus, this.gentleReverb);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
@@ -1490,22 +1008,18 @@ class GentleRhubarbEngine extends BaseSoundEngine {
             if (!this.isActive) return;
 
             const chord = this.getRandomChord(2);
-            this.hybridPad.triggerAttackRelease(chord, Math.random() * 10 + 6); // Longer notes
+            this.hybridPad.triggerAttackRelease(chord, Math.random() * 10 + 6);
 
-            // Slightly longer intervals for gentle pacing
             this.scheduleNext(playPattern, 5000, 8000);
         };
 
         playPattern();
     }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.gentleReverb) {
-            this.gentleReverb.wet.value = value;
-        }
-    }
 }
+
+// ===============================================
+// 19. ETHEREAL RHUBARB ENGINE
+// ===============================================
 
 class EtherealRhubarbEngine extends BaseSoundEngine {
     constructor() {
@@ -1515,101 +1029,31 @@ class EtherealRhubarbEngine extends BaseSoundEngine {
     async initialize(masterVolume, globalReverb, globalDelay, globalFilter) {
         super.initialize(masterVolume, globalReverb, globalDelay, globalFilter);
 
-        // Ethereal pad with moderate detuning
-        this.etherealPad = new Tone.PolySynth(Tone.Synth, {
-            oscillator: {
-                type: "sawtooth",
-                detune: 12 // Moderate detuning for character
-            },
-            envelope: {
-                attack: 8,  // Very slow attack for ethereal emergence
-                decay: 4,
-                sustain: 0.8, // Higher sustain for floating quality
-                release: 15 // Very long release for ethereal trails
-            }
-        });
+        this.etherealPad = SynthFactory.createPad("sawtooth", 'VERY_SLOW_ETHEREAL');
+        this.etherealPad.set({ oscillator: { detune: 12 } });
 
-        // Ethereal bandpass filter for focused resonance
-        this.etherealFilter = new Tone.Filter({
-            frequency: 1500,
-            type: "bandpass",
-            Q: 3 // Moderate Q for smooth resonance
-        });
-
-        // Very slow LFO for gentle movement
-        this.floatingLFO = new Tone.LFO({
-            frequency: 0.1, // Very slow modulation
-            min: 1200,
-            max: 1800,
-            type: "sine" // Smoothest modulation
-        }).start();
-
-        // Minimal frequency shifting
-        this.whisperShifter = new Tone.FrequencyShifter({
-            frequency: 2, // Very subtle
-            wet: 0.1    // Barely noticeable
-        });
-
-        // No saturation for pure ethereal quality
-
-        // Ethereal high-frequency softening
-        this.cloudFilter = new Tone.Filter({
-            frequency: 4500, // Higher cutoff, gentler slope
-            type: "lowpass",
-            Q: 0.6 // Very gentle
-        });
-
-        // Wide, atmospheric chorus
-        this.atmosphericChorus = new Tone.Chorus({
-            frequency: 0.8, // Slower chorus rate
-            delayTime: 5,   // Longer delay time
-            depth: 0.6,     // Deep modulation for width
-            wet: 0.5
-        }).start();
-
-        // Massive ethereal reverb
-        this.celestialReverb = new Tone.Reverb({
-            decay: 22, // Very long decay
-            wet: this.config.reverbAmount,
-            roomSize: 0.95 // Huge space
-        });
-
-        // Connect ethereal audio chain
-        this.etherealPad.connect(this.whisperShifter);
-        this.whisperShifter.connect(this.etherealFilter);
-        this.etherealFilter.connect(this.cloudFilter);
-        this.cloudFilter.connect(this.atmosphericChorus);
-        this.atmosphericChorus.connect(this.celestialReverb);
-        this.celestialReverb.connect(this.masterVolume);
-
-        this.floatingLFO.connect(this.etherealFilter.frequency);
+        const audioChain = new AudioChainBuilder(this.etherealPad)
+            .addEtherealRhubarbChain()
+            .addReverb('CAVERNOUS', this.config.reverbAmount)
+            .connectTo(this.masterVolume);
 
         this.synths.push(this.etherealPad);
-        this.effects.push(this.etherealFilter, this.floatingLFO, this.whisperShifter,
-            this.cloudFilter, this.atmosphericChorus, this.celestialReverb);
+        this.effects.push(...audioChain.effects);
+        this.lfos = audioChain.lfos;
     }
 
     startGenerativePattern() {
         const playPattern = () => {
             if (!this.isActive) return;
 
-            // Often single notes for ethereal simplicity
             const noteCount = Math.random() < 0.3 ? 1 : 2;
             const chord = this.getRandomChord(noteCount);
-            this.etherealPad.triggerAttackRelease(chord, Math.random() * 12 + 8); // Long, floating notes
+            this.etherealPad.triggerAttackRelease(chord, Math.random() * 12 + 8);
 
-            // Longer intervals for spacious, ethereal timing
             this.scheduleNext(playPattern, 7000, 12000);
         };
 
         playPattern();
-    }
-
-    updateReverb(value) {
-        super.updateReverb(value);
-        if (this.celestialReverb) {
-            this.celestialReverb.wet.value = value;
-        }
     }
 }
 
@@ -1621,7 +1065,8 @@ class SoundEngineRegistry {
 
     registerDefaultEngines() {
         this.register('standard', StandardSoundEngine);
-        this.register('ethereal-void', EtherealVoidEngine);
+        this.register('cathedral-ethereal', CathedralEtherealEngine);
+        this.register('glacial-ethereal', GlacialEtherealEngine);
         this.register('dark-matter', DarkMatterEngine);
         this.register('aurora-field', AuroraFieldEngine);
         this.register('glass-horizon', GlassHorizonEngine);
@@ -1683,8 +1128,14 @@ class AmbientMusicManager {
         }
 
         this.currentSoundEngine = this.soundEngineRegistry.create(engineKey, config);
+
+        // Initialize with global audio nodes (these should be available globally)
         await this.currentSoundEngine.initialize(masterVolume, reverb, delay, filter);
-        this.currentSoundEngine.setScale(scales[this.currentMood]);
+
+        // Set the current scale (scales should be available globally)
+        if (typeof scales !== 'undefined') {
+            this.currentSoundEngine.setScale(scales[this.currentMood]);
+        }
 
         if (this.isPlaying) {
             this.currentSoundEngine.start();
@@ -1696,7 +1147,7 @@ class AmbientMusicManager {
     setMood(moodKey) {
         this.currentMood = moodKey;
 
-        if (this.currentSoundEngine) {
+        if (this.currentSoundEngine && typeof scales !== 'undefined') {
             this.currentSoundEngine.setScale(scales[moodKey]);
         }
     }
@@ -1739,7 +1190,7 @@ class AmbientMusicManager {
     }
 
     getAvailableMoods() {
-        return Object.keys(scales);
+        return typeof scales !== 'undefined' ? Object.keys(scales) : [];
     }
 
     startRandomMoodCycle() {
@@ -1747,11 +1198,13 @@ class AmbientMusicManager {
             clearInterval(this.randomMoodInterval);
         }
 
-        const minutesValue = parseInt(randomIntervalSlider.value);
+        // Get interval from global slider (should be available globally)
+        const minutesValue = typeof randomIntervalSlider !== 'undefined' ?
+            parseInt(randomIntervalSlider.value) : 10;
         const milliseconds = minutesValue * 60 * 1000;
 
         this.randomMoodInterval = setInterval(() => {
-            if (this.isPlaying && moodSelect.value === "random") {
+            if (this.isPlaying && typeof moodSelect !== 'undefined' && moodSelect.value === "random") {
                 this.changeToRandomMood();
             } else {
                 clearInterval(this.randomMoodInterval);
@@ -1766,8 +1219,9 @@ class AmbientMusicManager {
         const newMood = availableMoods[randomIndex];
 
         this.setMood(newMood);
-        currentActiveMood = newMood;
+        if (typeof currentActiveMood !== 'undefined') {
+            currentActiveMood = newMood;
+        }
         console.debug("Random mood change to:", newMood);
     }
 }
-
