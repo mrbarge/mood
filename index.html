@@ -6,6 +6,7 @@
     <title>Mood</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <script src="audio-chain-system.js"></script>
+    <script src="multi-melody-system.js"></script>
     <script src="sound-engines.js"></script>
     <script src="ocean-waves.js"></script>
     <script src="melody-instruments.js"></script>
@@ -116,92 +117,9 @@
                 </div>
             </div>
         </div>
-<!--        -->
-<!--        <div class="control-section" id="mood-section">-->
-<!--            <div class="section-header" onclick="toggleSection('mood')">-->
-<!--                <div class="section-title">-->
-<!--                    <div class="section-icon mood-icon">🎭</div>-->
-<!--                    <div>-->
-<!--                        <div class="section-info">Mood</div>-->
-<!--                        <div class="section-status" id="mood-status">Calm</div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                <button class="expand-btn" id="mood-expand">-->
-<!--                    <span>▼</span>-->
-<!--                </button>-->
-<!--            </div>-->
-<!--            <div class="section-content" id="mood-content">-->
-<!--                <div class="control-group">-->
-<!--                    <label class="control-label" for="sound-engine">Sound Engine</label>-->
-<!--                    <select id="sound-engine">-->
-<!--                        <option value="standard">Standard Ambient</option>-->
-<!--                        <option value="cathedral-ethereal">Ethereal Cathedral</option>-->
-<!--                        <option value="glacial-ethereal">Glacial Ethereal</option>-->
-<!--                        <option value="dark-matter">Dark Matter</option>-->
-<!--                        <option value="aurora-field">Aurora Field</option>-->
-<!--                        <option value="glass-horizon">Glass Horizon</option>-->
-<!--                        <option value="nebula-drift">Nebula Drift</option>-->
-<!--                        <option value="thermal-layers">Thermal Layers</option>-->
-<!--                        <option value="deep-resonance">Deep Resonance</option>-->
-<!--                        <option value="cosmic-drift">Cosmic Drift</option>-->
-<!--                        <option value="underwater-palace">Underwater Palace</option>-->
-<!--                        <option value="neon-nocturne">Neon Nocturne</option>-->
-<!--                        <option value="atmospheric-temple">Atmospheric Temple</option>-->
-<!--                        <option value="stone-focus">Stone in Focus</option>-->
-<!--                        <option value="string-theory">String Theory</option>-->
-<!--                        <option value="hexagon-sun">Hexagon Sun</option>-->
-<!--                        <option value="parallel-dimension">Parallel Dimension</option>-->
-<!--                        <option value="gentle-rhubarb">Gentle Rhubarb</option>-->
-<!--                        <option value="ethereal-rhubarb">Ethereal Rhubarb</option>-->
-<!--                    </select>-->
-<!--                </div>-->
-<!--                <div class="control-group">-->
-<!--                    <label class="control-label" for="mood">Musical Mood</label>-->
-<!--                    <select id="mood" onchange="updateMoodStatus()">-->
-<!--                        <option value="random">Random (Auto-changing)</option>-->
-<!--                        <option value="calm">Calm</option>-->
-<!--                        <option value="ethereal">Ethereal</option>-->
-<!--                        <option value="mysterious">Mysterious</option>-->
-<!--                        <option value="melancholic">Melancholic</option>-->
-<!--                        <option value="hopeful">Hopeful</option>-->
-<!--                        <option value="dreamy">Dreamy</option>-->
-<!--                        <option value="nostalgic">Nostalgic</option>-->
-<!--                        <option value="peaceful">Peaceful</option>-->
-<!--                        <option value="serene">Serene</option>-->
-<!--                    </select>-->
-<!--                </div>-->
-
-<!--                <div class="control-group">-->
-<!--                    <label class="control-label" for="density">Note Density</label>-->
-<!--                    <div class="slider-container">-->
-<!--                        <div class="slider-wrapper">-->
-<!--                            <input type="range" id="density" min="1" max="10" value="5">-->
-<!--                        </div>-->
-<!--                        <div class="slider-labels">-->
-<!--                            <span>Sparse</span>-->
-<!--                            <span>Dense</span>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-
-<!--                <div class="control-group">-->
-<!--                    <label class="control-label" for="reverb">Reverb Amount</label>-->
-<!--                    <div class="slider-container">-->
-<!--                        <div class="slider-wrapper">-->
-<!--                            <input type="range" id="reverb" min="0" max="1" step="0.1" value="0.5">-->
-<!--                        </div>-->
-<!--                        <div class="slider-labels">-->
-<!--                            <span>Dry</span>-->
-<!--                            <span>Wet</span>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
 
         <!-- Melody Section -->
         <div class="control-section" id="melody-section">
-
             <div class="section-header" onclick="toggleSection('melody')">
                 <div class="section-title">
                     <div class="toggle-btn" onclick="toggleMelody(event)">
@@ -211,7 +129,7 @@
                     <div class="section-icon melody-icon">🎹</div>
                     <div>
                         <div class="section-info">Melodic Instruments</div>
-                        <div class="section-status" id="melody-status">Soft Piano</div>
+                        <div class="section-status" id="melody-status">1 Layer: Soft Piano</div>
                     </div>
                 </div>
                 <button class="expand-btn" id="melody-expand">
@@ -220,18 +138,43 @@
             </div>
             <div class="section-content" id="melody-content">
                 <div class="control-group">
-                    <label class="control-label" for="melodic-instrument">Instrument Type</label>
+                    <label class="control-label" for="melodic-instrument">Instrument Selection</label>
                     <select id="melodic-instrument" onchange="updateMelodyStatus()">
                         <option value="random">Random (Auto-changing)</option>
-                        <option value="piano" selected>Soft Piano</option>
-                        <option value="marimba">Marimba</option>
-                        <option value="harp">Harp</option>
-                        <option value="music-box">Music Box</option>
+                        <option value="piano" selected>Soft Piano (All Layers)</option>
+                        <option value="marimba">Marimba (All Layers)</option>
+                        <option value="harp">Harp (All Layers)</option>
+                        <option value="music-box">Music Box (All Layers)</option>
+                        <option value="mixed">Mixed (Different Per Layer)</option>
                     </select>
                 </div>
 
                 <div class="control-group">
-                    <label class="control-label" for="melodic-frequency">Note Frequency</label>
+                    <label class="control-label" for="melody-slot-count">Number of Melody Layers</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="melody-slot-count" min="1" max="4" value="1" onchange="handleSlotCountChange()">
+                        </div>
+                        <div class="slider-labels">
+                            <span>1 Layer</span>
+                            <span>4 Layers</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Active Melody Layers</label>
+                    <div id="melody-slots-info" class="slots-info">
+                        <div class="slot-info active">
+                            <span class="slot-label">Layer 1:</span>
+                            <span class="slot-instrument">Piano</span>
+                            <span class="slot-status">♪</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="melodic-frequency">Global Note Frequency</label>
                     <div class="slider-container">
                         <div class="slider-wrapper">
                             <input type="range" id="melodic-frequency" min="1" max="10" value="4">
@@ -255,8 +198,79 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="layer-randomness">Layer Randomness</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="layer-randomness" min="0" max="1" step="0.1" value="0.5">
+                        </div>
+                        <div class="slider-labels">
+                            <span>Synchronized</span>
+                            <span>Chaotic</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+<!--        <div class="control-section" id="melody-section">-->
+
+<!--            <div class="section-header" onclick="toggleSection('melody')">-->
+<!--                <div class="section-title">-->
+<!--                    <div class="toggle-btn" onclick="toggleMelody(event)">-->
+<!--                        <input type="checkbox" id="melody-toggle" onchange="updateMelodyStatus()" onclick="event.stopPropagation()">-->
+<!--                        <span class="toggle-indicator"></span>-->
+<!--                    </div>-->
+<!--                    <div class="section-icon melody-icon">🎹</div>-->
+<!--                    <div>-->
+<!--                        <div class="section-info">Melodic Instruments</div>-->
+<!--                        <div class="section-status" id="melody-status">Soft Piano</div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <button class="expand-btn" id="melody-expand">-->
+<!--                    <span>▼</span>-->
+<!--                </button>-->
+<!--            </div>-->
+<!--            <div class="section-content" id="melody-content">-->
+<!--                <div class="control-group">-->
+<!--                    <label class="control-label" for="melodic-instrument">Instrument Type</label>-->
+<!--                    <select id="melodic-instrument" onchange="updateMelodyStatus()">-->
+<!--                        <option value="random">Random (Auto-changing)</option>-->
+<!--                        <option value="piano" selected>Soft Piano</option>-->
+<!--                        <option value="marimba">Marimba</option>-->
+<!--                        <option value="harp">Harp</option>-->
+<!--                        <option value="music-box">Music Box</option>-->
+<!--                    </select>-->
+<!--                </div>-->
+
+<!--                <div class="control-group">-->
+<!--                    <label class="control-label" for="melodic-frequency">Note Frequency</label>-->
+<!--                    <div class="slider-container">-->
+<!--                        <div class="slider-wrapper">-->
+<!--                            <input type="range" id="melodic-frequency" min="1" max="10" value="4">-->
+<!--                        </div>-->
+<!--                        <div class="slider-labels">-->
+<!--                            <span>Rare</span>-->
+<!--                            <span>Often</span>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div class="control-group">-->
+<!--                    <label class="control-label" for="melodic-reverb">Melodic Reverb</label>-->
+<!--                    <div class="slider-container">-->
+<!--                        <div class="slider-wrapper">-->
+<!--                            <input type="range" id="melodic-reverb" min="0" max="1" step="0.05" value="0.8">-->
+<!--                        </div>-->
+<!--                        <div class="slider-labels">-->
+<!--                            <span>Dry</span>-->
+<!--                            <span>Wet</span>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
 
         <!-- Ocean Waves Section -->
         <div class="control-section" id="waves-section">
@@ -466,11 +480,6 @@
 </div>
 
 <script>
-    // ===============================================
-    // COMPLETE MAIN JAVASCRIPT FILE
-    // This should be in your index.html <script> section
-    // ===============================================
-
     // Global variables
     let musicManager = null;
     let melodyManager = null;
@@ -586,12 +595,45 @@
         }
     }
 
+    function handleMelodicReverbChange() {
+        const melodicReverbSlider = document.getElementById('melodic-reverb');
+        if (!melodicReverbSlider || !melodyManager) return;
+
+        const reverbAmount = parseFloat(melodicReverbSlider.value);
+        console.debug(`Setting melodic reverb to: ${reverbAmount}`);
+
+        // Update reverb for all slots (each slot gets slightly different reverb)
+        for (let i = 0; i < melodyManager.getCurrentSlotCount(); i++) {
+            const slotReverb = reverbAmount + (i * 0.1); // Each layer gets more reverb
+            melodyManager.updateSlotConfig(i, {
+                reverbAmount: Math.min(1.0, slotReverb)
+            });
+        }
+    }
+
     function updateMelodyStatus() {
         const status = document.getElementById('melody-status');
-        if (!status || !melodicInstrumentSelect) return;
+        const instrumentSelect = document.getElementById('melodic-instrument');
 
-        const selectedOption = melodicInstrumentSelect.options[melodicInstrumentSelect.selectedIndex];
-        status.textContent = selectedOption ? selectedOption.text : 'Soft Piano';
+        if (!status || !melodyManager) return;
+
+        const slotCount = melodyManager.getCurrentSlotCount();
+
+        if (instrumentSelect) {
+            const selectedValue = instrumentSelect.value;
+            const selectedOption = instrumentSelect.options[instrumentSelect.selectedIndex];
+
+            if (selectedValue === 'mixed') {
+                status.textContent = `${slotCount} Layers: Mixed Instruments`;
+            } else if (selectedValue === 'random') {
+                status.textContent = `${slotCount} Layers: Random Mode`;
+            } else {
+                const instrumentName = selectedOption ? selectedOption.text.replace(' (All Layers)', '') : 'Piano';
+                status.textContent = `${slotCount} Layer${slotCount > 1 ? 's' : ''}: ${instrumentName}`;
+            }
+        } else {
+            status.textContent = `${slotCount} Layer${slotCount > 1 ? 's' : ''}: Piano`;
+        }
     }
 
     function updateWavesStatus() {
@@ -652,13 +694,42 @@
         const diceButton = document.getElementById('dice-button');
         if (!diceButton) return;
 
-        console.log('🎲 Starting complete randomization...');
+        console.log('🎲 Starting complete randomization with multi-melody...');
 
         diceButton.style.transform = 'scale(0.95)';
         diceButton.innerHTML = '<span class="dice-icon">🎲</span> Rolling...';
 
         setTimeout(() => {
-            // Randomize mood (exclude random option)
+            // Randomize slot count (1-4 layers)
+            const slotCountSlider = document.getElementById('melody-slot-count');
+            if (slotCountSlider) {
+                const newSlotCount = Math.floor(Math.random() * 4) + 1;
+                slotCountSlider.value = newSlotCount;
+                handleSlotCountChange();
+                console.log('🎹 Randomized melody layers to:', newSlotCount);
+            }
+
+            // Randomize layer randomness
+            const layerRandomnessSlider = document.getElementById('layer-randomness');
+            if (layerRandomnessSlider) {
+                const newRandomness = (Math.random() * 0.8 + 0.2).toFixed(1);
+                layerRandomnessSlider.value = newRandomness;
+                handleLayerRandomnessChange();
+                console.log('🔀 Randomized layer randomness to:', newRandomness);
+            }
+
+            // Randomize melody instrument assignment
+            const melodicInstrumentSelect = document.getElementById('melodic-instrument');
+            if (melodicInstrumentSelect) {
+                const melodyOptions = ['piano', 'marimba', 'harp', 'music-box', 'mixed'];
+                const randomMelody = melodyOptions[Math.floor(Math.random() * melodyOptions.length)];
+                melodicInstrumentSelect.value = randomMelody;
+                handleMultiInstrumentChange();
+                console.log('🎼 Randomized melody to:', randomMelody);
+            }
+
+            // Rest of existing randomization...
+            const moodSelect = document.getElementById('mood');
             if (moodSelect) {
                 const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
                 const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
@@ -666,7 +737,7 @@
                 console.log('🎭 Randomized mood to:', randomMood.value);
             }
 
-            // Randomize sound engine (exclude random option)
+            const soundEngineSelect = document.getElementById('sound-engine');
             if (soundEngineSelect) {
                 const engineOptions = Array.from(soundEngineSelect.options).filter(option => option.value !== 'random');
                 const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
@@ -674,24 +745,22 @@
                 console.log('🔧 Randomized engine to:', randomEngine.value);
             }
 
-            // Randomize melody instrument
-            if (melodicInstrumentSelect) {
-                const melodyOptions = Array.from(melodicInstrumentSelect.options);
-                const randomMelody = melodyOptions[Math.floor(Math.random() * melodyOptions.length)];
-                melodicInstrumentSelect.value = randomMelody.value;
-                console.log('🎹 Randomized instrument to:', randomMelody.value);
-            }
-
             // Randomize waves
+            const noiseToggle = document.getElementById('noise-toggle');
             if (noiseToggle) {
                 noiseToggle.checked = Math.random() > 0.5;
-                if (waveManager) {
+                if (typeof waveManager !== 'undefined' && waveManager) {
                     waveManager.updateStatus();
                 }
                 console.log('🌊 Randomized waves to:', noiseToggle.checked ? 'On' : 'Off');
             }
 
             // Randomize sliders
+            const densitySlider = document.getElementById('density');
+            const reverbSlider = document.getElementById('reverb');
+            const melodicFrequencySlider = document.getElementById('melodic-frequency');
+            const melodicReverbSlider = document.getElementById('melodic-reverb');
+
             if (densitySlider) {
                 densitySlider.value = Math.floor(Math.random() * 8) + 2;
                 console.log('🎵 Randomized density to:', densitySlider.value);
@@ -704,25 +773,38 @@
                 melodicFrequencySlider.value = Math.floor(Math.random() * 8) + 2;
                 console.log('🎼 Randomized melody frequency to:', melodicFrequencySlider.value);
             }
+            if (melodicReverbSlider) {
+                const newMelodicReverb = (Math.random() * 0.6 + 0.4).toFixed(2);
+                melodicReverbSlider.value = newMelodicReverb;
+                handleMelodicReverbChange();
+                console.log('🎭 Randomized melodic reverb to:', newMelodicReverb);
+            }
 
-            // Apply changes gradually if music is playing
-            if (isPlaying) {
+            // Apply changes if music is playing
+            if (typeof isPlaying !== 'undefined' && isPlaying && typeof applySettingsGradually === 'function') {
                 applySettingsGradually();
             }
 
-            // Update status displays
-            updateMoodStatus();
+            // Update all status displays
+            if (typeof updateMoodStatus === 'function') updateMoodStatus();
             updateMelodyStatus();
-            updateWavesStatus();
-            updateSoundEngineStatus();
-            updateRandomizationStatus();
+            if (typeof updateWavesStatus === 'function') updateWavesStatus();
+            if (typeof updateSoundEngineStatus === 'function') updateSoundEngineStatus();
+            if (typeof updateRandomizationStatus === 'function') updateRandomizationStatus();
+            updateSlotsInfoDisplay();
 
-            // Reset button
+            // Reset button with success animation
             diceButton.style.transform = 'scale(1)';
             diceButton.innerHTML = '<span class="dice-icon">🎲</span> Randomize Everything';
 
-            console.log('✅ Complete randomization finished!');
-        }, 500);
+            // Brief success feedback
+            diceButton.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
+            setTimeout(() => {
+                diceButton.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }, 1000);
+
+            console.log('✅ Complete multi-melody randomization finished!');
+        }, 800);
     }
 
     // ===============================================
@@ -824,16 +906,19 @@
             event.preventDefault();
         }
 
-        console.debug("🎹 toggleMelody() called");
-        updateMelodyStatus();
+        const melodyToggle = document.getElementById('melody-toggle');
+        console.debug("Multi-melody toggle called, enabled:", melodyToggle?.checked);
 
         if (melodyManager) {
             melodyManager.setEnabled(melodyToggle?.checked || false);
         }
 
-        if (isPlaying) {
-            handleInstrumentChange();
+        if (typeof isPlaying !== 'undefined' && isPlaying) {
+            handleMultiInstrumentChange();
         }
+
+        updateMelodyStatus();
+        updateSlotsInfoDisplay();
     }
 
     async function toggleWaves() {
@@ -857,27 +942,34 @@
     // ===============================================
 
     async function startMusic() {
-        if (isPlaying) return;
+        if (typeof isPlaying !== 'undefined' && isPlaying) return;
 
-        console.log('🎵 Starting ambient music system...');
+        console.log('🎵 Starting ambient music system with multi-melody...');
 
         try {
             await Tone.start();
 
-            isPlaying = true;
-            activeNotes = {};
+            if (typeof isPlaying !== 'undefined') {
+                isPlaying = true;
+            }
+            if (typeof activeNotes !== 'undefined') {
+                activeNotes = {};
+            }
 
+            const startButton = document.getElementById('start');
+            const stopButton = document.getElementById('stop');
             if (startButton) startButton.disabled = true;
             if (stopButton) stopButton.disabled = false;
-
-            // Set initial sound engine if none selected
-            const selectedEngine = soundEngineSelect?.value || 'standard';
-            console.debug("Starting with engine:", selectedEngine);
 
             // Initialize music manager if not already done
             if (!musicManager) {
                 musicManager = new AmbientMusicManager();
             }
+
+            // Set up sound engine (existing logic)
+            const soundEngineSelect = document.getElementById('sound-engine');
+            const selectedEngine = soundEngineSelect?.value || 'standard';
+            console.debug("Starting with engine:", selectedEngine);
 
             if (selectedEngine !== "random") {
                 await musicManager.setSoundEngine(selectedEngine, {
@@ -885,7 +977,6 @@
                     reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
                 });
             } else {
-                // Start with a random engine, then begin random cycle
                 const availableEngines = musicManager.getAvailableSoundEngines();
                 const randomEngine = availableEngines[Math.floor(Math.random() * availableEngines.length)];
                 console.log('🎲 Starting with random engine:', randomEngine.key);
@@ -898,7 +989,8 @@
                 updateSoundEngineStatus(randomEngine.name);
             }
 
-            // Initialize currentActiveMood
+            // Initialize mood (existing logic)
+            const moodSelect = document.getElementById('mood');
             if (moodSelect?.value !== "random") {
                 currentActiveMood = moodSelect.value;
             } else {
@@ -906,7 +998,6 @@
                 currentActiveMood = availableMoods[Math.floor(Math.random() * availableMoods.length)];
             }
 
-            // Set mood
             musicManager.setMood(currentActiveMood);
 
             // Start random cycles if needed
@@ -917,30 +1008,65 @@
                 musicManager.startRandomEngineCycle();
             }
 
-            // Update audio settings
-            if (reverbSlider) reverb.wet.value = parseFloat(reverbSlider.value);
-            if (volumeSlider) masterVolume.volume.value = parseInt(volumeSlider.value);
+            // Update audio settings (existing logic)
+            if (reverbSlider && typeof reverb !== 'undefined') {
+                reverb.wet.value = parseFloat(reverbSlider.value);
+            }
+            if (volumeSlider && typeof masterVolume !== 'undefined') {
+                masterVolume.volume.value = parseInt(volumeSlider.value);
+            }
 
-            Tone.Transport.bpm.value = 60;
-            Tone.Transport.start();
+            if (typeof Tone !== 'undefined') {
+                Tone.Transport.bpm.value = 60;
+                Tone.Transport.start();
+            }
 
             // Start the sound engine
             await musicManager.start();
 
-            // Handle melodic instruments
-            if (melodyToggle?.checked) {
-                await handleInstrumentChange();
+            // Handle multi-melody instruments
+            const melodyToggle = document.getElementById('melody-toggle');
+            if (melodyToggle?.checked && melodyManager) {
+                console.log('🎹 Starting multi-melody system...');
+
+                // Make sure melodyManager is properly initialized
+                if (melodyManager.getCurrentSlotCount() === 0) {
+                    melodyManager.initializeSlots(1);
+                }
+
+                // Set up instruments based on current selection
+                await handleMultiInstrumentChange();
+
+                // Start playback with current scale and pattern
+                const effectiveMood = getCurrentEffectiveMood();
+                const currentScale = typeof scales !== 'undefined' ? scales[effectiveMood] : [];
+                const melodicPattern = typeof melodicPatterns !== 'undefined' ? melodicPatterns[effectiveMood] : [];
+
+                if (currentScale.length > 0 && melodicPattern.length > 0) {
+                    await melodyManager.start(currentScale, melodicPattern);
+                    console.log('✅ Multi-melody started successfully');
+                }
             }
 
-            startVisualizer();
+            // Start visualizer (existing logic)
+            if (typeof startVisualizer === 'function') {
+                startVisualizer();
+            }
 
-            console.log('✅ Music started successfully!');
+            // Update status displays
+            updateSlotsInfoDisplay();
+
+            console.log('✅ Music started successfully with multi-melody support!');
 
         } catch (error) {
             console.error('❌ Error starting music:', error);
 
             // Reset UI on error
-            isPlaying = false;
+            if (typeof isPlaying !== 'undefined') {
+                isPlaying = false;
+            }
+            const startButton = document.getElementById('start');
+            const stopButton = document.getElementById('stop');
             if (startButton) startButton.disabled = false;
             if (stopButton) stopButton.disabled = true;
         }
@@ -949,28 +1075,44 @@
     function stopMusic() {
         console.log('🛑 Stopping ambient music system...');
 
-        isPlaying = false;
+        if (typeof isPlaying !== 'undefined') {
+            isPlaying = false;
+        }
 
-        // Stop the sound engine
+        // Stop all managers
         if (musicManager) {
             musicManager.stop();
         }
 
         if (melodyManager) {
             melodyManager.stop();
+            console.log('🎹 Multi-melody stopped');
         }
 
-        Tone.Transport.stop();
+        // Stop transport (existing logic)
+        if (typeof Tone !== 'undefined') {
+            Tone.Transport.stop();
+        }
 
+        // Update UI (existing logic)
+        const startButton = document.getElementById('start');
+        const stopButton = document.getElementById('stop');
         if (startButton) startButton.disabled = false;
         if (stopButton) stopButton.disabled = true;
 
-        if (visualizerInterval) {
+        // Stop visualizer (existing logic)
+        if (typeof visualizerInterval !== 'undefined' && visualizerInterval) {
             clearInterval(visualizerInterval);
             visualizerInterval = null;
         }
 
-        activeNotes = {};
+        // Clear active notes (existing logic)
+        if (typeof activeNotes !== 'undefined') {
+            activeNotes = {};
+        }
+
+        // Update displays
+        updateSlotsInfoDisplay();
 
         console.log("✅ Music stopped successfully");
     }
@@ -1066,6 +1208,151 @@
         }
     }
 
+    function setupMultiMelodyEventListeners() {
+        // Slot count slider
+        const slotCountSlider = document.getElementById('melody-slot-count');
+        if (slotCountSlider) {
+            slotCountSlider.addEventListener('input', handleSlotCountChange);
+        }
+
+        // Layer randomness slider
+        const layerRandomnessSlider = document.getElementById('layer-randomness');
+        if (layerRandomnessSlider) {
+            layerRandomnessSlider.addEventListener('input', handleLayerRandomnessChange);
+        }
+
+        // Enhanced instrument selection
+        const melodicInstrumentSelect = document.getElementById('melodic-instrument');
+        if (melodicInstrumentSelect) {
+            melodicInstrumentSelect.addEventListener('change', handleMultiInstrumentChange);
+        }
+
+        // Enhanced melodic reverb slider
+        const melodicReverbSlider = document.getElementById('melodic-reverb');
+        if (melodicReverbSlider) {
+            melodicReverbSlider.addEventListener('input', handleMelodicReverbChange);
+        }
+
+        console.log('✅ Multi-melody event listeners set up');
+    }
+
+    function getInstrumentDisplayName(instrumentKey) {
+        const displayNames = {
+            'piano': 'Piano',
+            'marimba': 'Marimba',
+            'harp': 'Harp',
+            'music-box': 'Music Box',
+            'glitch-electronic': 'Glitch Electronic',
+            'sampled-piano': 'Sampled Piano'
+        };
+        return displayNames[instrumentKey] || instrumentKey;
+    }
+
+    function handleSlotCountChange() {
+        const slotCountSlider = document.getElementById('melody-slot-count');
+        if (!slotCountSlider || !melodyManager) return;
+
+        const newCount = parseInt(slotCountSlider.value);
+        console.debug(`Changing melody layers to: ${newCount}`);
+
+        melodyManager.setSlotCount(newCount);
+
+        // If we're in mixed mode, randomize instruments for new slots
+        const instrumentSelect = document.getElementById('melodic-instrument');
+        if (instrumentSelect && instrumentSelect.value === 'mixed') {
+            setTimeout(async () => {
+                await melodyManager.randomizeSlotInstruments();
+                updateSlotsInfoDisplay();
+            }, 100);
+        }
+
+        updateSlotsInfoDisplay();
+        updateMelodyStatus();
+
+        console.log(`✅ Melody layers changed to: ${newCount}`);
+    }
+
+    function getCurrentEffectiveMood() {
+        const moodSelect = document.getElementById('mood');
+        if (moodSelect?.value === "random") {
+            return typeof currentActiveMood !== 'undefined' ? currentActiveMood : 'calm';
+        }
+        return moodSelect?.value || 'calm';
+    }
+
+    function getReverbAmount() {
+        const melodicReverbSlider = document.getElementById('melodic-reverb');
+        return melodicReverbSlider ? parseFloat(melodicReverbSlider.value) : 0.8;
+    }
+
+    function handleLayerRandomnessChange() {
+        const layerRandomnessSlider = document.getElementById('layer-randomness');
+        if (!layerRandomnessSlider || !melodyManager) return;
+
+        const randomnessLevel = parseFloat(layerRandomnessSlider.value);
+        console.debug(`Setting layer randomness to: ${randomnessLevel}`);
+
+        // Update randomness for all slots with different patterns per slot
+        for (let i = 0; i < melodyManager.getCurrentSlotCount(); i++) {
+            melodyManager.updateSlotConfig(i, {
+                randomness: {
+                    timing: 0.2 + (randomnessLevel * 0.6) + (i * 0.1), // Each layer more random
+                    noteChoice: 0.1 + (randomnessLevel * 0.4) + (i * 0.05),
+                    octaveShift: i > 0 ? randomnessLevel * 0.3 : 0 // Only higher layers shift octaves
+                }
+            });
+        }
+
+        console.log(`✅ Layer randomness updated to: ${randomnessLevel}`);
+    }
+
+    async function handleMultiInstrumentChange() {
+        const instrumentSelect = document.getElementById('melodic-instrument');
+        const melodyToggle = document.getElementById('melody-toggle');
+        if (!instrumentSelect || !melodyManager) return;
+
+        const selectedInstrument = instrumentSelect.value;
+        console.debug(`Multi-instrument changed to: ${selectedInstrument}`);
+
+        try {
+            if (selectedInstrument === 'mixed') {
+                // Assign different instruments to each slot
+                console.log('🎼 Setting mixed instruments...');
+                await melodyManager.randomizeSlotInstruments();
+
+            } else if (selectedInstrument === 'random') {
+                // Start random cycling for all slots
+                console.log('🎲 Starting random instrument cycling...');
+                melodyManager.startRandomCycle();
+
+            } else if (selectedInstrument !== 'random') {
+                // Set all slots to the same instrument
+                console.log(`🎹 Setting all layers to: ${selectedInstrument}`);
+                await melodyManager.setAllSlotsToInstrument(selectedInstrument, {
+                    reverbAmount: getReverbAmount()
+                });
+            }
+
+            // Start playback if enabled and playing
+            if (melodyToggle?.checked && typeof isPlaying !== 'undefined' && isPlaying) {
+                const effectiveMood = getCurrentEffectiveMood();
+                const currentScale = typeof scales !== 'undefined' ? scales[effectiveMood] : [];
+                const melodicPattern = typeof melodicPatterns !== 'undefined' ? melodicPatterns[effectiveMood] : [];
+
+                console.log('🎵 Starting multi-melody playback...');
+                await melodyManager.start(currentScale, melodicPattern);
+            }
+
+            updateSlotsInfoDisplay();
+            updateMelodyStatus();
+
+            console.log('✅ Multi-instrument change completed');
+
+        } catch (error) {
+            console.error("❌ Error in multi-instrument change:", error);
+        }
+    }
+
     // ===============================================
     // INITIALIZATION
     // ===============================================
@@ -1076,8 +1363,8 @@
 
         // Initialize managers
         musicManager = new AmbientMusicManager();
-        melodyManager = new MelodyManager();
         waveManager = new OceanWaveManager();
+        melodyManager = new MultiMelodyManager();
 
         // Set initial sound engine
         if (musicManager) {
@@ -1086,6 +1373,15 @@
                 reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
             });
         }
+
+        melodyManager.initializeSlots(1); // Start with 1 slot
+
+        // Update the UI to show multi-melody controls
+        updateMelodyStatus();
+        updateSlotsInfoDisplay();
+
+        // Set up additional event listeners
+        setupMultiMelodyEventListeners();
 
         // Create wave elements for visualizer
         if (wavesContainer) {
@@ -1164,6 +1460,13 @@
             musicManager.stop();
         }
     });
+
+    // Auto-update slots display every few seconds
+    setInterval(() => {
+        if (typeof isPlaying !== 'undefined' && isPlaying && melodyManager) {
+            updateSlotsInfoDisplay();
+        }
+    }, 3000);
 
 </script>
 </body>

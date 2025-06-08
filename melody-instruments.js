@@ -213,12 +213,12 @@ class PianoInstrument extends BaseMelodyInstrument {
 }
 
 // ===============================================
-// IDM ELECTRONIC INSTRUMENT
+// Glitch ELECTRONIC INSTRUMENT
 // ===============================================
 
-class IDMElectronicInstrument extends BaseMelodyInstrument {
+class GlitchElectronicInstrument extends BaseMelodyInstrument {
     constructor() {
-        super('IDM Electronic');
+        super('Glitch Electronic');
     }
 
     async initialize(masterVolume, globalReverb) {
@@ -234,17 +234,17 @@ class IDMElectronicInstrument extends BaseMelodyInstrument {
             volume: 5
         });
 
-        // Complex IDM effect chain
-        const idmBitCrusher = new Tone.BitCrusher({ bits: 6, wet: 0.3 });
-        const idmRingMod = new Tone.FrequencyShifter({ frequency: 47, wet: 0.25 });
-        const idmPhaser = new Tone.Phaser({ frequency: 0.7, depth: 0.8, baseFrequency: 400, wet: 0.6 });
-        const idmChopDelay = new Tone.PingPongDelay({ delayTime: "16n", feedback: 0.6, wet: 0.4 });
-        const idmFilteredDelay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.5, wet: 0.3 });
-        const idmFilter = new Tone.Filter({ frequency: 1200, type: "bandpass", Q: 8, rolloff: -24 });
-        const idmFilterLFO = new Tone.LFO({ frequency: 0.13, min: 400, max: 2400, type: "triangle" });
-        const idmDistortion = new Tone.Distortion({ distortion: 0.4, wet: 0.3 });
-        const idmChorus = new Tone.Chorus({ frequency: 1.2, delayTime: 2, depth: 0.4, wet: 0.35 }).start();
-        const idmCompressor = new Tone.Compressor({ threshold: -18, ratio: 4, attack: 0.001, release: 0.2 });
+        // Complex Glitch effect chain
+        const glitchBitCrusher = new Tone.BitCrusher({ bits: 6, wet: 0.3 });
+        const glitchRingMod = new Tone.FrequencyShifter({ frequency: 47, wet: 0.25 });
+        const glitchPhaser = new Tone.Phaser({ frequency: 0.7, depth: 0.8, baseFrequency: 400, wet: 0.6 });
+        const glitchChopDelay = new Tone.PingPongDelay({ delayTime: "16n", feedback: 0.6, wet: 0.4 });
+        const glitchFilteredDelay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.5, wet: 0.3 });
+        const glitchFilter = new Tone.Filter({ frequency: 1200, type: "bandpass", Q: 8, rolloff: -24 });
+        const glitchFilterLFO = new Tone.LFO({ frequency: 0.13, min: 400, max: 2400, type: "triangle" });
+        const glitchDistortion = new Tone.Distortion({ distortion: 0.4, wet: 0.3 });
+        const glitchChorus = new Tone.Chorus({ frequency: 1.2, delayTime: 2, depth: 0.4, wet: 0.35 }).start();
+        const glitchCompressor = new Tone.Compressor({ threshold: -18, ratio: 4, attack: 0.001, release: 0.2 });
 
         this.reverbNode = new Tone.Reverb({
             decay: 8,
@@ -254,24 +254,24 @@ class IDMElectronicInstrument extends BaseMelodyInstrument {
         });
 
         // Connect complex chain
-        this.synth.connect(idmBitCrusher);
-        idmBitCrusher.connect(idmRingMod);
-        idmRingMod.connect(idmDistortion);
-        idmDistortion.connect(idmPhaser);
-        idmPhaser.connect(idmChopDelay);
-        idmChopDelay.connect(idmFilteredDelay);
-        idmFilteredDelay.connect(idmFilter);
-        idmFilter.connect(idmChorus);
-        idmChorus.connect(idmCompressor);
-        idmCompressor.connect(this.reverbNode);
+        this.synth.connect(glitchBitCrusher);
+        glitchBitCrusher.connect(glitchRingMod);
+        glitchRingMod.connect(glitchDistortion);
+        glitchDistortion.connect(glitchPhaser);
+        glitchPhaser.connect(glitchChopDelay);
+        glitchChopDelay.connect(glitchFilteredDelay);
+        glitchFilteredDelay.connect(glitchFilter);
+        glitchFilter.connect(glitchChorus);
+        glitchChorus.connect(glitchCompressor);
+        glitchCompressor.connect(this.reverbNode);
         this.reverbNode.connect(masterVolume);
 
-        idmFilterLFO.connect(idmFilter.frequency);
-        idmFilterLFO.start();
+        glitchFilterLFO.connect(glitchFilter.frequency);
+        glitchFilterLFO.start();
 
-        this.effects.push(idmBitCrusher, idmRingMod, idmPhaser, idmChopDelay,
-            idmFilteredDelay, idmFilter, idmFilterLFO, idmDistortion,
-            idmChorus, idmCompressor, this.reverbNode);
+        this.effects.push(glitchBitCrusher, glitchRingMod, glitchPhaser, glitchChopDelay,
+            glitchFilteredDelay, glitchFilter, glitchFilterLFO, glitchDistortion,
+            glitchChorus, glitchCompressor, this.reverbNode);
 
         this.synth.volume.value = this.config.volume;
     }
@@ -280,7 +280,7 @@ class IDMElectronicInstrument extends BaseMelodyInstrument {
         const noteDuration = 0.8;
         const noteSpacing = 0.9;
 
-        // Modify melody for IDM character
+        // Modify melody for Glitch character
         const modifiedMelody = melody.map(note => {
             if (Math.random() < 0.3) {
                 const noteBase = note.slice(0, -1);
@@ -677,7 +677,7 @@ class MelodyInstrumentRegistry {
 
     registerDefaultInstruments() {
         this.register('piano', PianoInstrument);
-        this.register('idm-electronic', IDMElectronicInstrument);
+        this.register('glitch-electronic', GlitchElectronicInstrument);
         this.register('sampled-piano', SampledPianoInstrument);
         this.register('marimba', MarimbaInstrument);
         this.register('harp', HarpInstrument);

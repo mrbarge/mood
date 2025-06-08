@@ -552,12 +552,15 @@ input:checked + .toggle-label:before {
 }
 
 @keyframes header-expand {
-    0%, 100% { width: 60px; opacity: 0.5; }
-    50% { width: 120px; opacity: 1; }
+    0%, 100% {
+        width: 60px;
+        opacity: 0.5;
+    }
+    50% {
+        width: 120px;
+        opacity: 1;
+    }
 }
-
-
-
 
 
 .waves-grid {
@@ -596,4 +599,169 @@ input:checked + .toggle-label:before {
 .waves-column select {
     max-width: 100%;
     font-size: 0.85em;
+}
+
+
+.slots-info {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.slot-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.slot-info:last-child {
+    margin-bottom: 0;
+}
+
+.slot-info.active {
+    border-left-color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+}
+
+.slot-info.inactive {
+    opacity: 0.6;
+    border-left-color: #6b7280;
+}
+
+.slot-label {
+    font-weight: 600;
+    color: #e5e7eb;
+    min-width: 60px;
+}
+
+.slot-instrument {
+    flex: 1;
+    text-align: center;
+    color: #d1d5db;
+    font-size: 0.9em;
+}
+
+.slot-status {
+    font-size: 1.2em;
+    min-width: 24px;
+    text-align: center;
+}
+
+.slot-status.playing {
+    color: #4ade80;
+    animation: pulse-note 2s infinite;
+}
+
+.slot-status.stopped {
+    color: #6b7280;
+}
+
+@keyframes pulse-note {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+/* Enhanced layer controls */
+.layer-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.layer-control-group {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.layer-control-label {
+    font-size: 0.85em;
+    color: #9ca3af;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Instrument assignment badges */
+.instrument-badge {
+    display: inline-block;
+    background: rgba(102, 126, 234, 0.2);
+    color: #a5b4fc;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    margin-left: 4px;
+}
+
+.instrument-badge.mixed {
+    background: rgba(168, 85, 247, 0.2);
+    color: #c4b5fd;
+}
+
+.instrument-badge.random {
+    background: rgba(236, 72, 153, 0.2);
+    color: #f9a8d4;
+}
+
+/* Layer visualization */
+.layer-visualization {
+    display: flex;
+    gap: 4px;
+    margin: 8px 0;
+    height: 24px;
+    align-items: end;
+}
+
+.layer-bar {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    min-height: 4px;
+}
+
+.layer-bar.active {
+    background: linear-gradient(0deg, #4ade80, #22c55e);
+    animation: layer-activity 3s ease-in-out infinite;
+}
+
+@keyframes layer-activity {
+    0%, 100% {
+        height: 8px;
+        opacity: 0.7;
+    }
+    50% {
+        height: 16px;
+        opacity: 1;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .layer-controls {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .slot-info {
+        padding: 6px 10px;
+    }
+
+    .slot-label {
+        min-width: 50px;
+        font-size: 0.9em;
+    }
 }
