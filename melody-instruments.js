@@ -216,103 +216,327 @@ class PianoInstrument extends BaseMelodyInstrument {
 // Glitch ELECTRONIC INSTRUMENT
 // ===============================================
 
+// ===============================================
+// GLITCH ELECTRONIC INSTRUMENT
+// ===============================================
+
 class GlitchElectronicInstrument extends BaseMelodyInstrument {
     constructor() {
         super('Glitch Electronic');
+        this.glitchVariants = [
+            'stutterChop', 'granularCrush', 'ringModChaos', 'filterGlitch',
+            'timeStretch', 'pitchShift', 'spectralFold', 'digitalArtifact'
+        ];
+        this.currentVariant = null;
+        this.variantTimeout = null;
     }
 
     async initialize(masterVolume, globalReverb) {
         super.initialize(masterVolume, globalReverb);
 
-        this.synth = new Tone.PolySynth(Tone.FMSynth, {
-            harmonicity: 2.1,
-            modulationIndex: 8,
-            oscillator: { type: "sawtooth" },
-            envelope: { attack: 0.001, decay: 0.3, sustain: 0.4, release: 2 },
-            modulation: { type: "square" },
-            modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 1.5 },
-            volume: 5
-        });
+        // Create multiple synths for different glitch textures
+        this.synths = {
+            fm: new Tone.PolySynth(Tone.FMSynth, {
+                harmonicity: 2.1,
+                modulationIndex: 8,
+                oscillator: { type: "sawtooth" },
+                envelope: { attack: 0.001, decay: 0.3, sustain: 0.4, release: 2 },
+                modulation: { type: "square" },
+                modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 1.5 },
+                volume: -5
+            }),
+            metal: new Tone.PolySynth(Tone.MetalSynth, {
+                harmonicity: 12,
+                resonance: 800,
+                modulationIndex: 25,
+                envelope: { attack: 0.001, decay: 0.4, sustain: 0.1, release: 1.2 },
+                volume: -15
+            }),
+            am: new Tone.PolySynth(Tone.AMSynth, {
+                harmonicity: 3.5,
+                oscillator: { type: "square" },
+                envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 1 },
+                modulation: { type: "sawtooth" },
+                modulationEnvelope: { attack: 0.02, decay: 0.2, sustain: 0.3, release: 0.8 },
+                volume: -8
+            })
+        };
 
-        // Complex Glitch effect chain
-        const glitchBitCrusher = new Tone.BitCrusher({ bits: 6, wet: 0.3 });
-        const glitchRingMod = new Tone.FrequencyShifter({ frequency: 47, wet: 0.25 });
-        const glitchPhaser = new Tone.Phaser({ frequency: 0.7, depth: 0.8, baseFrequency: 400, wet: 0.6 });
-        const glitchChopDelay = new Tone.PingPongDelay({ delayTime: "16n", feedback: 0.6, wet: 0.4 });
-        const glitchFilteredDelay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.5, wet: 0.3 });
-        const glitchFilter = new Tone.Filter({ frequency: 1200, type: "bandpass", Q: 8, rolloff: -24 });
-        const glitchFilterLFO = new Tone.LFO({ frequency: 0.13, min: 400, max: 2400, type: "triangle" });
-        const glitchDistortion = new Tone.Distortion({ distortion: 0.4, wet: 0.3 });
-        const glitchChorus = new Tone.Chorus({ frequency: 1.2, delayTime: 2, depth: 0.4, wet: 0.35 }).start();
-        const glitchCompressor = new Tone.Compressor({ threshold: -18, ratio: 4, attack: 0.001, release: 0.2 });
+        // Create multiple effect chains for variety
+        this.effectChains = this.createGlitchEffectChains(masterVolume);
 
+        // Start with a random variant
+        this.selectRandomVariant();
+
+        // Schedule periodic variant changes
+        this.scheduleVariantChanges();
+    }
+
+    createGlitchEffectChains(masterVolume) {
+        const chains = {};
+
+        // Stutter Chop Chain - Rhythmic chopping
+        chains.stutterChop = {
+            bitCrusher: new Tone.BitCrusher({ bits: 4, wet: 0.6 }),
+            chopDelay: new Tone.PingPongDelay({ delayTime: "32n", feedback: 0.8, wet: 0.7 }),
+            gate: new Tone.Gate({ threshold: -20, attack: 0.001, release: 0.01 }),
+            tremolo: new Tone.Tremolo({ frequency: 16, depth: 0.8, wet: 0.5 }).start(),
+            compressor: new Tone.Compressor({ threshold: -12, ratio: 8 })
+        };
+
+        // Granular Crush Chain - Texture destruction
+        chains.granularCrush = {
+            bitCrusher: new Tone.BitCrusher({ bits: 3, wet: 0.8 }),
+            distortion: new Tone.Distortion({ distortion: 0.8, wet: 0.6 }),
+            autoFilter: new Tone.AutoFilter({ frequency: 8, baseFrequency: 200, octaves: 4, wet: 0.7 }).start(),
+            freqShift: new Tone.FrequencyShifter({ frequency: 120, wet: 0.4 }),
+            limiter: new Tone.Limiter(-3)
+        };
+
+        // Ring Mod Chaos Chain - Metallic harmonics
+        chains.ringModChaos = {
+            ringMod1: new Tone.FrequencyShifter({ frequency: 89, wet: 0.6 }),
+            ringMod2: new Tone.FrequencyShifter({ frequency: 157, wet: 0.4 }),
+            phaser: new Tone.Phaser({ frequency: 2.3, depth: 0.9, baseFrequency: 350, wet: 0.8 }),
+            delay: new Tone.FeedbackDelay({ delayTime: "16n.", feedback: 0.7, wet: 0.5 }),
+            filter: new Tone.Filter({ frequency: 1500, type: "bandpass", Q: 12 })
+        };
+
+        // Filter Glitch Chain - Sweeping artifacts
+        chains.filterGlitch = {
+            filter1: new Tone.Filter({ frequency: 800, type: "lowpass", Q: 15 }),
+            filter2: new Tone.Filter({ frequency: 2000, type: "highpass", Q: 8 }),
+            lfo1: new Tone.LFO({ frequency: 7.3, min: 300, max: 3000, type: "square" }),
+            lfo2: new Tone.LFO({ frequency: 0.37, min: 500, max: 5000, type: "sawtooth" }),
+            chorus: new Tone.Chorus({ frequency: 3.2, delayTime: 1.5, depth: 0.7, wet: 0.6 }).start(),
+            gain: new Tone.Gain(0.8)
+        };
+
+        // Time Stretch Chain - Pitch/time manipulation
+        chains.timeStretch = {
+            pitchShift1: new Tone.PitchShift({ pitch: 7, wet: 0.3 }),
+            pitchShift2: new Tone.PitchShift({ pitch: -12, wet: 0.2 }),
+            delay: new Tone.PingPongDelay({ delayTime: "8n.", feedback: 0.6, wet: 0.4 }),
+            vibrato: new Tone.Vibrato({ frequency: 6.4, depth: 0.4, wet: 0.5 }),
+            reverb: new Tone.Reverb({ decay: 4, wet: 0.3 })
+        };
+
+        // Pitch Shift Chain - Harmonic chaos
+        chains.pitchShift = {
+            shift1: new Tone.PitchShift({ pitch: 19, wet: 0.4 }),
+            shift2: new Tone.PitchShift({ pitch: -7, wet: 0.3 }),
+            shift3: new Tone.PitchShift({ pitch: 24, wet: 0.2 }),
+            chebyshev: new Tone.Chebyshev({ order: 50, wet: 0.3 }),
+            autoWah: new Tone.AutoWah({ baseFrequency: 100, octaves: 6, sensitivity: -10, wet: 0.6 })
+        };
+
+        // Spectral Fold Chain - Frequency folding
+        chains.spectralFold = {
+            chebyshev1: new Tone.Chebyshev({ order: 30, wet: 0.5 }),
+            chebyshev2: new Tone.Chebyshev({ order: 80, wet: 0.3 }),
+            filter: new Tone.Filter({ frequency: 1200, type: "bandpass", Q: 20 }),
+            lfo: new Tone.LFO({ frequency: 0.23, min: 400, max: 4000, type: "triangle" }),
+            feedback: new Tone.FeedbackDelay({ delayTime: "32n", feedback: 0.9, wet: 0.3 })
+        };
+
+        // Digital Artifact Chain - Lo-fi digital errors
+        chains.digitalArtifact = {
+            bitCrusher: new Tone.BitCrusher({ bits: 6, wet: 0.5 }),
+            jcreverb: new Tone.JCReverb({ roomSize: 0.2, wet: 0.4 }),
+            autoFilter: new Tone.AutoFilter({ frequency: 12, baseFrequency: 800, octaves: 3, wet: 0.6 }).start(),
+            tremolo: new Tone.Tremolo({ frequency: 23, depth: 0.6, wet: 0.4 }).start(),
+            compressor: new Tone.Compressor({ threshold: -18, ratio: 6 })
+        };
+
+        // Connect LFOs and start them
+        if (chains.filterGlitch.lfo1) {
+            chains.filterGlitch.lfo1.connect(chains.filterGlitch.filter1.frequency);
+            chains.filterGlitch.lfo1.start();
+        }
+        if (chains.filterGlitch.lfo2) {
+            chains.filterGlitch.lfo2.connect(chains.filterGlitch.filter2.frequency);
+            chains.filterGlitch.lfo2.start();
+        }
+        if (chains.spectralFold.lfo) {
+            chains.spectralFold.lfo.connect(chains.spectralFold.filter.frequency);
+            chains.spectralFold.lfo.start();
+        }
+
+        // Add reverb node
         this.reverbNode = new Tone.Reverb({
-            decay: 8,
-            wet: this.config.reverbAmount * 0.8,
+            decay: 6,
+            wet: this.config.reverbAmount * 0.7,
             preDelay: 0.02,
-            roomSize: 0.7
+            roomSize: 0.6
         });
 
-        // Connect complex chain
-        this.synth.connect(glitchBitCrusher);
-        glitchBitCrusher.connect(glitchRingMod);
-        glitchRingMod.connect(glitchDistortion);
-        glitchDistortion.connect(glitchPhaser);
-        glitchPhaser.connect(glitchChopDelay);
-        glitchChopDelay.connect(glitchFilteredDelay);
-        glitchFilteredDelay.connect(glitchFilter);
-        glitchFilter.connect(glitchChorus);
-        glitchChorus.connect(glitchCompressor);
-        glitchCompressor.connect(this.reverbNode);
+        // Connect chains to reverb and master volume
+        Object.values(chains).forEach(chain => {
+            const effects = Object.values(chain);
+            const lastEffect = effects[effects.length - 1];
+            lastEffect.connect(this.reverbNode);
+        });
         this.reverbNode.connect(masterVolume);
 
-        glitchFilterLFO.connect(glitchFilter.frequency);
-        glitchFilterLFO.start();
+        // Store all effects for cleanup
+        Object.values(chains).forEach(chain => {
+            this.effects.push(...Object.values(chain));
+        });
+        this.effects.push(this.reverbNode);
 
-        this.effects.push(glitchBitCrusher, glitchRingMod, glitchPhaser, glitchChopDelay,
-            glitchFilteredDelay, glitchFilter, glitchFilterLFO, glitchDistortion,
-            glitchChorus, glitchCompressor, this.reverbNode);
+        return chains;
+    }
 
-        this.synth.volume.value = this.config.volume;
+    selectRandomVariant() {
+        const oldVariant = this.currentVariant;
+        do {
+            this.currentVariant = this.glitchVariants[Math.floor(Math.random() * this.glitchVariants.length)];
+        } while (this.currentVariant === oldVariant && this.glitchVariants.length > 1);
+
+        console.debug(`Glitch variant changed to: ${this.currentVariant}`);
+        this.connectCurrentVariant();
+    }
+
+    connectCurrentVariant() {
+        // Disconnect all synths first
+        Object.values(this.synths).forEach(synth => {
+            try { synth.disconnect(); } catch (e) {}
+        });
+
+        // Select synth based on variant
+        let selectedSynth;
+        switch (this.currentVariant) {
+            case 'stutterChop':
+            case 'granularCrush':
+            case 'digitalArtifact':
+                selectedSynth = this.synths.fm;
+                break;
+            case 'ringModChaos':
+            case 'spectralFold':
+                selectedSynth = this.synths.metal;
+                break;
+            default:
+                selectedSynth = this.synths.am;
+        }
+
+        this.synth = selectedSynth; // Set current synth reference
+
+        // Connect to the appropriate effect chain
+        const chain = this.effectChains[this.currentVariant];
+        if (chain) {
+            this.connectEffectChain(selectedSynth, chain);
+        }
+    }
+
+    connectEffectChain(synth, chain) {
+        // Handle special cases for different chain types
+        switch (this.currentVariant) {
+            case 'filterGlitch':
+                this.connectFilterGlitchChain(synth, chain);
+                break;
+            case 'spectralFold':
+                this.connectSpectralFoldChain(synth, chain);
+                break;
+            default:
+                this.connectStandardChain(synth, chain);
+        }
+    }
+
+    connectStandardChain(synth, chain) {
+        const effects = Object.values(chain).filter(effect =>
+            effect && typeof effect.connect === 'function'
+        );
+
+        if (effects.length === 0) return;
+
+        // Connect synth to first effect
+        synth.connect(effects[0]);
+
+        // Chain effects together
+        for (let i = 0; i < effects.length - 1; i++) {
+            try {
+                effects[i].connect(effects[i + 1]);
+            } catch (e) {
+                console.debug("Effect connection error:", e);
+            }
+        }
+    }
+
+    connectFilterGlitchChain(synth, chain) {
+        // Special handling for filter glitch with LFOs
+        const { filter1, filter2, lfo1, lfo2, chorus, gain } = chain;
+
+        // Connect audio path: synth -> filter1 -> filter2 -> chorus -> gain
+        synth.connect(filter1);
+        filter1.connect(filter2);
+        filter2.connect(chorus);
+        chorus.connect(gain);
+
+        // LFOs are already connected in createGlitchEffectChains
+    }
+
+    connectSpectralFoldChain(synth, chain) {
+        // Special handling for spectral fold with LFO
+        const { chebyshev1, chebyshev2, filter, lfo, feedback } = chain;
+
+        // Connect audio path: synth -> chebyshev1 -> chebyshev2 -> filter -> feedback
+        synth.connect(chebyshev1);
+        chebyshev1.connect(chebyshev2);
+        chebyshev2.connect(filter);
+        filter.connect(feedback);
+
+        // LFO is already connected in createGlitchEffectChains
+    }
+
+    scheduleVariantChanges() {
+        if (this.variantTimeout) {
+            clearTimeout(this.variantTimeout);
+        }
+
+        // Change variant every 15-45 seconds
+        const changeInterval = (15 + Math.random() * 30) * 1000;
+
+        this.variantTimeout = setTimeout(() => {
+            if (this.isActive) {
+                this.selectRandomVariant();
+                this.scheduleVariantChanges();
+            }
+        }, changeInterval);
     }
 
     playMelodicSequence(melody) {
-        const noteDuration = 0.8;
-        const noteSpacing = 0.9;
+        const baseNoteDuration = 0.6;
+        const baseNoteSpacing = 0.7;
 
-        // Modify melody for Glitch character
-        const modifiedMelody = melody.map(note => {
-            if (Math.random() < 0.3) {
-                const noteBase = note.slice(0, -1);
-                const octave = parseInt(note.slice(-1));
-                const newOctave = Math.random() < 0.5 ?
-                    Math.max(2, octave - 1) :
-                    Math.min(6, octave + 1);
-                return noteBase + newOctave;
-            }
-            return note;
-        });
+        // Apply variant-specific modifications to melody
+        const modifiedMelody = this.applyVariantModifications(melody);
 
-        modifiedMelody.forEach((note, index) => {
-            let timing = index * noteSpacing * 1000;
-            timing += (Math.random() * 0.6 - 0.3) * 1000; // More timing variation
+        modifiedMelody.forEach((noteData, index) => {
+            let timing = index * baseNoteSpacing * 1000;
+
+            // Add variant-specific timing chaos
+            const timingChaos = this.getVariantTimingChaos();
+            timing += (Math.random() - 0.5) * timingChaos * 1000;
             timing = Math.max(0, timing);
 
             setTimeout(() => {
                 if (!this.isActive) return;
 
+                const { note, duration, velocity } = noteData;
+
                 if (typeof activeNotes !== 'undefined') {
                     if (!activeNotes[note]) {
-                        activeNotes[note] = { count: 1, type: 'melodic' };
+                        activeNotes[note] = { count: 1, type: 'glitch' };
                     } else {
                         activeNotes[note].count++;
                     }
                 }
 
                 try {
-                    this.synth.triggerAttackRelease(note, noteDuration);
+                    // Some variants might trigger multiple notes or effects
+                    this.triggerVariantNote(note, duration, velocity);
                 } catch (error) {
-                    console.debug("Note playback error:", error.message);
+                    console.debug("Glitch note playback error:", error.message);
                 }
 
                 setTimeout(() => {
@@ -323,9 +547,144 @@ class GlitchElectronicInstrument extends BaseMelodyInstrument {
                             delete activeNotes[note];
                         }
                     }
-                }, noteDuration * 1000 + 500);
+                }, duration * 1000 + 500);
             }, timing);
         });
+    }
+
+    applyVariantModifications(melody) {
+        return melody.map(note => {
+            let modifiedNote = note;
+            let duration = 0.6;
+            let velocity = 1;
+
+            switch (this.currentVariant) {
+                case 'stutterChop':
+                    // Randomly repeat notes
+                    duration = Math.random() < 0.4 ? 0.2 : 0.8;
+                    break;
+
+                case 'granularCrush':
+                    // Random octave jumps and micro-durations
+                    if (Math.random() < 0.3) {
+                        const noteBase = note.slice(0, -1);
+                        const octave = parseInt(note.slice(-1));
+                        const newOctave = Math.max(1, Math.min(7, octave + (Math.random() < 0.5 ? -2 : 2)));
+                        modifiedNote = noteBase + newOctave;
+                    }
+                    duration = 0.3 + Math.random() * 0.6;
+                    break;
+
+                case 'ringModChaos':
+                    // Slight detuning effect through note choice
+                    duration = 1.2 + Math.random() * 0.8;
+                    break;
+
+                case 'timeStretch':
+                    // Longer, stretched notes
+                    duration = 1.5 + Math.random() * 1.5;
+                    break;
+
+                case 'pitchShift':
+                    // Harmonically shifted notes
+                    if (Math.random() < 0.5) {
+                        const noteBase = note.slice(0, -1);
+                        const octave = parseInt(note.slice(-1));
+                        const shift = Math.random() < 0.5 ? 1 : -1;
+                        const newOctave = Math.max(1, Math.min(7, octave + shift));
+                        modifiedNote = noteBase + newOctave;
+                    }
+                    duration = 0.8 + Math.random() * 0.8;
+                    break;
+
+                case 'spectralFold':
+                    // Emphasis on harmonic content
+                    duration = 1.0 + Math.random() * 1.0;
+                    velocity = 0.7 + Math.random() * 0.6;
+                    break;
+
+                case 'digitalArtifact':
+                    // Short, clipped notes
+                    duration = 0.4 + Math.random() * 0.4;
+                    break;
+
+                default:
+                    duration = 0.6 + Math.random() * 0.6;
+            }
+
+            return { note: modifiedNote, duration, velocity };
+        });
+    }
+
+    getVariantTimingChaos() {
+        switch (this.currentVariant) {
+            case 'stutterChop': return 0.8;
+            case 'granularCrush': return 1.2;
+            case 'digitalArtifact': return 0.6;
+            default: return 0.4;
+        }
+    }
+
+    triggerVariantNote(note, duration, velocity) {
+        switch (this.currentVariant) {
+            case 'stutterChop':
+                // Sometimes trigger rapid-fire stutters
+                if (Math.random() < 0.3) {
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            if (this.isActive) {
+                                this.synth.triggerAttackRelease(note, 0.1, undefined, velocity);
+                            }
+                        }, i * 100);
+                    }
+                } else {
+                    this.synth.triggerAttackRelease(note, duration, undefined, velocity);
+                }
+                break;
+
+            case 'granularCrush':
+                // Trigger with micro-delays for granular effect
+                const grains = Math.floor(Math.random() * 3) + 1;
+                for (let i = 0; i < grains; i++) {
+                    setTimeout(() => {
+                        if (this.isActive) {
+                            this.synth.triggerAttackRelease(note, duration / grains, undefined, velocity * (0.5 + Math.random() * 0.5));
+                        }
+                    }, i * (duration * 1000 / grains / 2));
+                }
+                break;
+
+            default:
+                this.synth.triggerAttackRelease(note, duration, undefined, velocity);
+        }
+    }
+
+    stop() {
+        super.stop();
+        if (this.variantTimeout) {
+            clearTimeout(this.variantTimeout);
+            this.variantTimeout = null;
+        }
+    }
+
+    dispose() {
+        if (this.variantTimeout) {
+            clearTimeout(this.variantTimeout);
+            this.variantTimeout = null;
+        }
+
+        // Dispose all synths
+        Object.values(this.synths).forEach(synth => {
+            if (synth && synth.dispose) {
+                try {
+                    synth.dispose();
+                } catch (error) {
+                    console.debug("Error disposing glitch synth:", error);
+                }
+            }
+        });
+
+        super.dispose();
     }
 }
 

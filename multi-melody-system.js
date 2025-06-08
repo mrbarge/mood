@@ -147,6 +147,23 @@ class MultiMelodyManager {
         });
     }
 
+    updateReverbAmount(amount) {
+        console.debug(`Updating reverb amount to: ${amount} for all melody slots`);
+
+        // Update reverb for all active slots
+        for (let i = 0; i < this.melodySlots.length; i++) {
+            const slot = this.melodySlots[i];
+
+            // Update slot config
+            slot.config.reverbAmount = amount;
+
+            // Update the actual instrument reverb if it exists
+            if (slot.instrument && slot.instrument.updateReverbAmount) {
+                slot.instrument.updateReverbAmount(amount);
+            }
+        }
+    }
+
     async start(scale, pattern) {
         if (!this.isEnabled) return;
 
@@ -459,6 +476,16 @@ class MultiMelodyManager {
         for (let i = 0; i < this.melodySlots.length; i++) {
             this.updateSlotConfig(i, config);
         }
+    }
+
+    async setInstrument(instrumentKey, config = {}) {
+        console.debug(`Setting instrument (compatibility mode): ${instrumentKey}`);
+
+        // For backward compatibility, set all slots to the same instrument
+        await this.setAllSlotsToInstrument(instrumentKey, config);
+
+        // Return the first slot's instrument for compatibility
+        return this.melodySlots[0]?.instrument || null;
     }
 
     // ===============================================
