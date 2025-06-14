@@ -6,10 +6,11 @@
     <title>Mood</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <script src="audio-chain-system.js"></script>
+    <script src="melody-instruments.js"></script>
     <script src="multi-melody-system.js"></script>
     <script src="sound-engines.js"></script>
     <script src="ocean-waves.js"></script>
-    <script src="melody-instruments.js"></script>
+    <script src="grandfather-clock.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -146,6 +147,13 @@
                         <option value="harp">Harp (All Layers)</option>
                         <option value="music-box">Music Box (All Layers)</option>
                         <option value="glitch-electronic">Glitch Electronic (All Layers)</option>
+                        <option value="crystal-bells">Crystal Bells (All Layers)</option>
+                        <option value="warm-strings">Warm Strings (All Layers)</option>
+                        <option value="ethereal-choir">Ethereal Choir (All Layers)</option>
+                        <option value="wind-chimes">Wind Chimes (All Layers)</option>
+                        <option value="glass-harmonics">Glass Harmonics (All Layers)</option>
+                        <option value="soft-flute">Soft Flute (All Layers)</option>
+                        <option value="vintage-celesta">Vintage Celesta (All Layers)</option>
                         <option value="mixed">Mixed (Different Per Layer)</option>
                     </select>
                 </div>
@@ -364,6 +372,127 @@
             </div>
         </div>
 
+        <!-- Grandfather Clock Section -->
+        <div class="control-section" id="clock-section">
+            <div class="section-header" onclick="toggleSection('clock')">
+                <div class="section-title">
+                    <div class="toggle-btn">
+                        <input type="checkbox" id="clock-toggle" onchange="updateClockStatus(); toggleClock();">
+                        <span class="toggle-indicator"></span>
+                    </div>
+                    <div class="section-icon clock-icon">🕰️</div>
+                    <div>
+                        <div class="section-info">Grandfather Clock</div>
+                        <div class="section-status" id="clock-status">Off</div>
+                    </div>
+                </div>
+                <button class="expand-btn" id="clock-expand">
+                    <span>▼</span>
+                </button>
+            </div>
+
+            <div class="section-content" id="clock-content">
+                <div class="control-group">
+                    <label class="control-label" for="clock-volume">Clock Volume</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="clock-volume" min="-20" max="0" step="1" value="-6">
+                        </div>
+                        <div class="slider-labels">
+                            <span>Quiet</span>
+                            <span>Loud</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="clock-grid">
+                    <div class="clock-column">
+                        <h4 class="column-header">Clock Characteristics</h4>
+
+                        <div class="control-group">
+                            <label class="control-label" for="clock-tempo">Tempo (BPM)</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="clock-tempo" min="30" max="120" step="1" value="60">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>30</span>
+                                    <span>120</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="clock-brightness">Tick Brightness</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="clock-brightness" min="800" max="4000" step="50" value="2000">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Warm</span>
+                                    <span>Bright</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="clock-resonance">Wood Resonance</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="clock-resonance" min="0.5" max="15" step="0.5" value="8">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Muted</span>
+                                    <span>Resonant</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="clock-column">
+                        <h4 class="column-header">Ambient Processing</h4>
+
+                        <div class="control-group">
+                            <label class="control-label" for="clock-reverb">Reverb Amount</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="clock-reverb" min="0" max="1" step="0.05" value="0.8">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Dry</span>
+                                    <span>Wet</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="clock-decay">Reverb Decay</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="clock-decay" min="5" max="40" step="1" value="25">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>5s</span>
+                                    <span>40s</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">Current Tempo</label>
+                            <div class="tempo-display">
+                                <span id="clock-tempo-display">60 BPM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="clock-info">
+                    <p>Realistic grandfather clock ticking with adjustable tempo and massive reverb for ambient atmosphere.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Settings section -->
         <div class="control-section" id="settings-section">
             <div class="section-header" onclick="toggleSection('settings')">
@@ -427,6 +556,8 @@
     let musicManager = null;
     let melodyManager = null;
     let waveManager = null;
+    let clockManager = null;
+    let clockInitialized = false;
     let isPlaying = false;
     let activeNotes = {};
     let currentActiveMood = "calm";
@@ -1186,7 +1317,14 @@
             'harp': 'Harp',
             'music-box': 'Music Box',
             'glitch-electronic': 'Glitch Electronic',
-            'sampled-piano': 'Sampled Piano'
+            'sampled-piano': 'Sampled Piano',
+            'crystal-bells': 'Crystal Bells',
+            'warm-strings': 'Warm Strings',
+            'ethereal-choir': 'Ethereal Choir',
+            'wind-chimes': 'Wind Chimes',
+            'glass-harmonics': 'Glass Harmonics',
+            'soft-flute': 'Soft Flute',
+            'vintage-celesta': 'Vintage Celesta',
         };
         return displayNames[instrumentKey] || instrumentKey;
     }
@@ -1308,6 +1446,7 @@
         musicManager = new AmbientMusicManager();
         waveManager = new OceanWaveManager();
         melodyManager = new MultiMelodyManager();
+        clockManager = new GrandfatherClockManager();
 
         // Set initial sound engine
         if (musicManager) {
@@ -1391,6 +1530,19 @@
             diceButton.addEventListener('click', randomizeEverything);
         }
 
+        // Clock-specific setup
+        console.log('🕰️ Setting up clock integration...');
+        const tempoSlider = document.getElementById('clock-tempo');
+        if (tempoSlider) {
+            tempoSlider.addEventListener('input', function() {
+                console.log('🕰️ Tempo slider moved to:', tempoSlider.value);
+                updateClockTempoDisplay();
+            });
+        }
+        updateClockTempoDisplay();
+        updateClockStatus();
+        console.log('🕰️ Clock integration setup complete');
+
         console.log('✅ Ambient Music System initialized successfully');
     });
 
@@ -1402,7 +1554,69 @@
         if (musicManager) {
             musicManager.stop();
         }
+        if (clockManager) {
+            clockManager.dispose();
+        }
     });
+
+    async function initializeClock() {
+        console.log('🕰️ Initializing clock from integration...');
+
+        if (clockInitialized) {
+            console.log('🕰️ Clock already initialized');
+            return;
+        }
+
+        try {
+            clockManager = new GrandfatherClockManager();
+            await clockManager.initialize();
+            clockInitialized = true;
+            console.log('🕰️ Clock integration complete');
+        } catch (error) {
+            console.error('🕰️ Clock initialization failed:', error);
+        }
+    }
+
+    async function toggleClock() {
+        console.log('🕰️ toggleClock() called from UI');
+
+        // Initialize on first use
+        if (!clockInitialized) {
+            await initializeClock();
+        }
+
+        if (clockManager) {
+            await clockManager.toggle();
+        } else {
+            console.error('🕰️ clockManager not available');
+        }
+    }
+
+    function updateClockStatus() {
+        console.log('🕰️ updateClockStatus() called');
+
+        const status = document.getElementById('clock-status');
+        const clockToggle = document.getElementById('clock-toggle');
+
+        if (status && clockToggle) {
+            status.textContent = clockToggle.checked ? 'On' : 'Off';
+            console.log(`🕰️ Status set to: ${status.textContent}`);
+        } else {
+            console.warn('🕰️ Status elements not found');
+        }
+
+        // Update tempo display
+        updateClockTempoDisplay();
+    }
+
+    function updateClockTempoDisplay() {
+        const tempoSlider = document.getElementById('clock-tempo');
+        const tempoDisplay = document.getElementById('clock-tempo-display');
+
+        if (tempoSlider && tempoDisplay) {
+            tempoDisplay.textContent = `${tempoSlider.value} BPM`;
+        }
+    }
 
     // Auto-update slots display every few seconds
     setInterval(() => {
