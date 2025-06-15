@@ -677,6 +677,7 @@ class CosmicDriftEngine extends BaseSoundEngine {
         this.subBass = SynthFactory.createMonoSynth("sine", 'CONTINUOUS_DRONE');
 
         const padChain = new AudioChainBuilder(this.cosmicPad)
+            .addFilter('WARM_LOWPASS')
             .addCosmicChain()
             .addReverb('DEEP_SPACE', this.config.reverbAmount)
             .connectTo(this.masterVolume);
@@ -839,8 +840,9 @@ class StoneFocusEngine extends BaseSoundEngine {
         this.abstractPad.set({ oscillator: { detune: 12 } });
 
         const audioChain = new AudioChainBuilder(this.abstractPad)
-            .addDistortion(0.2)
-            .addFilterWithLFO('BRIGHT_BANDPASS', 'SLOW_FILTER_SWEEP', 600, 1800)
+            .addDistortion(0.05)
+            .addFilter('SOFT_LOWPASS')
+            .addFilterWithLFO('WARM_LOWPASS', 'SLOW_FILTER_SWEEP', 800, 1400)
             .addReverb('STANDARD', this.config.reverbAmount)
             .connectTo(this.masterVolume);
 
@@ -878,6 +880,7 @@ class StringTheoryEngine extends BaseSoundEngine {
         this.stringEnsemble = SynthFactory.createPad("sawtooth", 'ORCHESTRAL');
 
         const audioChain = new AudioChainBuilder(this.stringEnsemble)
+            .addFilter('ORCHESTRAL_LOWPASS')
             .addStringChain()
             .addReverb('CAVERNOUS', this.config.reverbAmount)
             .connectTo(this.masterVolume);
