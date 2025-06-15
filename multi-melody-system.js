@@ -60,6 +60,7 @@ class MultiMelodyManager {
         if (count > this.maxSlots) count = this.maxSlots;
 
         const wasEnabled = this.isEnabled;
+        const wasSingleSlot = this.isSingleSlotMode();
         const currentScale = this.melodySlots[0]?.config.scale;
         const currentPattern = this.melodySlots[0]?.config.pattern;
 
@@ -69,13 +70,13 @@ class MultiMelodyManager {
         // Reinitialize with new count
         this.initializeSlots(count);
 
-        // Restore previous state if it was enabled
+        // If transitioning to/from single slot mode, restart appropriately
         if (wasEnabled && currentScale && currentPattern) {
             this.setEnabled(true);
             this.setScaleAndPattern(currentScale, currentPattern);
         }
 
-        console.debug(`Melody slot count changed to: ${count}`);
+        console.debug(`Melody slot count changed to: ${count} (single-slot mode: ${this.isSingleSlotMode()})`);
     }
 
     // ===============================================
@@ -86,6 +87,19 @@ class MultiMelodyManager {
         if (slotIndex >= this.melodySlots.length) return;
 
         const slot = this.melodySlots[slotIndex];
+        const wasActive = slot.isActive; // Remember if it was playing
+
+        // If slot was active, stop it properly
+        if (wasActive) {
+            slot.isActive = false;
+            if (slot.timeout) {
+                clearTimeout(slot.timeout);
+                slot.timeout = null;
+            }
+            if (slot.instrument) {
+                slot.instrument.stop();
+            }
+        }
 
         // Dispose existing instrument
         if (slot.instrument) {
@@ -98,7 +112,7 @@ class MultiMelodyManager {
             ...config
         };
 
-        slot.instrument = this.registry.create(instrumentKey, finalConfig);
+        slot.instrument = this.registry.create(instrumentKey, config);
         slot.config.instrumentType = instrumentKey;
 
         // Initialize instrument
@@ -111,9 +125,14 @@ class MultiMelodyManager {
     }
 
     async setAllSlotsToInstrument(instrumentKey, config = {}) {
+        console.debug(`Setting all ${this.melodySlots.length} slots to instrument: ${instrumentKey}`);
+
         for (let i = 0; i < this.melodySlots.length; i++) {
             await this.setSlotInstrument(i, instrumentKey, config);
         }
+
+        console.debug(`All slots set to ${instrumentKey}, active slots:`,
+            this.melodySlots.filter(slot => slot.isActive).length);
     }
 
     async randomizeSlotInstruments() {
@@ -171,20 +190,29 @@ class MultiMelodyManager {
 
         this.setScaleAndPattern(scale, pattern);
 
-        // Start each slot with different timing offsets
-        for (let i = 0; i < this.melodySlots.length; i++) {
-            const slot = this.melodySlots[i];
-
+        if (this.isSingleSlotMode()) {
+            // Single slot: behave like MelodyManager
+            const slot = this.melodySlots[0];
             if (slot.instrument && !slot.isActive) {
-                // Initialize if needed
                 if (!slot.instrument.synth) {
                     await slot.instrument.initialize(masterVolume, reverb);
                 }
+                this.startSlotPlayback(slot);
+            }
+        } else {
+            // Multi-slot: use staggered timing
+            for (let i = 0; i < this.melodySlots.length; i++) {
+                const slot = this.melodySlots[i];
 
-                // Start with staggered timing
-                setTimeout(() => {
-                    this.startSlotPlayback(slot);
-                }, i * 2000); // 2 second stagger between slots
+                if (slot.instrument && !slot.isActive) {
+                    if (!slot.instrument.synth) {
+                        await slot.instrument.initialize(masterVolume, reverb);
+                    }
+
+                    setTimeout(() => {
+                        this.startSlotPlayback(slot);
+                    }, i * 2000);
+                }
             }
         }
     }
@@ -195,9 +223,16 @@ class MultiMelodyManager {
         slot.isActive = true;
         console.debug(`Starting playback for slot ${slot.id}`);
 
-        // Use the instrument's start method but with slot-specific timing
         if (slot.instrument && slot.config.scale && slot.config.pattern) {
-            this.scheduleSlotMelody(slot);
+            if (this.isSingleSlotMode()) {
+                // Use the instrument's built-in melody system (like MelodyManager)
+                slot.instrument.currentScale = slot.config.scale;
+                slot.instrument.currentPattern = slot.config.pattern;
+                slot.instrument.start(slot.config.scale, slot.config.pattern);
+            } else {
+                // Use multi-slot custom scheduling
+                this.scheduleSlotMelody(slot);
+            }
         }
     }
 
@@ -207,18 +242,27 @@ class MultiMelodyManager {
         this.melodySlots.forEach(slot => {
             slot.isActive = false;
 
-            if (slot.timeout) {
-                clearTimeout(slot.timeout);
-                slot.timeout = null;
-            }
+            // NEW: Different stopping behavior for single vs multi-slot
+            if (this.melodySlots.length === 1) {
+                // Use instrument's built-in stop (like MelodyManager)
+                if (slot.instrument) {
+                    slot.instrument.stop();
+                }
+            } else {
+                // Use custom slot management
+                if (slot.timeout) {
+                    clearTimeout(slot.timeout);
+                    slot.timeout = null;
+                }
 
-            if (slot.randomCycleTimeout) {
-                clearTimeout(slot.randomCycleTimeout);
-                slot.randomCycleTimeout = null;
-            }
+                if (slot.randomCycleTimeout) {
+                    clearTimeout(slot.randomCycleTimeout);
+                    slot.randomCycleTimeout = null;
+                }
 
-            if (slot.instrument) {
-                slot.instrument.stop();
+                if (slot.instrument) {
+                    slot.instrument.stop();
+                }
             }
         });
 
@@ -226,6 +270,10 @@ class MultiMelodyManager {
             clearInterval(this.globalRandomInterval);
             this.globalRandomInterval = null;
         }
+    }
+
+    isSingleSlotMode() {
+        return this.melodySlots.length === 1;
     }
 
     // ===============================================
