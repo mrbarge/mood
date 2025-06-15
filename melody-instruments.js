@@ -20,6 +20,11 @@ class BaseMelodyInstrument {
     }
 
     start(scale, melodicPattern) {
+        // Clean up any existing state first
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+            this.timeout = null;
+        }
         if (this.isActive) return;
         this.isActive = true;
         this.currentScale = scale;
@@ -2212,9 +2217,9 @@ class SoftFluteInstrument extends BaseMelodyInstrument {
         });
     }
 
-    start() {
+    start(scale, melodicPattern) {
         console.log('🎵 Soft Flute start() called');
-        super.start();
+        super.start(scale, melodicPattern);
         console.log('🎵 Soft Flute isActive after start:', this.isActive);
     }
 

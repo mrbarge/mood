@@ -60,6 +60,7 @@ class MultiMelodyManager {
         if (count > this.maxSlots) count = this.maxSlots;
 
         const wasEnabled = this.isEnabled;
+        const wasSingleSlot = this.isSingleSlotMode();
         const currentScale = this.melodySlots[0]?.config.scale;
         const currentPattern = this.melodySlots[0]?.config.pattern;
 
@@ -69,13 +70,13 @@ class MultiMelodyManager {
         // Reinitialize with new count
         this.initializeSlots(count);
 
-        // Restore previous state if it was enabled
+        // If transitioning to/from single slot mode, restart appropriately
         if (wasEnabled && currentScale && currentPattern) {
             this.setEnabled(true);
             this.setScaleAndPattern(currentScale, currentPattern);
         }
 
-        console.debug(`Melody slot count changed to: ${count}`);
+        console.debug(`Melody slot count changed to: ${count} (single-slot mode: ${this.isSingleSlotMode()})`);
     }
 
     // ===============================================
@@ -86,6 +87,19 @@ class MultiMelodyManager {
         if (slotIndex >= this.melodySlots.length) return;
 
         const slot = this.melodySlots[slotIndex];
+        const wasActive = slot.isActive; // Remember if it was playing
+
+        // If slot was active, stop it properly
+        if (wasActive) {
+            slot.isActive = false;
+            if (slot.timeout) {
+                clearTimeout(slot.timeout);
+                slot.timeout = null;
+            }
+            if (slot.instrument) {
+                slot.instrument.stop();
+            }
+        }
 
         // Dispose existing instrument
         if (slot.instrument) {
@@ -98,7 +112,7 @@ class MultiMelodyManager {
             ...config
         };
 
-        slot.instrument = this.registry.create(instrumentKey, finalConfig);
+        slot.instrument = this.registry.create(instrumentKey, config);
         slot.config.instrumentType = instrumentKey;
 
         // Initialize instrument
@@ -111,9 +125,14 @@ class MultiMelodyManager {
     }
 
     async setAllSlotsToInstrument(instrumentKey, config = {}) {
+        console.debug(`Setting all ${this.melodySlots.length} slots to instrument: ${instrumentKey}`);
+
         for (let i = 0; i < this.melodySlots.length; i++) {
             await this.setSlotInstrument(i, instrumentKey, config);
         }
+
+        console.debug(`All slots set to ${instrumentKey}, active slots:`,
+            this.melodySlots.filter(slot => slot.isActive).length);
     }
 
     async randomizeSlotInstruments() {
@@ -167,25 +186,33 @@ class MultiMelodyManager {
     async start(scale, pattern) {
         if (!this.isEnabled) return;
 
-        console.log("aaaaaaaaaaaaaaaa");
         console.debug(`Starting ${this.melodySlots.length} melody slots`);
 
         this.setScaleAndPattern(scale, pattern);
 
-        // Start each slot with different timing offsets
-        for (let i = 0; i < this.melodySlots.length; i++) {
-            const slot = this.melodySlots[i];
-
+        if (this.isSingleSlotMode()) {
+            // Single slot: behave like MelodyManager
+            const slot = this.melodySlots[0];
             if (slot.instrument && !slot.isActive) {
-                // Initialize if needed
                 if (!slot.instrument.synth) {
                     await slot.instrument.initialize(masterVolume, reverb);
                 }
+                this.startSlotPlayback(slot);
+            }
+        } else {
+            // Multi-slot: use staggered timing
+            for (let i = 0; i < this.melodySlots.length; i++) {
+                const slot = this.melodySlots[i];
 
-                // Start with staggered timing
-                setTimeout(() => {
-                    this.startSlotPlayback(slot);
-                }, i * 2000); // 2 second stagger between slots
+                if (slot.instrument && !slot.isActive) {
+                    if (!slot.instrument.synth) {
+                        await slot.instrument.initialize(masterVolume, reverb);
+                    }
+
+                    setTimeout(() => {
+                        this.startSlotPlayback(slot);
+                    }, i * 2000);
+                }
             }
         }
     }
@@ -196,9 +223,16 @@ class MultiMelodyManager {
         slot.isActive = true;
         console.debug(`Starting playback for slot ${slot.id}`);
 
-        // Use the instrument's start method but with slot-specific timing
         if (slot.instrument && slot.config.scale && slot.config.pattern) {
-            this.scheduleSlotMelody(slot);
+            if (this.isSingleSlotMode()) {
+                // Use the instrument's built-in melody system (like MelodyManager)
+                slot.instrument.currentScale = slot.config.scale;
+                slot.instrument.currentPattern = slot.config.pattern;
+                slot.instrument.start(slot.config.scale, slot.config.pattern);
+            } else {
+                // Use multi-slot custom scheduling
+                this.scheduleSlotMelody(slot);
+            }
         }
     }
 
@@ -208,18 +242,27 @@ class MultiMelodyManager {
         this.melodySlots.forEach(slot => {
             slot.isActive = false;
 
-            if (slot.timeout) {
-                clearTimeout(slot.timeout);
-                slot.timeout = null;
-            }
+            // NEW: Different stopping behavior for single vs multi-slot
+            if (this.melodySlots.length === 1) {
+                // Use instrument's built-in stop (like MelodyManager)
+                if (slot.instrument) {
+                    slot.instrument.stop();
+                }
+            } else {
+                // Use custom slot management
+                if (slot.timeout) {
+                    clearTimeout(slot.timeout);
+                    slot.timeout = null;
+                }
 
-            if (slot.randomCycleTimeout) {
-                clearTimeout(slot.randomCycleTimeout);
-                slot.randomCycleTimeout = null;
-            }
+                if (slot.randomCycleTimeout) {
+                    clearTimeout(slot.randomCycleTimeout);
+                    slot.randomCycleTimeout = null;
+                }
 
-            if (slot.instrument) {
-                slot.instrument.stop();
+                if (slot.instrument) {
+                    slot.instrument.stop();
+                }
             }
         });
 
@@ -227,6 +270,10 @@ class MultiMelodyManager {
             clearInterval(this.globalRandomInterval);
             this.globalRandomInterval = null;
         }
+    }
+
+    isSingleSlotMode() {
+        return this.melodySlots.length === 1;
     }
 
     // ===============================================
@@ -609,145 +656,6 @@ function updateSlotsInfoDisplay() {
             </div>
         `;
     }).join('');
-}
-
-class DualMelodySystemManager {
-    constructor() {
-        this.useOriginalSystem = false;  // Default to multi-melody
-        this.forceOriginalSystem = false;  // Manual override
-        this.originalMelodyManager = null;
-        this.multiMelodyManager = null;
-        this.currentActiveManager = null;
-    }
-
-    // Initialize both systems
-    async initialize(originalManager, multiManager) {
-        console.log('🎼 Initializing dual melody system...');
-        this.originalMelodyManager = originalManager;
-        this.multiMelodyManager = multiManager;
-
-        // Set initial active manager
-        this.updateActiveManager();
-    }
-
-    // APPROACH 1: Automatic switching based on layer count
-    updateActiveManager() {
-        const activeLayerCount = this.getActiveLayerCount();
-        console.log(`🎼 Active layers: ${activeLayerCount}`);
-
-        // Determine which system to use
-        let shouldUseOriginal;
-
-        if (this.forceOriginalSystem) {
-            // Manual override - always use original
-            shouldUseOriginal = true;
-            console.log('🎼 Using original system (forced override)');
-        } else if (activeLayerCount <= 1) {
-            // Auto-switch: single layer = original system
-            shouldUseOriginal = true;
-            console.log('🎼 Auto-switching to original system (≤1 layer)');
-        } else {
-            // Auto-switch: multiple layers = multi system
-            shouldUseOriginal = false;
-            console.log('🎼 Auto-switching to multi-melody system (>1 layer)');
-        }
-
-        // Switch if needed
-        if (this.useOriginalSystem !== shouldUseOriginal) {
-            this.switchMelodySystem(shouldUseOriginal);
-        }
-    }
-
-    // Get count of currently active melody instruments/layers
-    getActiveLayerCount() {
-        if (typeof instruments !== 'undefined') {
-            // Count active melody instruments
-            const activeMelodyInstruments = instruments.filter(inst =>
-                inst.isActive && inst.constructor.name.includes('Instrument')
-            ).length;
-            return activeMelodyInstruments;
-        }
-
-        // Fallback: check layer controls in UI
-        const layerControls = document.querySelectorAll('[id*="layer"]:checked, [class*="layer"][checked]');
-        return layerControls.length;
-    }
-
-    // Switch between melody systems
-    switchMelodySystem(useOriginal) {
-        console.log(`🎼 Switching to ${useOriginal ? 'original' : 'multi-melody'} system`);
-
-        // Stop current system
-        if (this.currentActiveManager && this.currentActiveManager.stop) {
-            this.currentActiveManager.stop();
-        }
-
-        // Update flags
-        this.useOriginalSystem = useOriginal;
-        this.currentActiveManager = useOriginal ? this.originalMelodyManager : this.multiMelodyManager;
-
-        // Update UI indicator
-        this.updateSystemIndicator();
-
-        // Restart if currently playing
-        if (typeof isPlaying !== 'undefined' && isPlaying) {
-            setTimeout(() => {
-                if (this.currentActiveManager && this.currentActiveManager.start) {
-                    this.currentActiveManager.start();
-                }
-            }, 100);
-        }
-    }
-
-    // APPROACH 2: Manual toggle option
-    setForceOriginalSystem(force) {
-        console.log(`🎼 ${force ? 'Enabling' : 'Disabling'} original system override`);
-        this.forceOriginalSystem = force;
-        this.updateActiveManager();
-    }
-
-    // Delegate melody generation to active system
-    generateMelody() {
-        if (this.currentActiveManager && this.currentActiveManager.generateMelody) {
-            return this.currentActiveManager.generateMelody();
-        }
-    }
-
-    start() {
-        this.updateActiveManager(); // Check which system to use
-        if (this.currentActiveManager && this.currentActiveManager.start) {
-            console.log(`🎼 Starting ${this.useOriginalSystem ? 'original' : 'multi-melody'} system`);
-            this.currentActiveManager.start();
-        }
-    }
-
-    stop() {
-        if (this.currentActiveManager && this.currentActiveManager.stop) {
-            console.log(`🎼 Stopping ${this.useOriginalSystem ? 'original' : 'multi-melody'} system`);
-            this.currentActiveManager.stop();
-        }
-    }
-
-    // Update UI to show which system is active
-    updateSystemIndicator() {
-        const indicator = document.getElementById('melody-system-indicator');
-        if (indicator) {
-            const systemName = this.useOriginalSystem ? 'Single Instrument' : 'Multi-Layer';
-            const forced = this.forceOriginalSystem ? ' (Manual)' : ' (Auto)';
-            indicator.textContent = `${systemName}${forced}`;
-            indicator.className = `system-indicator ${this.useOriginalSystem ? 'original' : 'multi'}`;
-        }
-    }
-
-    // Get current system info
-    getCurrentSystemInfo() {
-        return {
-            useOriginal: this.useOriginalSystem,
-            forced: this.forceOriginalSystem,
-            activeLayerCount: this.getActiveLayerCount(),
-            systemName: this.useOriginalSystem ? 'Original Single-Instrument' : 'Multi-Melody Layer'
-        };
-    }
 }
 
 console.log("✅ Multi-Melody System loaded");
