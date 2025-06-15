@@ -1262,7 +1262,7 @@ class EtherealChoirInstrument extends BaseMelodyInstrument {
                 sustain: 0.7,
                 release: 6
             },
-            volume: 3              // MUCH louder (was -3)
+            volume: -3
         });
 
         // FORMANT VOICE - Human-like vowel sounds
@@ -1272,7 +1272,7 @@ class EtherealChoirInstrument extends BaseMelodyInstrument {
             envelope: { attack: 4, decay: 1, sustain: 0.9, release: 10 },
             modulation: { type: "square" },
             modulationEnvelope: { attack: 3, decay: 2, sustain: 0.6, release: 8 },
-            volume: -2              // Much louder (was -8)
+            volume: -3              // Much louder (was -8)
         });
 
         // WHISPER VOICE - Breathy texture
@@ -1623,7 +1623,7 @@ class GlassHarmonicsInstrument extends BaseMelodyInstrument {
         this.synth = new Tone.PolySynth(Tone.Synth, {
             oscillator: { type: "sine" },
             envelope: { attack: 0.5, decay: 2, sustain: 0.3, release: 3 },
-            volume: 0               // MUCH louder (was -10)
+            volume: -6
         });
 
         // Glass-like harmonic processing
@@ -1729,7 +1729,7 @@ class GlassHarmonicsInstrument extends BaseMelodyInstrument {
                 sustain: 0.7,
                 release: 6
             },
-            volume: 3              // MUCH louder (was -3)
+            volume: -3
         });
 
         // FORMANT VOICE - Human-like vowel sounds
@@ -1739,7 +1739,7 @@ class GlassHarmonicsInstrument extends BaseMelodyInstrument {
             envelope: { attack: 4, decay: 1, sustain: 0.9, release: 10 },
             modulation: { type: "square" },
             modulationEnvelope: { attack: 3, decay: 2, sustain: 0.6, release: 8 },
-            volume: -2              // Much louder (was -8)
+            volume: -4              // Much louder (was -8)
         });
 
         // WHISPER VOICE - Breathy texture
@@ -1756,7 +1756,7 @@ class GlassHarmonicsInstrument extends BaseMelodyInstrument {
         this.droneVoice = new Tone.Synth({
             oscillator: { type: "triangle" },
             envelope: { attack: 10, decay: 5, sustain: 0.9, release: 20 },
-            volume: -6              // Much louder drone (was -12)
+            volume: -4              // Much louder drone (was -12)
         });
 
         // EXPERIMENTAL PROCESSING CHAIN
