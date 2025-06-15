@@ -167,6 +167,7 @@ class MultiMelodyManager {
     async start(scale, pattern) {
         if (!this.isEnabled) return;
 
+        console.log("aaaaaaaaaaaaaaaa");
         console.debug(`Starting ${this.melodySlots.length} melody slots`);
 
         this.setScaleAndPattern(scale, pattern);
@@ -608,6 +609,145 @@ function updateSlotsInfoDisplay() {
             </div>
         `;
     }).join('');
+}
+
+class DualMelodySystemManager {
+    constructor() {
+        this.useOriginalSystem = false;  // Default to multi-melody
+        this.forceOriginalSystem = false;  // Manual override
+        this.originalMelodyManager = null;
+        this.multiMelodyManager = null;
+        this.currentActiveManager = null;
+    }
+
+    // Initialize both systems
+    async initialize(originalManager, multiManager) {
+        console.log('🎼 Initializing dual melody system...');
+        this.originalMelodyManager = originalManager;
+        this.multiMelodyManager = multiManager;
+
+        // Set initial active manager
+        this.updateActiveManager();
+    }
+
+    // APPROACH 1: Automatic switching based on layer count
+    updateActiveManager() {
+        const activeLayerCount = this.getActiveLayerCount();
+        console.log(`🎼 Active layers: ${activeLayerCount}`);
+
+        // Determine which system to use
+        let shouldUseOriginal;
+
+        if (this.forceOriginalSystem) {
+            // Manual override - always use original
+            shouldUseOriginal = true;
+            console.log('🎼 Using original system (forced override)');
+        } else if (activeLayerCount <= 1) {
+            // Auto-switch: single layer = original system
+            shouldUseOriginal = true;
+            console.log('🎼 Auto-switching to original system (≤1 layer)');
+        } else {
+            // Auto-switch: multiple layers = multi system
+            shouldUseOriginal = false;
+            console.log('🎼 Auto-switching to multi-melody system (>1 layer)');
+        }
+
+        // Switch if needed
+        if (this.useOriginalSystem !== shouldUseOriginal) {
+            this.switchMelodySystem(shouldUseOriginal);
+        }
+    }
+
+    // Get count of currently active melody instruments/layers
+    getActiveLayerCount() {
+        if (typeof instruments !== 'undefined') {
+            // Count active melody instruments
+            const activeMelodyInstruments = instruments.filter(inst =>
+                inst.isActive && inst.constructor.name.includes('Instrument')
+            ).length;
+            return activeMelodyInstruments;
+        }
+
+        // Fallback: check layer controls in UI
+        const layerControls = document.querySelectorAll('[id*="layer"]:checked, [class*="layer"][checked]');
+        return layerControls.length;
+    }
+
+    // Switch between melody systems
+    switchMelodySystem(useOriginal) {
+        console.log(`🎼 Switching to ${useOriginal ? 'original' : 'multi-melody'} system`);
+
+        // Stop current system
+        if (this.currentActiveManager && this.currentActiveManager.stop) {
+            this.currentActiveManager.stop();
+        }
+
+        // Update flags
+        this.useOriginalSystem = useOriginal;
+        this.currentActiveManager = useOriginal ? this.originalMelodyManager : this.multiMelodyManager;
+
+        // Update UI indicator
+        this.updateSystemIndicator();
+
+        // Restart if currently playing
+        if (typeof isPlaying !== 'undefined' && isPlaying) {
+            setTimeout(() => {
+                if (this.currentActiveManager && this.currentActiveManager.start) {
+                    this.currentActiveManager.start();
+                }
+            }, 100);
+        }
+    }
+
+    // APPROACH 2: Manual toggle option
+    setForceOriginalSystem(force) {
+        console.log(`🎼 ${force ? 'Enabling' : 'Disabling'} original system override`);
+        this.forceOriginalSystem = force;
+        this.updateActiveManager();
+    }
+
+    // Delegate melody generation to active system
+    generateMelody() {
+        if (this.currentActiveManager && this.currentActiveManager.generateMelody) {
+            return this.currentActiveManager.generateMelody();
+        }
+    }
+
+    start() {
+        this.updateActiveManager(); // Check which system to use
+        if (this.currentActiveManager && this.currentActiveManager.start) {
+            console.log(`🎼 Starting ${this.useOriginalSystem ? 'original' : 'multi-melody'} system`);
+            this.currentActiveManager.start();
+        }
+    }
+
+    stop() {
+        if (this.currentActiveManager && this.currentActiveManager.stop) {
+            console.log(`🎼 Stopping ${this.useOriginalSystem ? 'original' : 'multi-melody'} system`);
+            this.currentActiveManager.stop();
+        }
+    }
+
+    // Update UI to show which system is active
+    updateSystemIndicator() {
+        const indicator = document.getElementById('melody-system-indicator');
+        if (indicator) {
+            const systemName = this.useOriginalSystem ? 'Single Instrument' : 'Multi-Layer';
+            const forced = this.forceOriginalSystem ? ' (Manual)' : ' (Auto)';
+            indicator.textContent = `${systemName}${forced}`;
+            indicator.className = `system-indicator ${this.useOriginalSystem ? 'original' : 'multi'}`;
+        }
+    }
+
+    // Get current system info
+    getCurrentSystemInfo() {
+        return {
+            useOriginal: this.useOriginalSystem,
+            forced: this.forceOriginalSystem,
+            activeLayerCount: this.getActiveLayerCount(),
+            systemName: this.useOriginalSystem ? 'Original Single-Instrument' : 'Multi-Melody Layer'
+        };
+    }
 }
 
 console.log("✅ Multi-Melody System loaded");

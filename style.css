@@ -814,3 +814,38 @@ input:checked + .toggle-label:before {
         gap: 15px;
     }
 }
+
+
+.system-indicator {
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.system-indicator.original {
+    background: #e8f4fd;
+    color: #1976d2;
+}
+
+.system-indicator.multi {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.debug-btn {
+    background: #424242;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
+.control-description {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 4px;
+    line-height: 1.3;
+}

@@ -1239,110 +1239,176 @@ class EtherealChoirInstrument extends BaseMelodyInstrument {
     async initialize(masterVolume, globalReverb) {
         super.initialize(masterVolume, globalReverb);
 
+        // MAIN VOICE - More aggressive and audible
         this.synth = new Tone.PolySynth(Tone.FMSynth, {
             harmonicity: 0.5,
-            modulationIndex: 4,
+            modulationIndex: 8,        // More modulation for presence
             oscillator: { type: "sine" },
             envelope: {
-                attack: 8,      // Much longer attack (was 2)
-                decay: 4,       // Longer decay (was 1)
-                sustain: 0.95,  // Higher sustain (was 0.8)
-                release: 15     // Much longer release (was 4)
+                attack: 3,             // Shorter attack for more presence
+                decay: 2,
+                sustain: 0.8,
+                release: 8
             },
             modulation: { type: "triangle" },
             modulationEnvelope: {
-                attack: 6,      // Longer mod attack (was 1.5)
-                decay: 3,       // Longer mod decay (was 1)
-                sustain: 0.8,   // Higher mod sustain (was 0.6)
-                release: 12     // Much longer mod release (was 3)
+                attack: 2,
+                decay: 1.5,
+                sustain: 0.7,
+                release: 6
             },
-            volume: -12
+            volume: 3              // MUCH louder (was -3)
         });
 
-        // Additional voice for richer choir texture
-        this.harmonyVoice = new Tone.PolySynth(Tone.FMSynth, {
-            harmonicity: 0.75,
-            modulationIndex: 3,
-            oscillator: { type: "sine", detune: 7 },
-            envelope: {
-                attack: 9,      // Slightly staggered timing
-                decay: 4.5,
-                sustain: 0.9,
-                release: 16
-            },
-            modulation: { type: "triangle" },
-            modulationEnvelope: {
-                attack: 6.5,
-                decay: 3.2,
-                sustain: 0.75,
-                release: 13
-            },
-            volume: -15
+        // FORMANT VOICE - Human-like vowel sounds
+        this.formantVoice = new Tone.PolySynth(Tone.AMSynth, {
+            harmonicity: 1.5,
+            oscillator: { type: "sawtooth" },
+            envelope: { attack: 4, decay: 1, sustain: 0.9, release: 10 },
+            modulation: { type: "square" },
+            modulationEnvelope: { attack: 3, decay: 2, sustain: 0.6, release: 8 },
+            volume: -2              // Much louder (was -8)
         });
 
-        // Choir-like processing with slow breathing movement
-        const voiceFilter = new Tone.Filter({
-            frequency: 1800,
+        // WHISPER VOICE - Breathy texture
+        this.whisperVoice = new Tone.Noise("pink");
+        this.whisperEnv = new Tone.AmplitudeEnvelope({
+            attack: 6,
+            decay: 3,
+            sustain: 0.4,
+            release: 12
+        });
+        this.whisperGain = new Tone.Gain(0.3);  // Much louder whispers (was 0.15)
+
+        // DRONE VOICE - Sustained low harmonics
+        this.droneVoice = new Tone.Synth({
+            oscillator: { type: "triangle" },
+            envelope: { attack: 10, decay: 5, sustain: 0.9, release: 20 },
+            volume: -6              // Much louder drone (was -12)
+        });
+
+        // EXPERIMENTAL PROCESSING CHAIN
+
+        // Vowel formant filter with LFO modulation
+        const formantFilter = new Tone.Filter({
+            frequency: 800,
+            type: "bandpass",
+            Q: 8
+        });
+
+        const formantLFO = new Tone.LFO({
+            frequency: 0.1,
+            min: 400,
+            max: 1600,
+            type: "sine"
+        });
+        formantLFO.connect(formantFilter.frequency);
+        formantLFO.start();
+
+        // Breathing movement - more dramatic
+        const breathingFilter = new Tone.Filter({
+            frequency: 2000,
             type: "lowpass",
-            Q: 1.5
+            Q: 2
         });
 
         const breathingLFO = new Tone.LFO({
-            frequency: 0.03,  // Very slow breathing (was 0.15)
-            min: 1200,
-            max: 2400,
+            frequency: 0.08,    // Faster breathing
+            min: 800,
+            max: 3200,
             type: "sine"
         });
-        breathingLFO.connect(voiceFilter.frequency);
+        breathingLFO.connect(breathingFilter.frequency);
         breathingLFO.start();
 
+        // Experimental chorus with randomization
         const choirChorus = new Tone.Chorus({
-            frequency: 0.08,  // Slower chorus movement
-            delayTime: 12,    // Longer delay time
-            depth: 0.9,       // Deeper modulation
-            wet: 0.8          // More wet signal
+            frequency: 0.15,
+            delayTime: 8,
+            depth: 0.8,
+            wet: 0.9
         }).start();
 
-        const breathiness = new Tone.Filter({
-            frequency: 3000,
-            type: "highpass",
-            Q: 0.5
+        // Pitch shifter for ethereal harmonies
+        const pitchShift = new Tone.PitchShift({
+            pitch: 7,  // Perfect fifth up
+            wet: 0.3
         });
 
-        const breathGain = new Tone.Gain(0.08);  // Slightly more breath
+        // Granular-style delay for texture
+        const granularDelay = new Tone.PingPongDelay({
+            delayTime: "8n",
+            feedback: 0.6,
+            wet: 0.4
+        });
 
-        // Enhanced reverb for cathedral-like space
+        // Subtle distortion for character
+        const voiceDistortion = new Tone.Distortion({
+            distortion: 0.15,
+            wet: 0.25
+        });
+
+        // Auto-wah for movement
+        const autoWah = new Tone.AutoWah({
+            baseFrequency: 100,
+            octaves: 4,
+            sensitivity: -10,
+            Q: 2,
+            wet: 0.3
+        });
+
+        // Enhanced reverb
         this.reverbNode = new Tone.Reverb({
-            decay: 25,        // Much longer decay (was 18)
-            wet: this.config.reverbAmount * 1.2,  // More reverb
-            preDelay: 0.15,   // Longer pre-delay (was 0.08)
-            roomSize: 0.98    // Larger room (was 0.95)
+            decay: 30,
+            wet: this.config.reverbAmount * 1.3,
+            preDelay: 0.2
         });
 
-        // Main signal path
-        this.synth.connect(voiceFilter);
-        this.harmonyVoice.connect(voiceFilter);
-        voiceFilter.connect(choirChorus);
+        // COMPLEX SIGNAL ROUTING
+
+        // Main voice path - full processing
+        this.synth.connect(formantFilter);
+        formantFilter.connect(voiceDistortion);
+        voiceDistortion.connect(autoWah);
+        autoWah.connect(pitchShift);
+        pitchShift.connect(choirChorus);
+
+        // Formant voice path - formant emphasis
+        this.formantVoice.connect(breathingFilter);
+        breathingFilter.connect(granularDelay);
+        granularDelay.connect(choirChorus);
+
+        // Whisper voice path - filtered noise
+        this.whisperVoice.connect(this.whisperEnv);
+        this.whisperEnv.connect(this.whisperGain);
+        this.whisperGain.connect(breathingFilter);
+
+        // Drone voice path - minimal processing
+        this.droneVoice.connect(this.reverbNode);
+
+        // Final mix
         choirChorus.connect(this.reverbNode);
-
-        // Subtle breathiness layer
-        this.synth.connect(breathiness);
-        breathiness.connect(breathGain);
-        breathGain.connect(this.reverbNode);
-
         this.reverbNode.connect(masterVolume);
 
-        this.effects.push(this.harmonyVoice, voiceFilter, choirChorus, breathiness, breathGain, this.reverbNode, breathingLFO);
+        // Start continuous elements
+        this.whisperVoice.start();
+
+        this.effects.push(
+            this.formantVoice, this.whisperVoice, this.whisperEnv, this.whisperGain,
+            this.droneVoice, formantFilter, formantLFO, breathingFilter, breathingLFO,
+            choirChorus, pitchShift, granularDelay, voiceDistortion, autoWah, this.reverbNode
+        );
+
         this.synth.volume.value = this.config.volume;
     }
 
     playMelodicSequence(melody) {
-        const noteDuration = 8.0;    // Much longer notes (was 5.0)
-        const noteSpacing = 4.0;     // More space between notes (was 2.5)
+        const noteDuration = 6.0;
+        const noteSpacing = 3.0;
 
         melody.forEach((note, index) => {
             let timing = index * noteSpacing * 1000;
-            timing += (Math.random() * 1.0 * 1000);  // More timing variation
+            timing += (Math.random() * 1.5 * 1000);
 
             setTimeout(() => {
                 if (!this.isActive) return;
@@ -1356,19 +1422,46 @@ class EtherealChoirInstrument extends BaseMelodyInstrument {
                 }
 
                 try {
-                    // Play main note
+                    // Always play main voice
                     this.synth.triggerAttackRelease(note, noteDuration);
 
-                    // Sometimes add harmony note
-                    if (Math.random() < 0.6) {
+                    // Randomly add different voice layers for variety
+                    const voiceChoice = Math.random();
+
+                    if (voiceChoice < 0.4) {
+                        // Formant voice (40% chance)
                         setTimeout(() => {
                             if (this.isActive) {
-                                this.harmonyVoice.triggerAttackRelease(note, noteDuration * 0.8);
+                                this.formantVoice.triggerAttackRelease(note, noteDuration * 0.7);
                             }
-                        }, 1000 + Math.random() * 2000);
+                        }, 500 + Math.random() * 1000);
                     }
+
+                    if (voiceChoice < 0.6) {
+                        // Whisper envelope trigger (60% chance total, 20% additional)
+                        setTimeout(() => {
+                            if (this.isActive) {
+                                this.whisperEnv.triggerAttackRelease(noteDuration * 0.5);
+                            }
+                        }, Math.random() * 2000);
+                    }
+
+                    if (voiceChoice < 0.25) {
+                        // Drone voice for bass notes (25% chance)
+                        const noteName = note.slice(0, -1);
+                        const octave = parseInt(note.slice(-1));
+                        if (octave >= 3) {
+                            const droneNote = noteName + (octave - 2); // Two octaves lower
+                            setTimeout(() => {
+                                if (this.isActive) {
+                                    this.droneVoice.triggerAttackRelease(droneNote, noteDuration * 1.5);
+                                }
+                            }, 2000 + Math.random() * 3000);
+                        }
+                    }
+
                 } catch (error) {
-                    console.debug("Ethereal choir playback error:", error.message);
+                    console.debug("Experimental choir playback error:", error.message);
                 }
 
                 setTimeout(() => {
@@ -1383,8 +1476,15 @@ class EtherealChoirInstrument extends BaseMelodyInstrument {
             }, timing);
         });
     }
-}
 
+    stop() {
+        super.stop();
+        // Stop the whisper noise
+        if (this.whisperVoice) {
+            this.whisperVoice.stop();
+        }
+    }
+}
 
 // ===============================================
 // WIND CHIMES INSTRUMENT
@@ -1406,7 +1506,7 @@ class WindChimesInstrument extends BaseMelodyInstrument {
             envelope: { attack: 0.01, decay: 1.2, sustain: 0.1, release: 2 },
             modulation: { type: "triangle" },
             modulationEnvelope: { attack: 0.05, decay: 0.8, sustain: 0.2, release: 1.5 },
-            volume: -12
+            volume: 0               // MUCH louder (was -12)
         });
 
         // Wind chime effects
@@ -1518,7 +1618,7 @@ class GlassHarmonicsInstrument extends BaseMelodyInstrument {
         this.synth = new Tone.PolySynth(Tone.Synth, {
             oscillator: { type: "sine" },
             envelope: { attack: 0.5, decay: 2, sustain: 0.3, release: 3 },
-            volume: -10
+            volume: 0               // MUCH louder (was -10)
         });
 
         // Glass-like harmonic processing
@@ -1602,6 +1702,255 @@ class GlassHarmonicsInstrument extends BaseMelodyInstrument {
             }, timing);
         });
     }
+
+    async initialize(masterVolume, globalReverb) {
+        super.initialize(masterVolume, globalReverb);
+
+        // MAIN VOICE - More aggressive and audible
+        this.synth = new Tone.PolySynth(Tone.FMSynth, {
+            harmonicity: 0.5,
+            modulationIndex: 8,        // More modulation for presence
+            oscillator: { type: "sine" },
+            envelope: {
+                attack: 3,             // Shorter attack for more presence
+                decay: 2,
+                sustain: 0.8,
+                release: 8
+            },
+            modulation: { type: "triangle" },
+            modulationEnvelope: {
+                attack: 2,
+                decay: 1.5,
+                sustain: 0.7,
+                release: 6
+            },
+            volume: 3              // MUCH louder (was -3)
+        });
+
+        // FORMANT VOICE - Human-like vowel sounds
+        this.formantVoice = new Tone.PolySynth(Tone.AMSynth, {
+            harmonicity: 1.5,
+            oscillator: { type: "sawtooth" },
+            envelope: { attack: 4, decay: 1, sustain: 0.9, release: 10 },
+            modulation: { type: "square" },
+            modulationEnvelope: { attack: 3, decay: 2, sustain: 0.6, release: 8 },
+            volume: -2              // Much louder (was -8)
+        });
+
+        // WHISPER VOICE - Breathy texture
+        this.whisperVoice = new Tone.Noise("pink");
+        this.whisperEnv = new Tone.AmplitudeEnvelope({
+            attack: 6,
+            decay: 3,
+            sustain: 0.4,
+            release: 12
+        });
+        this.whisperGain = new Tone.Gain(0.3);  // Much louder whispers (was 0.15)
+
+        // DRONE VOICE - Sustained low harmonics
+        this.droneVoice = new Tone.Synth({
+            oscillator: { type: "triangle" },
+            envelope: { attack: 10, decay: 5, sustain: 0.9, release: 20 },
+            volume: -6              // Much louder drone (was -12)
+        });
+
+        // EXPERIMENTAL PROCESSING CHAIN
+
+        // Vowel formant filter with LFO modulation
+        const formantFilter = new Tone.Filter({
+            frequency: 800,
+            type: "bandpass",
+            Q: 8
+        });
+
+        const formantLFO = new Tone.LFO({
+            frequency: 0.1,
+            min: 400,
+            max: 1600,
+            type: "sine"
+        });
+        formantLFO.connect(formantFilter.frequency);
+        formantLFO.start();
+
+        // Breathing movement - more dramatic
+        const breathingFilter = new Tone.Filter({
+            frequency: 2000,
+            type: "lowpass",
+            Q: 2
+        });
+
+        const breathingLFO = new Tone.LFO({
+            frequency: 0.08,    // Faster breathing
+            min: 800,
+            max: 3200,
+            type: "sine"
+        });
+        breathingLFO.connect(breathingFilter.frequency);
+        breathingLFO.start();
+
+        // Experimental chorus with randomization
+        const choirChorus = new Tone.Chorus({
+            frequency: 0.15,
+            delayTime: 8,
+            depth: 0.8,
+            wet: 0.9
+        }).start();
+
+        // Pitch shifter for ethereal harmonies
+        const pitchShift = new Tone.PitchShift({
+            pitch: 7,  // Perfect fifth up
+            wet: 0.3
+        });
+
+        // Granular-style delay for texture
+        const granularDelay = new Tone.PingPongDelay({
+            delayTime: "8n",
+            feedback: 0.6,
+            wet: 0.4
+        });
+
+        // Subtle distortion for character
+        const voiceDistortion = new Tone.Distortion({
+            distortion: 0.15,
+            wet: 0.25
+        });
+
+        // Auto-wah for movement
+        const autoWah = new Tone.AutoWah({
+            baseFrequency: 100,
+            octaves: 4,
+            sensitivity: -10,
+            Q: 2,
+            wet: 0.3
+        });
+
+        // Enhanced reverb
+        this.reverbNode = new Tone.Reverb({
+            decay: 30,
+            wet: this.config.reverbAmount * 1.3,
+            preDelay: 0.2
+        });
+
+        // COMPLEX SIGNAL ROUTING
+
+        // Main voice path - full processing
+        this.synth.connect(formantFilter);
+        formantFilter.connect(voiceDistortion);
+        voiceDistortion.connect(autoWah);
+        autoWah.connect(pitchShift);
+        pitchShift.connect(choirChorus);
+
+        // Formant voice path - formant emphasis
+        this.formantVoice.connect(breathingFilter);
+        breathingFilter.connect(granularDelay);
+        granularDelay.connect(choirChorus);
+
+        // Whisper voice path - filtered noise
+        this.whisperVoice.connect(this.whisperEnv);
+        this.whisperEnv.connect(this.whisperGain);
+        this.whisperGain.connect(breathingFilter);
+
+        // Drone voice path - minimal processing
+        this.droneVoice.connect(this.reverbNode);
+
+        // Final mix
+        choirChorus.connect(this.reverbNode);
+        this.reverbNode.connect(masterVolume);
+
+        // Start continuous elements
+        this.whisperVoice.start();
+
+        this.effects.push(
+            this.formantVoice, this.whisperVoice, this.whisperEnv, this.whisperGain,
+            this.droneVoice, formantFilter, formantLFO, breathingFilter, breathingLFO,
+            choirChorus, pitchShift, granularDelay, voiceDistortion, autoWah, this.reverbNode
+        );
+
+        this.synth.volume.value = this.config.volume;
+    }
+
+    playMelodicSequence(melody) {
+        const noteDuration = 6.0;
+        const noteSpacing = 3.0;
+
+        melody.forEach((note, index) => {
+            let timing = index * noteSpacing * 1000;
+            timing += (Math.random() * 1.5 * 1000);
+
+            setTimeout(() => {
+                if (!this.isActive) return;
+
+                if (typeof activeNotes !== 'undefined') {
+                    if (!activeNotes[note]) {
+                        activeNotes[note] = { count: 1, type: 'choir' };
+                    } else {
+                        activeNotes[note].count++;
+                    }
+                }
+
+                try {
+                    // Always play main voice
+                    this.synth.triggerAttackRelease(note, noteDuration);
+
+                    // Randomly add different voice layers for variety
+                    const voiceChoice = Math.random();
+
+                    if (voiceChoice < 0.4) {
+                        // Formant voice (40% chance)
+                        setTimeout(() => {
+                            if (this.isActive) {
+                                this.formantVoice.triggerAttackRelease(note, noteDuration * 0.7);
+                            }
+                        }, 500 + Math.random() * 1000);
+                    }
+
+                    if (voiceChoice < 0.6) {
+                        // Whisper envelope trigger (60% chance total, 20% additional)
+                        setTimeout(() => {
+                            if (this.isActive) {
+                                this.whisperEnv.triggerAttackRelease(noteDuration * 0.5);
+                            }
+                        }, Math.random() * 2000);
+                    }
+
+                    if (voiceChoice < 0.25) {
+                        // Drone voice for bass notes (25% chance)
+                        const noteName = note.slice(0, -1);
+                        const octave = parseInt(note.slice(-1));
+                        if (octave >= 3) {
+                            const droneNote = noteName + (octave - 2); // Two octaves lower
+                            setTimeout(() => {
+                                if (this.isActive) {
+                                    this.droneVoice.triggerAttackRelease(droneNote, noteDuration * 1.5);
+                                }
+                            }, 2000 + Math.random() * 3000);
+                        }
+                    }
+
+                } catch (error) {
+                    console.debug("Experimental choir playback error:", error.message);
+                }
+
+                setTimeout(() => {
+                    if (typeof isPlaying !== 'undefined' && isPlaying &&
+                        typeof activeNotes !== 'undefined' && activeNotes[note]) {
+                        activeNotes[note].count--;
+                        if (activeNotes[note].count <= 0) {
+                            delete activeNotes[note];
+                        }
+                    }
+                }, noteDuration * 1000 + 2000);
+            }, timing);
+        });
+    }
+
+    stop() {
+        super.stop();
+        // Stop the whisper noise
+        if (this.whisperVoice) {
+            this.whisperVoice.stop();
+        }
+    }
 }
 
 // ===============================================
@@ -1611,7 +1960,9 @@ class GlassHarmonicsInstrument extends BaseMelodyInstrument {
 
 class SoftFluteInstrument extends BaseMelodyInstrument {
     constructor() {
+        console.log('🎵 Creating Soft Flute instrument...');
         super('Soft Flute');
+        console.log('🎵 Soft Flute constructor complete');
     }
 
     async initialize(masterVolume, globalReverb) {
@@ -1647,6 +1998,41 @@ class SoftFluteInstrument extends BaseMelodyInstrument {
             wet: 0.3
         });
 
+        // ENHANCED: Multiple echo/delay layers with variation
+        const shortEcho = new Tone.PingPongDelay({
+            delayTime: "16n",     // Fast echo
+            feedback: 0.3,
+            wet: 0.25
+        });
+
+        const mediumEcho = new Tone.FeedbackDelay({
+            delayTime: "8n.",     // Medium echo
+            feedback: 0.4,
+            wet: 0.3
+        });
+
+        const longEcho = new Tone.FeedbackDelay({
+            delayTime: "4n",      // Long echo
+            feedback: 0.25,
+            wet: 0.2
+        });
+
+        // Variable echo with LFO modulation
+        const variableEcho = new Tone.PingPongDelay({
+            delayTime: 0.25,      // Start with quarter note equivalent
+            feedback: 0.35,
+            wet: 0.3
+        });
+
+        const echoLFO = new Tone.LFO({
+            frequency: 0.2,
+            min: 0.0625,          // 16th note equivalent (1/16 second at 60 BPM)
+            max: 0.5,             // Quarter note equivalent (1/2 second at 120 BPM)
+            type: "sine"
+        });
+        echoLFO.connect(variableEcho.delayTime);
+        echoLFO.start();
+
         // ENHANCED: Added flutter tonguing effect for variety
         const flutter = new Tone.Tremolo({
             frequency: 8,
@@ -1661,11 +2047,15 @@ class SoftFluteInstrument extends BaseMelodyInstrument {
             roomSize: 0.7
         });
 
-        // Main flute signal
+        // Main flute signal with cascading echoes
         this.synth.connect(fluteFilter);
         fluteFilter.connect(vibrato);
         vibrato.connect(flutter);
-        flutter.connect(this.reverbNode);
+        flutter.connect(shortEcho);
+        shortEcho.connect(mediumEcho);
+        mediumEcho.connect(longEcho);
+        longEcho.connect(variableEcho);
+        variableEcho.connect(this.reverbNode);
 
         // Subtle breath noise layer
         breathNoise.connect(breathFilter);
@@ -1677,11 +2067,59 @@ class SoftFluteInstrument extends BaseMelodyInstrument {
         // Start breath noise at very low level
         breathNoise.start();
 
-        this.effects.push(breathNoise, breathGain, breathFilter, fluteFilter, vibrato, flutter, this.reverbNode);
+        this.effects.push(breathNoise, breathGain, breathFilter, fluteFilter, vibrato, flutter,
+            shortEcho, mediumEcho, longEcho, variableEcho, echoLFO, this.reverbNode);
         this.synth.volume.value = this.config.volume;
     }
 
     playMelodicSequence(melody) {
+        console.log('🎵 Soft Flute playMelodicSequence called with melody:', melody);
+        console.log('🎵 Soft Flute isActive:', this.isActive);
+
+        if (!this.isActive) {
+            console.log('🎵 Soft Flute not active, skipping playback');
+            return;
+        }
+
+        // ENHANCED: Randomly choose echo behavior for this sequence
+        const echoChoice = Math.random();
+
+        // Get references to the echo effects
+        const shortEcho = this.effects.find(effect => effect instanceof Tone.PingPongDelay && effect.delayTime.value < 0.1);
+        const mediumEcho = this.effects.find(effect => effect instanceof Tone.FeedbackDelay && effect.delayTime.value < 0.3);
+        const longEcho = this.effects.find(effect => effect instanceof Tone.FeedbackDelay && effect.delayTime.value > 0.3);
+        const variableEcho = this.effects.find(effect => effect instanceof Tone.PingPongDelay && effect.delayTime.value > 0.1);
+
+        if (echoChoice < 0.3) {
+            // 30% chance: Simple delay echo mode
+            console.log('🎵 Flute: Simple delay echo mode');
+            if (shortEcho) shortEcho.wet.value = 0.1;
+            if (mediumEcho) mediumEcho.wet.value = 0.6;  // Boost medium echo
+            if (longEcho) longEcho.wet.value = 0.4;      // Boost long echo
+            if (variableEcho) variableEcho.wet.value = 0.1;
+        } else if (echoChoice < 0.5) {
+            // 20% chance: Ping-pong emphasis mode
+            console.log('🎵 Flute: Ping-pong emphasis mode');
+            if (shortEcho) shortEcho.wet.value = 0.5;    // Boost ping-pong
+            if (mediumEcho) mediumEcho.wet.value = 0.1;
+            if (longEcho) longEcho.wet.value = 0.1;
+            if (variableEcho) variableEcho.wet.value = 0.6; // Boost variable ping-pong
+        } else if (echoChoice < 0.7) {
+            // 20% chance: Long ambient echo mode
+            console.log('🎵 Flute: Long ambient echo mode');
+            if (shortEcho) shortEcho.wet.value = 0.1;
+            if (mediumEcho) mediumEcho.wet.value = 0.2;
+            if (longEcho) longEcho.wet.value = 0.7;      // Heavy long echo
+            if (variableEcho) variableEcho.wet.value = 0.3;
+        } else {
+            // 30% chance: Complex layered mode (original)
+            console.log('🎵 Flute: Complex layered echo mode');
+            if (shortEcho) shortEcho.wet.value = 0.25;
+            if (mediumEcho) mediumEcho.wet.value = 0.3;
+            if (longEcho) longEcho.wet.value = 0.2;
+            if (variableEcho) variableEcho.wet.value = 0.3;
+        }
+
         // ENHANCED: Occasionally use faster tempo
         const tempoVariation = Math.random();
         let baseSpacing, baseDuration;
@@ -1729,6 +2167,23 @@ class SoftFluteInstrument extends BaseMelodyInstrument {
             setTimeout(() => {
                 if (!this.isActive) return;
 
+                // Start breath noise when first note plays
+                if (index === 0) {
+                    const breathNoise = this.effects.find(effect => effect instanceof Tone.Noise);
+                    if (breathNoise && breathNoise.state !== 'started') {
+                        breathNoise.start();
+                        console.log('🎵 Soft Flute: Started breath noise for sequence');
+
+                        // Stop breath noise after sequence ends
+                        setTimeout(() => {
+                            if (breathNoise.state === 'started') {
+                                breathNoise.stop();
+                                console.log('🎵 Soft Flute: Stopped breath noise');
+                            }
+                        }, (melody.length * baseSpacing + baseDuration + 2) * 1000);
+                    }
+                }
+
                 if (typeof activeNotes !== 'undefined') {
                     if (!activeNotes[playNote]) {
                         activeNotes[playNote] = { count: 1, type: 'flute' };
@@ -1739,6 +2194,7 @@ class SoftFluteInstrument extends BaseMelodyInstrument {
 
                 try {
                     this.synth.triggerAttackRelease(playNote, baseDuration);
+                    console.log(`🎵 Soft Flute: Playing note ${playNote}`);
                 } catch (error) {
                     console.debug("Soft flute playback error:", error.message);
                 }
@@ -1756,13 +2212,22 @@ class SoftFluteInstrument extends BaseMelodyInstrument {
         });
     }
 
+    start() {
+        console.log('🎵 Soft Flute start() called');
+        super.start();
+        console.log('🎵 Soft Flute isActive after start:', this.isActive);
+    }
+
     stop() {
+        console.log('🎵 Soft Flute stop() called');
         super.stop();
         // Stop the breath noise
         const breathNoise = this.effects.find(effect => effect instanceof Tone.Noise);
-        if (breathNoise) {
+        if (breathNoise && breathNoise.state === 'started') {
             breathNoise.stop();
+            console.log('🎵 Soft Flute: Stopped breath noise on stop()');
         }
+        console.log('🎵 Soft Flute stopped');
     }
 }
 
