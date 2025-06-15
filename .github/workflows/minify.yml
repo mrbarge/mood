@@ -26,13 +26,13 @@ jobs:
       - run: npm install -g html-minifier
 
       # Perform minification, overwriting original files
-      - run: terser ./audio-chain-system.js --compress --mangle -o ./audio-chain-system.js
-      - run: terser ./grandfather-clock.js --compress --mangle -o ./grandfather-clock.js
-      - run: terser ./melody-instruments.js --compress --mangle -o ./melody-instruments.js
-      - run: terser ./multi-melody-system.js --compress --mangle -o ./multi-melody-system.js
-      - run: terser ./ocean-waves.js --compress --mangle -o ./ocean-waves.js
-      - run: terser ./sound-engines.js --compress --mangle -o ./sound-engines.js
-      - run: csso style.css -o ./style.css
+      - run: terser ./js/audio-chain-system.js --compress --mangle -o ./js/audio-chain-system.js
+      - run: terser ./js/grandfather-clock.js --compress --mangle -o ./js/grandfather-clock.js
+      - run: terser ./js/melody-instruments.js --compress --mangle -o ./js/melody-instruments.js
+      - run: terser ./js/multi-melody-system.js --compress --mangle -o ./js/multi-melody-system.js
+      - run: terser ./js/ocean-waves.js --compress --mangle -o ./js/ocean-waves.js
+      - run: terser ./js/sound-engines.js --compress --mangle -o ./js/sound-engines.js
+      - run: csso ./css/style.css -o ./css/style.css
       - run: html-minifier --collapse-boolean-attributes --collapse-whitespace --minify-css --minify-js --minify-urls --remove-attribute-quotes --remove-comments --remove-empty-attributes --remove-optional-tags --remove-redundant-attributes --remove-script-type-attributes --remove-style-link-type-attributes --remove-tag-whitespace --use-short-doctype -o index.html index.html
 
       # (Force) push changes to `gh-pages` branch
