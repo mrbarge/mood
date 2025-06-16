@@ -163,11 +163,11 @@
                     <label class="control-label" for="melody-slot-count">Number of Melody Layers</label>
                     <div class="slider-container">
                         <div class="slider-wrapper">
-                            <input type="range" id="melody-slot-count" min="1" max="4" value="1" onchange="handleSlotCountChange()">
+                            <input type="range" id="melody-slot-count" min="1" max="3" value="1" onchange="handleSlotCountChange()">
                         </div>
                         <div class="slider-labels">
                             <span>1 Layer</span>
-                            <span>4 Layers</span>
+                            <span>3 Layers</span>
                         </div>
                     </div>
                 </div>
@@ -794,7 +794,7 @@
             // Randomize slot count (1-4 layers)
             const slotCountSlider = document.getElementById('melody-slot-count');
             if (slotCountSlider) {
-                const newSlotCount = Math.floor(Math.random() * 4) + 1;
+                const newSlotCount = Math.floor(Math.random() * 3) + 1;
                 slotCountSlider.value = newSlotCount;
                 handleSlotCountChange();
                 console.log('🎹 Randomized melody layers to:', newSlotCount);

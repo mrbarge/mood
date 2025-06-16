@@ -9,7 +9,7 @@ class MultiMelodyManager {
         this.melodySlots = []; // Array of melody slot objects
         this.isEnabled = false;
         this.globalRandomInterval = null;
-        this.maxSlots = 4; // Configurable maximum
+        this.maxSlots = 3; // Configurable maximum
         this.currentSlotCount = 1; // How many slots are currently active
     }
 
@@ -41,7 +41,7 @@ class MultiMelodyManager {
                 instrumentType: 'piano',
                 volume: -8 - (slotIndex * 2), // Each slot gets quieter
                 reverbAmount: 0.6 + (slotIndex * 0.1), // Each slot gets more reverb
-                frequency: 4 - slotIndex, // Different timing for each slot
+                frequency: 3 - slotIndex, // Different timing for each slot
                 scale: null,
                 pattern: null,
                 randomness: {
@@ -581,45 +581,6 @@ class MultiMelodyManager {
 
     getMaxSlots() {
         return this.maxSlots;
-    }
-}
-
-// ===============================================
-// UI INTEGRATION HELPERS
-// ===============================================
-
-// Function to update UI for multi-melody support
-function updateMelodyUI() {
-    const melodySection = document.getElementById('melody-content');
-    if (!melodySection) return;
-
-    // Add slot count control
-    const slotCountHTML = `
-        <div class="control-group">
-            <label class="control-label" for="melody-slot-count">Number of Melody Layers</label>
-            <div class="slider-container">
-                <div class="slider-wrapper">
-                    <input type="range" id="melody-slot-count" min="1" max="4" value="1" onchange="handleSlotCountChange()">
-                </div>
-                <div class="slider-labels">
-                    <span>1 Layer</span>
-                    <span>4 Layers</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="control-group">
-            <label class="control-label">Melody Layers Info</label>
-            <div id="melody-slots-info" class="slots-info">
-                <div class="slot-info">Layer 1: Piano</div>
-            </div>
-        </div>
-    `;
-
-    // Insert after the instrument type control
-    const instrumentControl = melodySection.querySelector('.control-group');
-    if (instrumentControl) {
-        instrumentControl.insertAdjacentHTML('afterend', slotCountHTML);
     }
 }
 
