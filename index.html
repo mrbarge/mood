@@ -11,6 +11,7 @@
     <script src="js/sound-engines.js"></script>
     <script src="js/ocean-waves.js"></script>
     <script src="js/grandfather-clock.js"></script>
+    <script src="js/sleep-manager.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -534,12 +535,23 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Playback Controls -->
-    <div class="playback-controls">
-        <button class="play-button" id="start">Generate Music</button>
-        <button class="stop-button" id="stop" disabled>Stop Music</button>
+        <!-- Playback Controls -->
+        <div class="music-controls">
+            <button class="control-btn play-btn" id="playBtn" title="Play Music">
+                <div class="play-icon"></div>
+            </button>
+
+            <button class="control-btn stop-btn" id="stopBtn" title="Stop Music" disabled>
+                <div class="stop-icon"></div>
+            </button>
+
+            <button class="sleep-btn" id="sleepBtn" title="Sleep Mode">
+                <span class="sleep-icon">😴</span>
+                <span id="sleepText">Sleep Mode</span>
+            </button>
+        </div>
+
     </div>
 
     <!-- Visualizer -->
@@ -557,6 +569,7 @@
     let melodyManager = null;
     let waveManager = null;
     let clockManager = null;
+    let sleepManager = null;
     let clockInitialized = false;
     let isPlaying = false;
     let activeNotes = {};
@@ -585,8 +598,9 @@
     }).connect(delay);
 
     // Initialize UI elements
-    const startButton = document.getElementById("start");
-    const stopButton = document.getElementById("stop");
+    const startButton = document.getElementById("playBtn");
+    const stopButton = document.getElementById("stopBtn");
+    const sleepButton = document.getElementById("sleepBtn");
     const moodSelect = document.getElementById("mood");
     const densitySlider = document.getElementById("density");
     const reverbSlider = document.getElementById("reverb");
@@ -1043,8 +1057,8 @@
                 activeNotes = {};
             }
 
-            const startButton = document.getElementById('start');
-            const stopButton = document.getElementById('stop');
+            const startButton = document.getElementById('playBtn');
+            const stopButton = document.getElementById('stopBtn');
             if (startButton) startButton.disabled = true;
             if (stopButton) stopButton.disabled = false;
 
@@ -1161,8 +1175,9 @@
             if (typeof isPlaying !== 'undefined') {
                 isPlaying = false;
             }
-            const startButton = document.getElementById('start');
-            const stopButton = document.getElementById('stop');
+            const startButton = document.getElementById('playBtn');
+            const stopButton = document.getElementById('stopBtn');
+
             if (startButton) startButton.disabled = false;
             if (stopButton) stopButton.disabled = true;
         }
@@ -1185,14 +1200,28 @@
             console.log('🎹 Multi-melody stopped');
         }
 
+        if (waveManager) {
+            noiseToggle.checked = false;
+            updateWavesStatus();
+            waveManager.toggle();
+            console.log('🌊 Wave manager stopped');
+        }
+
+        if (clockManager) {
+            clockToggle.checked = false;
+            updateClockStatus();
+            clockManager.toggle();
+            console.log('🕰️ Clock manager stopped');
+        }
+
         // Stop transport (existing logic)
         if (typeof Tone !== 'undefined') {
             Tone.Transport.stop();
         }
 
         // Update UI (existing logic)
-        const startButton = document.getElementById('start');
-        const stopButton = document.getElementById('stop');
+        const startButton = document.getElementById('playBtn');
+        const stopButton = document.getElementById('stopBtn');
         if (startButton) startButton.disabled = false;
         if (stopButton) stopButton.disabled = true;
 
@@ -1469,6 +1498,7 @@
         waveManager = new OceanWaveManager();
         melodyManager = new MultiMelodyManager();
         clockManager = new GrandfatherClockManager();
+        sleepManager = new SleepModeManager();
 
         // Set initial sound engine
         if (musicManager) {
@@ -1637,6 +1667,23 @@
 
         if (tempoSlider && tempoDisplay) {
             tempoDisplay.textContent = `${tempoSlider.value} BPM`;
+        }
+    }
+
+    function updatePlayButton(isPlaying) {
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        if (isPlaying) {
+            // Change to pause icon
+            playBtn.innerHTML = '<div style="width: 4px; height: 16px; background: white; margin-right: 3px;"></div><div style="width: 4px; height: 16px; background: white;"></div>';
+            playBtn.disabled = true;
+            stopBtn.disabled = false;
+        } else {
+            // Change to play icon
+            playBtn.innerHTML = '<div class="play-icon"></div>';
+            playBtn.disabled = false;
+            stopBtn.disabled = true;
         }
     }
 
