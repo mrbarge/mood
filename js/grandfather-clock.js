@@ -227,8 +227,6 @@ class GrandfatherClockSystem {
         const tick = () => {
             if (!this.isActive) return;
 
-            console.log('🕰️ TICK'); // Debug: log each tick
-
             // Trigger the tick sound
             this.triggerTick();
 
@@ -250,8 +248,6 @@ class GrandfatherClockSystem {
 
     triggerTick() {
         try {
-            console.log('🕰️ Triggering tick sound...'); // Debug
-
             // Trigger all envelope components
             this.noiseEnv.triggerAttackRelease("8n");
             this.woodEnv.triggerAttackRelease("4n");
@@ -512,33 +508,5 @@ class GrandfatherClockManager {
         this.isInitialized = false;
     }
 }
-
-// ===============================================
-// QUICK TEST FUNCTION - REMOVE AFTER DEBUGGING
-// ===============================================
-
-// Add this to test the clock independently
-window.testClock = async function() {
-    console.log('🕰️ Running clock test...');
-
-    try {
-        await Tone.start();
-        const testClock = new GrandfatherClockSystem();
-        await testClock.init();
-        testClock.start();
-
-        console.log('🕰️ Test clock started - you should hear ticking');
-
-        // Stop after 10 seconds
-        setTimeout(() => {
-            testClock.stop();
-            testClock.dispose();
-            console.log('🕰️ Test clock stopped');
-        }, 10000);
-
-    } catch (error) {
-        console.error('🕰️ Test failed:', error);
-    }
-};
 
 console.log('🕰️ Debug version loaded. Run testClock() in console to test independently.');
