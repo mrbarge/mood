@@ -1135,6 +1135,15 @@
                 }
             }
 
+
+            if (noiseToggle?.checked) {
+                await toggleWaves();
+            }
+
+            if (clockToggle?.checked) {
+                await toggleClock();
+            }
+
             // Start visualizer (existing logic)
             if (typeof startVisualizer === 'function') {
                 startVisualizer();
