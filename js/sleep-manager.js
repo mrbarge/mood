@@ -36,6 +36,10 @@ class SleepModeManager {
         this.startCountdown();
         this.updateDisplayEveryMinute();
 
+        const sleepCard = document.getElementById('sleepBtn');
+        sleepCard.classList.add('active');
+        this.updateSleepDisplay();
+
         console.log(`Sleep mode started: ${minutes} minutes`);
     }
 
@@ -72,6 +76,11 @@ class SleepModeManager {
 
         this.sleepBtn.classList.remove('active');
         this.sleepText.textContent = 'Sleep Mode';
+
+        const sleepCard = document.getElementById('sleepBtn');
+        const sleepLabel = document.querySelector('#sleepText');
+        sleepCard.classList.remove('active');
+        sleepLabel.textContent = 'Sleep';
     }
 
     startCountdown() {
@@ -106,7 +115,8 @@ class SleepModeManager {
 
     updateSleepDisplay() {
         const remainingMinutes = Math.round(this.sleepMode.remainingSeconds / 60);
-        this.sleepText.textContent = `Sleep: ${remainingMinutes}m`;
+        const sleepLabel = document.querySelector('#sleepText');
+        sleepLabel.textContent = remainingMinutes > 0 ? `${remainingMinutes}m` : 'Sleep';
     }
 
     onSleepTimeout() {

@@ -537,20 +537,36 @@
         </div>
 
         <!-- Playback Controls -->
-        <div class="music-controls">
-            <button class="control-btn play-btn" id="playBtn" title="Play Music">
-                <div class="play-icon"></div>
+        <div class="music-controls-cards">
+            <button class="control-card play-card" id="playBtn" title="Play Music">
+                <div class="card-icon">▶️</div>
+                <div class="card-label">Play</div>
             </button>
 
-            <button class="control-btn stop-btn" id="stopBtn" title="Stop Music" disabled>
-                <div class="stop-icon"></div>
+            <button class="control-card stop-card" id="stopBtn" title="Stop Music" disabled>
+                <div class="card-icon">⏹️</div>
+                <div class="card-label">Stop</div>
             </button>
 
-            <button class="sleep-btn" id="sleepBtn" title="Sleep Mode">
-                <span class="sleep-icon">😴</span>
-                <span id="sleepText">Sleep Mode</span>
+            <button class="control-card sleep-card" id="sleepBtn" title="Sleep Mode">
+                <div class="card-icon">😴</div>
+                <div class="card-label" id="sleepText">Sleep</div>
             </button>
         </div>
+<!--        <div class="music-controls">-->
+<!--            <button class="control-btn play-btn" id="playBtn" title="Play Music">-->
+<!--                <div class="play-icon"></div>-->
+<!--            </button>-->
+
+<!--            <button class="control-btn stop-btn" id="stopBtn" title="Stop Music" disabled>-->
+<!--                <div class="stop-icon"></div>-->
+<!--            </button>-->
+
+<!--            <button class="sleep-btn" id="sleepBtn" title="Sleep Mode">-->
+<!--                <span class="sleep-icon">😴</span>-->
+<!--                <span id="sleepText">Sleep Mode</span>-->
+<!--            </button>-->
+<!--        </div>-->
 
     </div>
 
@@ -812,7 +828,10 @@
             // Randomize melody instrument assignment
             const melodicInstrumentSelect = document.getElementById('melodic-instrument');
             if (melodicInstrumentSelect) {
-                const melodyOptions = ['piano', 'marimba', 'harp', 'music-box', 'mixed'];
+                const melodyOptions = ['piano', 'marimba', 'harp', 'music-box',
+                    'crystal-bells', 'warm-strings', 'ethereal-choir', 'wind-chimes',
+                    'glass-harmonics', 'soft-flute', 'vintage-celesta', 'mixed'
+                ];
                 const randomMelody = melodyOptions[Math.floor(Math.random() * melodyOptions.length)];
                 melodicInstrumentSelect.value = randomMelody;
                 handleMultiInstrumentChange();
@@ -1534,8 +1553,14 @@
         updateRandomizationStatus();
 
         // Set up event listeners
-        if (startButton) startButton.addEventListener("click", startMusic);
-        if (stopButton) stopButton.addEventListener("click", stopMusic);
+        if (startButton) startButton.addEventListener("click", () => {
+            startMusic();
+            updatePlayButton(true);
+        });
+        if (stopButton) stopButton.addEventListener("click", () => {
+            stopMusic();
+            updatePlayButton(false);
+        });
         if (soundEngineSelect) soundEngineSelect.addEventListener("change", handleSoundEngineChange);
         if (moodSelect) moodSelect.addEventListener("change", handleMoodChange);
         if (melodicInstrumentSelect) melodicInstrumentSelect.addEventListener("change", handleInstrumentChange);
@@ -1671,19 +1696,23 @@
     }
 
     function updatePlayButton(isPlaying) {
-        const playBtn = document.getElementById('playBtn');
-        const stopBtn = document.getElementById('stopBtn');
+        const playCard = document.getElementById('playBtn');
+        const stopCard = document.getElementById('stopBtn');
+        const playLabel = playCard.querySelector('.card-label');
+        const playIcon = playCard.querySelector('.card-icon');
 
         if (isPlaying) {
-            // Change to pause icon
-            playBtn.innerHTML = '<div style="width: 4px; height: 16px; background: white; margin-right: 3px;"></div><div style="width: 4px; height: 16px; background: white;"></div>';
-            playBtn.disabled = true;
-            stopBtn.disabled = false;
+            // Change to pause state
+            playIcon.textContent = '⏸️';
+            playLabel.textContent = 'Playing';
+            playCard.disabled = true;
+            stopCard.disabled = false;
         } else {
-            // Change to play icon
-            playBtn.innerHTML = '<div class="play-icon"></div>';
-            playBtn.disabled = false;
-            stopBtn.disabled = true;
+            // Change to play state
+            playIcon.textContent = '▶️';
+            playLabel.textContent = 'Play';
+            playCard.disabled = false;
+            stopCard.disabled = true;
         }
     }
 
