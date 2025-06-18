@@ -144,6 +144,7 @@
                     <select id="melodic-instrument" onchange="updateMelodyStatus()">
                         <option value="random">Random (Auto-changing)</option>
                         <option value="piano" selected>Soft Piano (All Layers)</option>
+                        <option value="rhythmic-piano">Rhythmic Piano (All Layers)</option> <!-- NEW OPTION -->
                         <option value="marimba">Marimba (All Layers)</option>
                         <option value="harp">Harp (All Layers)</option>
                         <option value="music-box">Music Box (All Layers)</option>
@@ -1383,6 +1384,7 @@
     function getInstrumentDisplayName(instrumentKey) {
         const displayNames = {
             'piano': 'Piano',
+            'rhythmic-piano': 'Rhythmic Piano',
             'marimba': 'Marimba',
             'harp': 'Harp',
             'music-box': 'Music Box',

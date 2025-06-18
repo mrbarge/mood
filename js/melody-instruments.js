@@ -2358,6 +2358,355 @@ class VintageCelestaInstrument extends BaseMelodyInstrument {
     }
 }
 
+class RhythmicPianoInstrument extends BaseMelodyInstrument {
+    constructor() {
+        super('Rhythmic Piano');
+
+        // Rhythmic patterns
+        // 1 = on beat, 0 = rest, 0.5 = offbeat (8th), 0.25 = early 16th, 0.75 = late 16th
+        // This creates complex polyrhythmic patterns with double offbeats and fine subdivisions
+        this.rhythmicPatterns = [
+            [1, 0, 1, 0],           // Basic on-beat pattern
+            [1, 0, 0.5, 0],         // Beat 1 + offbeat
+            [0, 1, 1, 0],           // Skip first beat
+            [1, 0.5, 0, 1],         // Syncopated
+            [1, 0, 1, 0.5],         // Beat + offbeat ending
+            [0.5, 0, 1, 0],         // Offbeat start
+            [1, 1, 0, 0],           // Two quick notes
+            [1, 0, 0, 1],           // Sparse pattern
+            [0, 0.5, 1, 0.5],       // All offbeats
+            [1, 0.5, 1, 0.5],       // Dense syncopated
+            [1, 0.25, 0.5, 0],      // Beat + early 16th + offbeat
+            [0.5, 0.75, 1, 0],      // Offbeat + late 16th + beat
+            [1, 0.25, 0.75, 0],     // Beat + both 16th subdivisions
+            [0, 0.25, 0.5, 0.75],   // All subdivisions except beat
+            [1, 0.5, 0.75, 0],      // Beat + offbeat + late 16th
+            [0.25, 0.5, 1, 0.75],   // Complex syncopated pattern
+            [1, 0.25, 1, 0.25],     // Beats + early 16ths
+            [0.5, 0.75, 0.5, 0.75], // Double offbeats pattern
+            [1, 0, 0.25, 0.75],     // Beat + double 16th subdivision
+            [0.25, 0.75, 0.25, 0.75], // All double offbeats
+        ];
+
+        // Current musical state
+        this.currentBeat = 0;
+        this.currentPattern = [];
+        this.currentPatternIndex = 0;
+        this.beatsPerPattern = 4;
+        this.beatInterval = null;
+        this.tempo = 100; // BPM
+
+        // Note selection
+        this.recentNotes = [];
+        this.maxRecentNotes = 4;
+        this.currentScale = [];
+        this.preferredRange = []; // Notes in preferred octave range
+
+        // Phrase structure
+        this.phraseBeat = 0;
+        this.phraseLength = 16; // beats per phrase
+        this.shouldChangePattern = false;
+    }
+
+    async initialize(masterVolume, globalReverb) {
+        super.initialize(masterVolume, globalReverb);
+
+        // Create a clean piano-style synth
+        this.synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "triangle",
+                partials: [1, 0.5, 0.25] // Add some harmonics for richness
+            },
+            envelope: {
+                attack: 0.01,
+                decay: 0.3,
+                sustain: 0.2,
+                release: 0.8
+            },
+            volume: -2
+        });
+
+        // Clean, modern piano processing
+        const rhythmChorus = new Tone.Chorus({
+            frequency: 0.3,
+            delayTime: 2,
+            depth: 0.2,
+            wet: 0.3
+        }).start();
+
+        // const rhythmDelay = new Tone.PingPongDelay({
+        //     delayTime: "8n",
+        //     feedback: 0.2,
+        //     wet: 0.15
+        // });
+
+        const rhythmDelay = new Tone.PingPongDelay({
+            delayTime: "4n",     // Quarter note - slower echoes
+            feedback: 0.3,       // Fewer repeats
+            wet: 0.5             // Very present
+        });
+        const rhythmCompressor = new Tone.Compressor({
+            threshold: -18,
+            ratio: 3,
+            attack: 0.003,
+            release: 0.1
+        });
+
+        this.reverbNode = new Tone.Reverb({
+            decay: 8,
+            wet: this.config.reverbAmount,
+            preDelay: 0.02,
+            roomSize: 0.6
+        });
+
+        // Signal chain
+        this.synth.connect(rhythmChorus);
+        rhythmChorus.connect(rhythmDelay);
+        rhythmDelay.connect(rhythmCompressor);
+        rhythmCompressor.connect(this.reverbNode);
+        this.reverbNode.connect(masterVolume);
+
+        this.effects.push(rhythmChorus, rhythmDelay, rhythmCompressor, this.reverbNode);
+        this.synth.volume.value = this.config.volume;
+    }
+
+    start(scale, melodicPattern) {
+        super.start(scale, melodicPattern);
+
+        this.currentScale = scale;
+        this.setupPreferredRange();
+        this.selectNewPattern();
+        this.startRhythmicPlayback();
+    }
+
+    setupPreferredRange() {
+        // Focus on a comfortable melodic range (octaves 3-5)
+        this.preferredRange = this.currentScale.filter(note => {
+            const octave = parseInt(note.slice(-1));
+            return octave >= 3 && octave <= 5;
+        });
+
+        // Fallback to full scale if preferred range is too small
+        if (this.preferredRange.length < 5) {
+            this.preferredRange = this.currentScale;
+        }
+    }
+
+    selectNewPattern() {
+        // Choose a new rhythmic pattern
+        const oldPattern = this.currentPattern;
+        do {
+            const randomIndex = Math.floor(Math.random() * this.rhythmicPatterns.length);
+            this.currentPattern = [...this.rhythmicPatterns[randomIndex]];
+        } while (this.rhythmicPatterns.length > 1 &&
+        JSON.stringify(this.currentPattern) === JSON.stringify(oldPattern));
+
+        this.currentPatternIndex = 0;
+        console.debug(`Rhythmic Piano: New pattern selected: ${this.currentPattern}`);
+    }
+
+    startRhythmicPlayback() {
+        if (!this.isActive) return;
+
+        // Calculate beat duration from tempo
+        const beatDuration = (60 / this.tempo) * 1000; // milliseconds per beat
+
+        const playBeat = () => {
+            if (!this.isActive) return;
+
+            // Get current rhythm value
+            const rhythmValue = this.currentPattern[this.currentPatternIndex];
+
+            if (rhythmValue > 0) {
+                // Determine timing offset for different subdivisions
+                let timing = 0;
+                if (rhythmValue === 0.5) {
+                    timing = beatDuration * 0.5; // Offbeat (8th note)
+                } else if (rhythmValue === 0.25) {
+                    timing = beatDuration * 0.25; // Early 16th note
+                } else if (rhythmValue === 0.75) {
+                    timing = beatDuration * 0.75; // Late 16th note
+                }
+                // rhythmValue === 1 means on-beat (timing = 0)
+
+                setTimeout(() => {
+                    if (this.isActive) {
+                        this.playRhythmicNote(rhythmValue);
+                    }
+                }, timing);
+            }
+
+            // Advance pattern and beat counters
+            this.currentPatternIndex = (this.currentPatternIndex + 1) % this.currentPattern.length;
+            this.currentBeat++;
+            this.phraseBeat++;
+
+            // Pattern change logic - change every 1-2 patterns
+            if (this.currentPatternIndex === 0) {
+                const patternsCompleted = Math.floor(this.phraseBeat / this.beatsPerPattern);
+                if (patternsCompleted > 0 && patternsCompleted % (1 + Math.floor(Math.random() * 2)) === 0) {
+                    this.selectNewPattern();
+                }
+            }
+
+            // Phrase structure - reset every 16 beats
+            if (this.phraseBeat >= this.phraseLength) {
+                this.phraseBeat = 0;
+                this.currentBeat = 0;
+
+                // Occasionally change tempo slightly
+                if (Math.random() < 0.3) {
+                    this.adjustTempo();
+                }
+            }
+
+            // Schedule next beat
+            if (this.isActive) {
+                this.beatInterval = setTimeout(playBeat, beatDuration);
+            }
+        };
+
+        // Start after a short delay
+        this.beatInterval = setTimeout(playBeat, 500);
+    }
+
+    playRhythmicNote(rhythmValue = 1) {
+        const note = this.selectNextNote();
+        if (!note) return;
+
+        // Add to recent notes for variety
+        this.recentNotes.push(note);
+        if (this.recentNotes.length > this.maxRecentNotes) {
+            this.recentNotes.shift();
+        }
+
+        // Track for visualization
+        if (typeof activeNotes !== 'undefined') {
+            if (!activeNotes[note]) {
+                activeNotes[note] = { count: 1, type: 'rhythmic' };
+            } else {
+                activeNotes[note].count++;
+            }
+        }
+
+        try {
+            // Vary note duration and velocity based on rhythm timing
+            let noteDuration = 0.15 + Math.random() * 0.2; // Base: 0.15-0.35 seconds
+            let velocity = 0.7 + Math.random() * 0.3; // Base: 0.7-1.0
+
+            if (rhythmValue === 1) {
+                // On-beat: longer, stronger
+                noteDuration *= 1.8;
+                velocity *= 1.0;
+            } else if (rhythmValue === 0.5) {
+                // Offbeat: medium length, slightly softer
+                noteDuration *= 1.3;
+                velocity *= 0.85;
+            } else if (rhythmValue === 0.25 || rhythmValue === 0.75) {
+                // 16th subdivisions: shorter, lighter
+                noteDuration *= 0.9;
+                velocity *= 0.7;
+            }
+
+            this.synth.triggerAttackRelease(note, noteDuration, undefined, velocity);
+
+        } catch (error) {
+            console.debug("Rhythmic piano playback error:", error.message);
+        }
+
+        // Clean up note tracking
+        setTimeout(() => {
+            if (typeof isPlaying !== 'undefined' && isPlaying &&
+                typeof activeNotes !== 'undefined' && activeNotes[note]) {
+                activeNotes[note].count--;
+                if (activeNotes[note].count <= 0) {
+                    delete activeNotes[note];
+                }
+            }
+        }, 1000);
+    }
+
+    selectNextNote() {
+        if (this.preferredRange.length === 0) return null;
+
+        // Create pool of available notes (excluding recent ones)
+        const availableNotes = this.preferredRange.filter(note =>
+            !this.recentNotes.includes(note)
+        );
+
+        // If we've used too many notes, allow some recent ones back
+        let notePool = availableNotes.length > 2 ? availableNotes : this.preferredRange;
+
+        // Prefer notes that create good melodic movement
+        if (this.recentNotes.length > 0) {
+            const lastNote = this.recentNotes[this.recentNotes.length - 1];
+            const lastNoteIndex = this.preferredRange.indexOf(lastNote);
+
+            if (lastNoteIndex !== -1) {
+                // Prefer notes that are 2-4 steps away for good melodic motion
+                const preferredNotes = notePool.filter(note => {
+                    const noteIndex = this.preferredRange.indexOf(note);
+                    const distance = Math.abs(noteIndex - lastNoteIndex);
+                    return distance >= 2 && distance <= 4;
+                });
+
+                if (preferredNotes.length > 0) {
+                    notePool = preferredNotes;
+                }
+            }
+        }
+
+        // Select random note from the filtered pool
+        return notePool[Math.floor(Math.random() * notePool.length)];
+    }
+
+    adjustTempo() {
+        // Slightly adjust tempo for musical interest
+        const tempoVariation = 5; // ±5 BPM
+        const oldTempo = this.tempo;
+        this.tempo = Math.max(80, Math.min(120,
+            this.tempo + (Math.random() - 0.5) * tempoVariation * 2
+        ));
+
+        if (Math.abs(this.tempo - oldTempo) > 1) {
+            console.debug(`Rhythmic Piano: Tempo adjusted from ${oldTempo} to ${this.tempo} BPM`);
+        }
+    }
+
+    stop() {
+        super.stop();
+
+        if (this.beatInterval) {
+            clearTimeout(this.beatInterval);
+            this.beatInterval = null;
+        }
+
+        // Reset state
+        this.currentBeat = 0;
+        this.phraseBeat = 0;
+        this.currentPatternIndex = 0;
+        this.recentNotes = [];
+
+        console.debug("Rhythmic Piano stopped");
+    }
+
+    // Override the parent's melody system since we use our own rhythmic system
+    startMelodicPhrases() {
+        // Don't use the parent's random phrase system
+        // Our rhythmic system handles all timing
+    }
+
+    playMelodicSequence(melody) {
+        // Don't use the parent's sequence system
+        // Our rhythmic system handles note playback
+    }
+
+    dispose() {
+        this.stop();
+        super.dispose();
+    }
+}
+
 // ===============================================
 // MELODY INSTRUMENT REGISTRY
 // ===============================================
@@ -2370,6 +2719,7 @@ class MelodyInstrumentRegistry {
 
     registerDefaultInstruments() {
         this.register('piano', PianoInstrument);
+        this.register('rhythmic-piano', RhythmicPianoInstrument);
         this.register('glitch-electronic', GlitchElectronicInstrument);
         this.register('sampled-piano', SampledPianoInstrument);
         this.register('marimba', MarimbaInstrument);
