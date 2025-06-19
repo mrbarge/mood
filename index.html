@@ -144,7 +144,8 @@
                     <select id="melodic-instrument" onchange="updateMelodyStatus()">
                         <option value="random">Random (Auto-changing)</option>
                         <option value="piano" selected>Soft Piano (All Layers)</option>
-                        <option value="rhythmic-piano">Rhythmic Piano (All Layers)</option> <!-- NEW OPTION -->
+                        <option value="rhythmic-piano">Rhythmic Piano (All Layers)</option>
+                        <option value="algorithmic-melody">Algorithmic Melody (All Layers)</option>
                         <option value="marimba">Marimba (All Layers)</option>
                         <option value="harp">Harp (All Layers)</option>
                         <option value="music-box">Music Box (All Layers)</option>
@@ -554,21 +555,6 @@
                 <div class="card-label" id="sleepText">Sleep</div>
             </button>
         </div>
-<!--        <div class="music-controls">-->
-<!--            <button class="control-btn play-btn" id="playBtn" title="Play Music">-->
-<!--                <div class="play-icon"></div>-->
-<!--            </button>-->
-
-<!--            <button class="control-btn stop-btn" id="stopBtn" title="Stop Music" disabled>-->
-<!--                <div class="stop-icon"></div>-->
-<!--            </button>-->
-
-<!--            <button class="sleep-btn" id="sleepBtn" title="Sleep Mode">-->
-<!--                <span class="sleep-icon">😴</span>-->
-<!--                <span id="sleepText">Sleep Mode</span>-->
-<!--            </button>-->
-<!--        </div>-->
-
     </div>
 
     <!-- Visualizer -->
@@ -1385,6 +1371,7 @@
         const displayNames = {
             'piano': 'Piano',
             'rhythmic-piano': 'Rhythmic Piano',
+            'algorithmic-melody': 'Algorithmic Melody',
             'marimba': 'Marimba',
             'harp': 'Harp',
             'music-box': 'Music Box',

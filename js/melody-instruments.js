@@ -2707,6 +2707,460 @@ class RhythmicPianoInstrument extends BaseMelodyInstrument {
     }
 }
 
+class AlgorithmicMelodyInstrument extends BaseMelodyInstrument {
+    constructor() {
+        super('Algorithmic Melody');
+
+        // Pattern systems
+        this.patterns = {};
+        this.sequencers = [];
+        this.currentScale = [];
+        this.scaleNotes = [];
+
+        // Algorithmic parameters
+        this.complexity = 0.6;
+        this.polyrhythmAmount = 0.4;
+        this.glitchAmount = 0.3;
+        this.evolutionRate = 0.2;
+
+        // Pattern lengths for polyrhythm
+        this.patternLengths = [16, 12, 9]; // Creates interesting polyrhythmic interactions
+
+        // Evolution timing
+        this.evolutionTimeout = null;
+        this.evolutionInterval = 15000; // Evolve every 15 seconds
+
+        // Tone.js sequences
+        this.toneSequences = [];
+    }
+
+    async initialize(masterVolume, globalReverb) {
+        super.initialize(masterVolume, globalReverb);
+
+        // Primary FM synth for melodic content
+        this.fmSynth = new Tone.FMSynth({
+            harmonicity: 3,
+            modulationIndex: 12,
+            detune: 0,
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.8 },
+            modulation: { type: "square" },
+            modulationEnvelope: { attack: 0.2, decay: 0.1, sustain: 0.6, release: 0.5 },
+            volume: -8
+        });
+
+        // Secondary synth for polyrhythmic texture
+        this.polySynth = new Tone.MonoSynth({
+            oscillator: { type: "sawtooth" },
+            envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.4 },
+            volume: -12
+        });
+
+        // Glitch/percussion synth for algorithmic hits
+        this.glitchSynth = new Tone.MembraneSynth({
+            pitchDecay: 0.05,
+            octaves: 6,
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.8 },
+            volume: -15
+        });
+
+        // Effects chain inspired by the original
+        const algorithmicFilter = new Tone.Filter({
+            frequency: 2000,
+            type: "lowpass",
+            rolloff: -12,
+            Q: 2
+        });
+
+        const algorithmicDelay = new Tone.PingPongDelay({
+            delayTime: "8n.",
+            feedback: 0.4,
+            wet: 0.3
+        });
+
+        const subtleDistortion = new Tone.Distortion({
+            distortion: 0.15,
+            wet: 0.2
+        });
+
+        const chorus = new Tone.Chorus({
+            frequency: 0.3,
+            delayTime: 3,
+            depth: 0.4,
+            wet: 0.3
+        }).start();
+
+        this.reverbNode = new Tone.Reverb({
+            decay: 8,
+            wet: this.config.reverbAmount,
+            preDelay: 0.03,
+            roomSize: 0.7
+        });
+
+        // Connect signal chain
+        this.fmSynth.connect(subtleDistortion);
+        this.polySynth.connect(algorithmicFilter);
+        this.glitchSynth.connect(algorithmicDelay);
+
+        subtleDistortion.connect(chorus);
+        algorithmicFilter.connect(chorus);
+        algorithmicDelay.connect(chorus);
+
+        chorus.connect(this.reverbNode);
+        this.reverbNode.connect(masterVolume);
+
+        this.synth = this.fmSynth; // Main synth reference for parent class compatibility
+
+        this.effects.push(
+            this.polySynth, this.glitchSynth, algorithmicFilter,
+            algorithmicDelay, subtleDistortion, chorus, this.reverbNode
+        );
+    }
+
+    start(scale, melodicPattern) {
+        super.start(scale, melodicPattern);
+
+        this.currentScale = scale;
+        this.extractScaleNotes();
+        this.generateAlgorithmicPatterns();
+        this.startSequencers();
+        this.scheduleEvolution();
+    }
+
+    extractScaleNotes() {
+        // Extract just the note names and octaves for algorithmic use
+        this.scaleNotes = this.currentScale.map(note => ({
+            name: note.slice(0, -1),
+            octave: parseInt(note.slice(-1)),
+            fullNote: note
+        }));
+    }
+
+    generateAlgorithmicPatterns() {
+        this.patterns = {
+            primary: this.generateMelodicPattern(this.patternLengths[0], this.complexity),
+            secondary: this.generatePolyrhythmicPattern(this.patternLengths[1], this.complexity * 0.7),
+            tertiary: this.generatePolyrhythmicPattern(this.patternLengths[2], this.complexity * 0.5),
+            glitch: this.generateGlitchPattern(32, this.glitchAmount)
+        };
+
+        console.debug('Algorithmic patterns generated:', {
+            primaryLength: this.patterns.primary.length,
+            secondaryLength: this.patterns.secondary.length,
+            tertiaryLength: this.patterns.tertiary.length
+        });
+    }
+
+    generateMelodicPattern(length, density) {
+        const pattern = [];
+        let lastNoteIndex = Math.floor(this.scaleNotes.length / 2);
+
+        for (let i = 0; i < length; i++) {
+            const shouldTrigger = Math.random() < density;
+
+            if (shouldTrigger && this.scaleNotes.length > 0) {
+                // Algorithmic note selection with melodic movement
+                const movement = Math.floor(Math.random() * 7) - 3; // -3 to +3 scale steps
+                let noteIndex = Math.max(0, Math.min(this.scaleNotes.length - 1, lastNoteIndex + movement));
+
+                // Occasional octave shifts for interest
+                let octave = this.scaleNotes[noteIndex].octave;
+                if (Math.random() < 0.2) {
+                    octave += Math.random() < 0.5 ? -1 : 1;
+                    octave = Math.max(2, Math.min(6, octave));
+                }
+
+                pattern.push({
+                    trigger: true,
+                    note: this.scaleNotes[noteIndex].name + octave,
+                    velocity: 0.4 + Math.random() * 0.5,
+                    duration: this.getAlgorithmicDuration(),
+                    probability: 0.6 + Math.random() * 0.3
+                });
+
+                lastNoteIndex = noteIndex;
+            } else {
+                pattern.push({
+                    trigger: false,
+                    note: null,
+                    velocity: 0,
+                    duration: 0,
+                    probability: 0
+                });
+            }
+        }
+
+        return pattern;
+    }
+
+    generatePolyrhythmicPattern(length, density) {
+        const pattern = [];
+
+        for (let i = 0; i < length; i++) {
+            if (Math.random() < density && this.scaleNotes.length > 0) {
+                const randomNote = this.scaleNotes[Math.floor(Math.random() * this.scaleNotes.length)];
+                let octave = randomNote.octave;
+
+                // Polyrhythmic patterns tend to use higher octaves
+                if (Math.random() < 0.4) {
+                    octave = Math.min(6, octave + 1);
+                }
+
+                pattern.push({
+                    trigger: true,
+                    note: randomNote.name + octave,
+                    velocity: 0.2 + Math.random() * 0.4,
+                    duration: "16n",
+                    probability: 0.5 + Math.random() * 0.4
+                });
+            } else {
+                pattern.push({
+                    trigger: false,
+                    note: null,
+                    velocity: 0,
+                    duration: 0,
+                    probability: 0
+                });
+            }
+        }
+
+        return pattern;
+    }
+
+    generateGlitchPattern(length, density) {
+        const pattern = [];
+
+        for (let i = 0; i < length; i++) {
+            if (Math.random() < density) {
+                // Generate glitch frequencies that relate to our scale
+                const baseFreq = 220; // A3
+                const glitchFreq = baseFreq * Math.pow(2, Math.random() * 3); // Up to 3 octaves higher
+
+                pattern.push({
+                    trigger: true,
+                    frequency: glitchFreq,
+                    velocity: 0.3 + Math.random() * 0.4,
+                    duration: 0.05 + Math.random() * 0.1,
+                    probability: 0.4 + Math.random() * 0.5
+                });
+            } else {
+                pattern.push({
+                    trigger: false,
+                    frequency: 0,
+                    velocity: 0,
+                    duration: 0,
+                    probability: 0
+                });
+            }
+        }
+
+        return pattern;
+    }
+
+    getAlgorithmicDuration() {
+        const durations = ["32n", "16n", "16n.", "8n", "8n.", "4n"];
+        const weights = [0.1, 0.3, 0.2, 0.2, 0.15, 0.05]; // Favor shorter notes
+
+        const random = Math.random();
+        let cumulative = 0;
+
+        for (let i = 0; i < weights.length; i++) {
+            cumulative += weights[i];
+            if (random < cumulative) {
+                return durations[i];
+            }
+        }
+
+        return "16n"; // Fallback
+    }
+
+    startSequencers() {
+        if (!this.isActive) return;
+
+        // Primary melodic sequencer
+        const primarySequence = new Tone.Sequence((time, step) => {
+            const pattern = this.patterns.primary[step % this.patterns.primary.length];
+            if (pattern.trigger && Math.random() < pattern.probability) {
+                this.triggerMelodicNote(this.fmSynth, pattern, time);
+            }
+        }, Array.from({length: this.patterns.primary.length}, (_, i) => i), "8n");
+
+        // Secondary polyrhythmic sequencer
+        const secondarySequence = new Tone.Sequence((time, step) => {
+            const pattern = this.patterns.secondary[step % this.patterns.secondary.length];
+            if (pattern.trigger && Math.random() < pattern.probability) {
+                this.triggerMelodicNote(this.polySynth, pattern, time);
+            }
+        }, Array.from({length: this.patterns.secondary.length}, (_, i) => i), "16n");
+
+        // Tertiary polyrhythmic sequencer
+        const tertiarySequence = new Tone.Sequence((time, step) => {
+            const pattern = this.patterns.tertiary[step % this.patterns.tertiary.length];
+            if (pattern.trigger && Math.random() < pattern.probability) {
+                this.triggerMelodicNote(this.polySynth, pattern, time);
+            }
+        }, Array.from({length: this.patterns.tertiary.length}, (_, i) => i), "8n.");
+
+        // Glitch sequencer
+        const glitchSequence = new Tone.Sequence((time, step) => {
+            const pattern = this.patterns.glitch[step % this.patterns.glitch.length];
+            if (pattern.trigger && Math.random() < pattern.probability) {
+                this.glitchSynth.triggerAttackRelease(pattern.frequency, pattern.duration, time, pattern.velocity);
+            }
+        }, Array.from({length: this.patterns.glitch.length}, (_, i) => i), "32n");
+
+        // Store sequences and start them
+        this.toneSequences = [primarySequence, secondarySequence, tertiarySequence, glitchSequence];
+        this.toneSequences.forEach(seq => {
+            seq.start();
+        });
+
+        console.debug('Algorithmic sequencers started');
+    }
+
+    triggerMelodicNote(synth, pattern, time) {
+        if (!pattern.note) return;
+
+        // Track for visualization
+        if (typeof activeNotes !== 'undefined') {
+            if (!activeNotes[pattern.note]) {
+                activeNotes[pattern.note] = { count: 1, type: 'algorithmic' };
+            } else {
+                activeNotes[pattern.note].count++;
+            }
+        }
+
+        try {
+            synth.triggerAttackRelease(pattern.note, pattern.duration, time, pattern.velocity);
+        } catch (error) {
+            console.debug("Algorithmic note playback error:", error.message);
+        }
+
+        // Clean up note tracking
+        setTimeout(() => {
+            if (typeof isPlaying !== 'undefined' && isPlaying &&
+                typeof activeNotes !== 'undefined' && activeNotes[pattern.note]) {
+                activeNotes[pattern.note].count--;
+                if (activeNotes[pattern.note].count <= 0) {
+                    delete activeNotes[pattern.note];
+                }
+            }
+        }, 1000);
+    }
+
+    scheduleEvolution() {
+        if (!this.isActive) return;
+
+        this.evolutionTimeout = setTimeout(() => {
+            if (this.isActive) {
+                this.evolvePatterns();
+                this.scheduleEvolution(); // Schedule next evolution
+            }
+        }, this.evolutionInterval);
+    }
+
+    evolvePatterns() {
+        console.debug('Evolving algorithmic patterns...');
+
+        // Evolve primary pattern
+        for (let i = 0; i < this.patterns.primary.length; i++) {
+            if (Math.random() < this.evolutionRate) {
+                if (Math.random() < 0.7) {
+                    // Modify existing note
+                    if (this.patterns.primary[i].trigger) {
+                        const currentNote = this.patterns.primary[i];
+                        const noteIndex = this.scaleNotes.findIndex(n => n.fullNote === currentNote.note);
+                        if (noteIndex !== -1) {
+                            const movement = Math.floor(Math.random() * 5) - 2; // -2 to +2
+                            const newIndex = Math.max(0, Math.min(this.scaleNotes.length - 1, noteIndex + movement));
+                            currentNote.note = this.scaleNotes[newIndex].fullNote;
+                        }
+                    }
+                } else {
+                    // Toggle trigger state
+                    this.patterns.primary[i].trigger = !this.patterns.primary[i].trigger;
+                    if (this.patterns.primary[i].trigger) {
+                        const randomNote = this.scaleNotes[Math.floor(Math.random() * this.scaleNotes.length)];
+                        this.patterns.primary[i].note = randomNote.fullNote;
+                        this.patterns.primary[i].velocity = 0.4 + Math.random() * 0.5;
+                        this.patterns.primary[i].duration = this.getAlgorithmicDuration();
+                        this.patterns.primary[i].probability = 0.6 + Math.random() * 0.3;
+                    }
+                }
+            }
+        }
+
+        // Evolve glitch pattern more frequently
+        this.patterns.glitch = this.generateGlitchPattern(32, this.glitchAmount);
+
+        console.debug('Pattern evolution complete');
+    }
+
+    stop() {
+        super.stop();
+
+        // Stop and dispose Tone.js sequences
+        this.toneSequences.forEach(seq => {
+            if (seq) {
+                seq.stop();
+                seq.dispose();
+            }
+        });
+        this.toneSequences = [];
+
+        // Clear evolution timeout
+        if (this.evolutionTimeout) {
+            clearTimeout(this.evolutionTimeout);
+            this.evolutionTimeout = null;
+        }
+
+        console.debug('Algorithmic melody stopped');
+    }
+
+    // Override parent methods since we use our own system
+    startMelodicPhrases() {
+        // Don't use parent's phrase system - we have our own sequencers
+    }
+
+    playMelodicSequence(melody) {
+        // Don't use parent's sequence system - we have algorithmic patterns
+    }
+
+    dispose() {
+        this.stop();
+        super.dispose();
+    }
+
+    // Public methods for adjusting algorithmic parameters
+    setComplexity(value) {
+        this.complexity = Math.max(0.1, Math.min(1.0, value));
+        console.debug(`Algorithmic complexity set to: ${this.complexity}`);
+    }
+
+    setPolyrhythmAmount(value) {
+        this.polyrhythmAmount = Math.max(0.0, Math.min(1.0, value));
+        console.debug(`Polyrhythm amount set to: ${this.polyrhythmAmount}`);
+    }
+
+    setGlitchAmount(value) {
+        this.glitchAmount = Math.max(0.0, Math.min(1.0, value));
+        console.debug(`Glitch amount set to: ${this.glitchAmount}`);
+    }
+
+    setEvolutionRate(value) {
+        this.evolutionRate = Math.max(0.0, Math.min(1.0, value));
+        console.debug(`Evolution rate set to: ${this.evolutionRate}`);
+    }
+
+    // Trigger immediate evolution
+    triggerEvolution() {
+        if (this.isActive) {
+            this.evolvePatterns();
+        }
+    }
+}
+
 // ===============================================
 // MELODY INSTRUMENT REGISTRY
 // ===============================================
@@ -2733,6 +3187,8 @@ class MelodyInstrumentRegistry {
         this.register('glass-harmonics', GlassHarmonicsInstrument);
         this.register('soft-flute', SoftFluteInstrument);
         this.register('vintage-celesta', VintageCelestaInstrument);
+
+        this.register('algorithmic-melody', AlgorithmicMelodyInstrument);
     }
 
     register(key, InstrumentClass) {
