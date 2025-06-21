@@ -220,14 +220,30 @@
                 </div>
 
                 <div class="control-group">
-                    <label class="control-label" for="melody-slot-count">Number of Melody Layers</label>
+                    <div class="control-header-with-protection">
+                        <label class="control-label" for="melody-slot-count">Number of Melody Layers</label>
+                        <div class="protection-controls">
+                            <div class="enable-checkbox">
+                                <input type="checkbox" id="melody-layers-enable" onchange="toggleMelodyLayersAccess()">
+                                <label for="melody-layers-enable" class="checkbox-label">Enable Advanced Control</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cpu-warning" id="melody-layers-warning">
+                        <div class="warning-icon">⚠️</div>
+                        <div class="warning-text">
+                            <strong>Warning:</strong> High melody layer counts can cause significant CPU usage and may affect performance on slower devices.
+                        </div>
+                    </div>
+
                     <div class="slider-container">
                         <div class="slider-wrapper">
-                            <input type="range" id="melody-slot-count" min="1" max="3" value="1" onchange="handleSlotCountChange()">
+                            <input type="range" id="melody-slot-count" min="1" max="3" step="1" value="1" onchange="handleSlotCountChange()" disabled>
                         </div>
                         <div class="slider-labels">
-                            <span>1 Layer</span>
-                            <span>3 Layers</span>
+                            <span>1</span>
+                            <span>3</span>
                         </div>
                     </div>
                 </div>
@@ -2269,6 +2285,38 @@
             status.textContent = thunderToggle.checked ? 'On' : 'Off';
         }
     }
+
+    function toggleMelodyLayersAccess() {
+        const checkbox = document.getElementById('melody-layers-enable');
+        const slider = document.getElementById('melody-slot-count');
+        const warning = document.getElementById('melody-layers-warning');
+
+        if (checkbox && slider && warning) {
+            const isEnabled = checkbox.checked;
+
+            // Enable/disable the slider
+            slider.disabled = !isEnabled;
+
+            // Show/hide the warning
+            if (isEnabled) {
+                warning.classList.remove('hidden');
+            } else {
+                warning.classList.add('hidden');
+                slider.value = '1';
+            }
+
+            console.log('Melody layers access:', isEnabled ? 'enabled' : 'disabled');
+        }
+    }
+
+    // Initialize the state when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ensure the warning is hidden initially since checkbox starts unchecked
+        const warning = document.getElementById('melody-layers-warning');
+        if (warning) {
+            warning.classList.add('hidden');
+        }
+    });
 
     // Initialize preset manager when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {

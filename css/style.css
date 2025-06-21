@@ -1328,3 +1328,102 @@ Thunder system*
 }
 
 
+
+
+/*
+Protection
+ */
+.control-header-with-protection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.protection-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.enable-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.checkbox-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    user-select: none;
+}
+
+.cpu-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.cpu-warning.hidden {
+    display: none;
+}
+
+.warning-icon {
+    font-size: 1.1rem;
+    margin-top: 1px;
+}
+
+.warning-text {
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.warning-text strong {
+    color: #ffc107;
+}
+
+/* Disabled slider styling */
+input[type="range"]:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #4a90e2;
+    cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .control-header-with-protection {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .protection-controls {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
