@@ -602,11 +602,6 @@
                 <div class="card-label">Play</div>
             </button>
 
-            <button class="control-card stop-card" id="stopBtn" title="Stop Music" disabled>
-                <div class="card-icon">⏹️</div>
-                <div class="card-label">Stop</div>
-            </button>
-
             <button class="control-card sleep-card" id="sleepBtn" title="Sleep Mode">
                 <div class="card-icon">😴</div>
                 <div class="card-label" id="sleepText">Sleep</div>
@@ -659,7 +654,6 @@
 
     // Initialize UI elements
     const startButton = document.getElementById("playBtn");
-    const stopButton = document.getElementById("stopBtn");
     const sleepButton = document.getElementById("sleepBtn");
     const moodSelect = document.getElementById("mood");
     const densitySlider = document.getElementById("density");
@@ -1120,11 +1114,6 @@
                 activeNotes = {};
             }
 
-            const startButton = document.getElementById('playBtn');
-            const stopButton = document.getElementById('stopBtn');
-            if (startButton) startButton.disabled = true;
-            if (stopButton) stopButton.disabled = false;
-
             // Initialize music manager if not already done
             if (!musicManager) {
                 musicManager = new AmbientMusicManager();
@@ -1238,11 +1227,6 @@
             if (typeof isPlaying !== 'undefined') {
                 isPlaying = false;
             }
-            const startButton = document.getElementById('playBtn');
-            const stopButton = document.getElementById('stopBtn');
-
-            if (startButton) startButton.disabled = false;
-            if (stopButton) stopButton.disabled = true;
         }
     }
 
@@ -1600,12 +1584,13 @@
 
         // Set up event listeners
         if (startButton) startButton.addEventListener("click", () => {
-            startMusic();
-            updatePlayButton(true);
-        });
-        if (stopButton) stopButton.addEventListener("click", () => {
-            stopMusic();
-            updatePlayButton(false);
+            if (isPlaying) {
+                stopMusic();
+                updatePlayButton(false);
+            } else {
+                startMusic();
+                updatePlayButton(true);
+            }
         });
         if (soundEngineSelect) soundEngineSelect.addEventListener("change", handleSoundEngineChange);
         if (moodSelect) moodSelect.addEventListener("change", handleMoodChange);
@@ -1743,22 +1728,21 @@
 
     function updatePlayButton(isPlaying) {
         const playCard = document.getElementById('playBtn');
-        const stopCard = document.getElementById('stopBtn');
         const playLabel = playCard.querySelector('.card-label');
         const playIcon = playCard.querySelector('.card-icon');
 
         if (isPlaying) {
-            // Change to pause state
-            playIcon.textContent = '⏸️';
-            playLabel.textContent = 'Playing';
-            playCard.disabled = true;
-            stopCard.disabled = false;
+            // Change to stop state
+            playIcon.textContent = '⏹️';
+            playLabel.textContent = 'Stop';
+            playCard.classList.remove('play-card');
+            playCard.classList.add('stop-card');
         } else {
             // Change to play state
             playIcon.textContent = '▶️';
             playLabel.textContent = 'Play';
-            playCard.disabled = false;
-            stopCard.disabled = true;
+            playCard.classList.remove('stop-card');
+            playCard.classList.add('play-card');
         }
     }
 
