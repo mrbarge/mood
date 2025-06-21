@@ -966,6 +966,10 @@ input:checked + .toggle-label:before {
     }
 }
 
+/*
+Presets
+ */
+
 /* Preset Ribbon Container */
 .preset-ribbon-container {
     margin-bottom: 15px;
@@ -1269,3 +1273,58 @@ input:checked + .toggle-label:before {
 .preset-btn.loading .preset-pattern {
     opacity: 0.4;
 }
+
+/*
+Thunder system*
+ */
+
+.thunder-icon {
+    background: linear-gradient(45deg, #4a90e2, #7b68ee);
+}
+
+.thunder-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.thunder-column {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-button {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+}
+
+.action-button:hover {
+    background: linear-gradient(135deg, #5ba0f2, #4588cd);
+    transform: translateY(-1px);
+}
+
+.action-button:active {
+    transform: translateY(0);
+}
+
+/* Responsive: Stack columns on smaller screens */
+@media (max-width: 768px) {
+    .thunder-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
+
