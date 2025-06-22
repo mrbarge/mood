@@ -13,6 +13,7 @@
     <script src="js/grandfather-clock.js"></script>
     <script src="js/thunder-system.js"></script>
     <script src="js/sleep-manager.js"></script>
+    <script src="js/preset-manager.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -27,56 +28,23 @@
         <div class="preset-ribbon-container">
             <h3 class="preset-ribbon-title">Presets</h3>
             <div class="preset-ribbon">
-                <button class="preset-btn" data-preset="deep-space" title="Deep Space - Vast, ethereal soundscapes">
-                    <div class="preset-pattern deep-space-pattern">
-                        <div class="star"></div>
-                        <div class="star"></div>
-                        <div class="star"></div>
-                        <div class="star"></div>
-                    </div>
+                <button class="preset-btn" data-preset="classic" title="Classic">
+                    <span class="icon">1️⃣</span>
                 </button>
-                <button class="preset-btn" data-preset="minimal-drift" title="Minimal Drift - Sparse, contemplative">
-                    <div class="preset-pattern minimal-pattern">
-                        <div class="circle"></div>
-                        <div class="circle"></div>
-                        <div class="circle"></div>
-                    </div>
+                <button class="preset-btn" data-preset="evolving" title="Ever-evolving">
+                    <span class="icon">♾️</span>
                 </button>
-                <button class="preset-btn" data-preset="urban-nights" title="Urban Nights - City ambience, distant echoes">
-                    <div class="preset-pattern urban-pattern">
-                        <div class="building"></div>
-                        <div class="building"></div>
-                        <div class="building"></div>
-                        <div class="building"></div>
-                    </div>
+                <button class="preset-btn" data-preset="minimal-drift" title="Minimal Drift">
+                    <span class="icon">🌱</span>
                 </button>
-                <button class="preset-btn" data-preset="forest-depths" title="Forest Depths - Natural, organic textures">
-                    <div class="preset-pattern forest-pattern">
-                        <div class="tree"></div>
-                        <div class="tree"></div>
-                        <div class="tree"></div>
-                    </div>
+                <button class="preset-btn" data-preset="puzzle" title="Puzzle">
+                    <span class="icon">🧩</span>
                 </button>
-                <button class="preset-btn" data-preset="arctic-expanse" title="Arctic Expanse - Cold, crystalline atmospheres">
-                    <div class="preset-pattern arctic-pattern">
-                        <div class="crystal"></div>
-                        <div class="crystal"></div>
-                        <div class="crystal"></div>
-                        <div class="crystal"></div>
-                    </div>
+                <button class="preset-btn" data-preset="forest" title="Forest Depths">
+                    <span class="icon">🌲</span>
                 </button>
-                <button class="preset-btn" data-preset="digital-dreams" title="Digital Dreams - Synthetic, glitchy textures">
-                    <div class="preset-pattern digital-pattern">
-                        <div class="pixel"></div>
-                        <div class="pixel"></div>
-                        <div class="pixel"></div>
-                        <div class="pixel"></div>
-                        <div class="pixel"></div>
-                        <div class="pixel"></div>
-                        <div class="pixel"></div>
-                        <div class="pixel"></div>
-                        <div class="pixel"></div>
-                    </div>
+                <button class="preset-btn" data-preset="frost" title="Frost">
+                    <span class="icon">❄️</span>
                 </button>
             </div>
         </div>
@@ -785,6 +753,9 @@
     // Clock elements
     const clockToggle = document.getElementById("clock-toggle");
 
+    // Thunder elements
+    const thunderToggle = document.getElementById("thunder-toggle");
+
     // Sound engine element
     const soundEngineSelect = document.getElementById("sound-engine");
 
@@ -1022,6 +993,16 @@
                     clockManager.updateStatus();
                 }
                 console.log('🕰️️ Randomized clock to:', clockToggle.checked ? 'On' : 'Off');
+            }
+
+            // Randomize thunder
+            const thunderToggle = document.getElementById('thunder-toggle');
+            if (thunderToggle) {
+                thunderToggle.checked = Math.random() > 0.5;
+                if (typeof thunderManager !== 'undefined' && thunderManager) {
+                    thunderManager.updateStatus();
+                }
+                console.log('⛈️️️ Randomized thunder to:', thunderToggle.checked ? 'On' : 'Off');
             }
 
             // Randomize sliders
@@ -1319,6 +1300,10 @@
 
             if (clockToggle?.checked) {
                 await toggleClock();
+            }
+
+            if (thunderToggle?.checked) {
+                await toggleThunder();
             }
 
             // Start visualizer (existing logic)
@@ -1773,6 +1758,14 @@
         updateClockStatus();
         console.log('🕰️ Clock integration setup complete');
 
+        // Ensure the warning is hidden initially since checkbox starts unchecked
+        const warning = document.getElementById('melody-layers-warning');
+        if (warning) {
+            warning.classList.add('hidden');
+        }
+
+        window.presetManager = new PresetManager();
+
         console.log('✅ Ambient Music System initialized successfully');
     });
 
@@ -1878,394 +1871,6 @@
         }
     }, 3000);
 
-</script>
-
-<script>
-    class PresetManager {
-        constructor() {
-            this.presets = this.initializePresets();
-            this.currentPreset = null;
-            this.setupEventListeners();
-        }
-
-        initializePresets() {
-            return {
-                'deep-space': {
-                    name: 'Deep Space',
-                    description: 'Vast, ethereal soundscapes',
-                    settings: {
-                        // Mood settings
-                        mood: 'calm',
-                        soundEngine: 'standard',
-                        noteDensity: 5,
-                        reverb: 0.5,
-                        // Toggle states
-                        melody: true,
-                        clock: false,
-                        noise: false,
-                        // Instruments
-                        melodicInstrument: 'soft-piano',
-                        noteFrequency: 6,
-                        melodicReverb: 0.8,
-                        layerRandomness: 0.5,
-                        // Wave
-                        waveVolume: -6,
-                        waveNoiseType: 'pink',
-                        // Clock
-                        clockTempo: 60,
-                    }
-                },
-
-                'minimal-drift': {
-                    name: 'Minimal Drift',
-                    description: 'Sparse, contemplative',
-                    settings: {
-                        // Mood settings
-                        mood: 'nostalgic',
-                        soundEngine: 'aurora-field',
-                        noteDensity: 5,
-                        reverb: 0.5,
-                        // Toggle states
-                        melody: true,
-                        clock: false,
-                        noise: false,
-                        // Instruments
-                        melodicInstrument: 'marimba',
-                        noteFrequency: 6,
-                        melodicReverb: 0.8,
-                        layerRandomness: 0.5,
-                        // Wave
-                        waveVolume: -6,
-                        waveNoiseType: 'pink',
-                        // Clock
-                        clockTempo: 60,
-                    }
-                },
-
-                'urban-nights': {
-                    name: 'Urban Nights',
-                    description: 'City ambience, distant echoes',
-                    settings: {
-                        // Mood settings
-                        mood: 'calm',
-                        soundEngine: 'standard-ambient',
-                        noteDensity: 5,
-                        reverb: 0.5,
-                        // Toggle states
-                        melody: true,
-                        clock: true,
-                        noise: true,
-                        // Instruments
-                        melodicInstrument: 'soft-piano',
-                        noteFrequency: 6,
-                        melodicReverb: 0.8,
-                        layerRandomness: 0.5,
-                        // Wave
-                        waveVolume: -6,
-                        waveNoiseType: 'pink',
-                        // Clock
-                        clockTempo: 60,
-                    }
-                },
-
-                'forest-depths': {
-                    name: 'Forest Depths',
-                    description: 'Natural, organic textures',
-                    settings: {
-                        // Mood settings
-                        mood: 'calm',
-                        soundEngine: 'standard-ambient',
-                        noteDensity: 5,
-                        reverb: 0.5,
-                        // Toggle states
-                        melody: true,
-                        clock: true,
-                        noise: true,
-                        // Instruments
-                        melodicInstrument: 'soft-piano',
-                        noteFrequency: 6,
-                        melodicReverb: 0.8,
-                        layerRandomness: 0.5,
-                        // Wave
-                        waveVolume: -6,
-                        waveNoiseType: 'pink',
-                        // Clock
-                        clockTempo: 60,
-                    }
-                },
-
-                'arctic-expanse': {
-                    name: 'Arctic Expanse',
-                    description: 'Cold, crystalline atmospheres',
-                    settings: {
-                        // Mood settings
-                        mood: 'calm',
-                        soundEngine: 'standard-ambient',
-                        noteDensity: 5,
-                        reverb: 0.5,
-                        // Toggle states
-                        melody: true,
-                        clock: true,
-                        noise: true,
-                        // Instruments
-                        melodicInstrument: 'soft-piano',
-                        noteFrequency: 6,
-                        melodicReverb: 0.8,
-                        layerRandomness: 0.5,
-                        // Wave
-                        waveVolume: -6,
-                        waveNoiseType: 'pink',
-                        // Clock
-                        clockTempo: 60,
-                    }
-                },
-
-                'digital-dreams': {
-                    name: 'Digital Dreams',
-                    description: 'Synthetic, glitchy textures',
-                    settings: {
-                        // Mood settings
-                        mood: 'calm',
-                        soundEngine: 'standard-ambient',
-                        noteDensity: 5,
-                        reverb: 0.5,
-                        // Toggle states
-                        melody: true,
-                        clock: true,
-                        noise: true,
-                        // Instruments
-                        melodicInstrument: 'soft-piano',
-                        noteFrequency: 6,
-                        melodicReverb: 0.8,
-                        layerRandomness: 0.5,
-                        // Wave
-                        waveVolume: -6,
-                        waveNoiseType: 'pink',
-                        // Clock
-                        clockTempo: 60,
-                    }
-                }
-            };
-        }
-
-        setupEventListeners() {
-            const presetButtons = document.querySelectorAll('.preset-btn');
-            presetButtons.forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const presetKey = button.getAttribute('data-preset');
-                    this.applyPreset(presetKey);
-                });
-            });
-        }
-
-        applyPreset(presetKey) {
-            const preset = this.presets[presetKey];
-            if (!preset) {
-                console.warn(`Preset '${presetKey}' not found`);
-                return;
-            }
-
-            console.log(`Applying preset: ${preset.name}`);
-
-            // Add loading state
-            const button = document.querySelector(`[data-preset="${presetKey}"]`);
-            if (button) {
-                this.setActivePreset(button);
-                button.classList.add('loading');
-            }
-
-            // Apply settings with a slight delay for visual feedback
-            setTimeout(() => {
-                this.applyPresetSettings(preset.settings);
-
-                if (button) {
-                    button.classList.remove('loading');
-                }
-
-                this.currentPreset = presetKey;
-                console.log(`Preset '${preset.name}' applied successfully`);
-            }, 300);
-        }
-
-        applyPresetSettings(settings) {
-            const moodSelect = document.getElementById('mood');
-            if (moodSelect) {
-                moodSelect.value = settings.mood;
-            }
-            if (settings.soundEngine !== undefined) {
-                this.setSelectValue('sound-engine', settings.soundEngine);
-            }
-            if (settings.melodicInstrument !== undefined) {
-                this.setSelectValue('melodic-instrument', settings.melodicInstrument);
-            }
-            const soundEngineSelect = document.getElementById('sound-engine');
-            if (soundEngineSelect) {
-                soundEngineSelect.value = settings.soundEngine;
-            }
-            const melodicInstrumentSelect = document.getElementById('melodic-instrument');
-            if (melodicInstrumentSelect) {
-                melodicInstrumentSelect.value = settings.melodicInstrument;
-            }
-
-            if (settings.melody !== undefined) {
-                this.setToggleButton('melody-toggle', settings.melody);
-            }
-            if (settings.clock !== undefined) {
-                this.setToggleButton('clock-toggle', settings.clock);
-            }
-            if (settings.noise !== undefined) {
-                this.setToggleButton('noise-toggle', settings.noise);
-            }
-
-            if (settings.reverb !== undefined) {
-                this.setSliderValue('reverb', settings.masterVolume);
-            }
-            if (settings.noteDensity !== undefined) {
-                this.setSliderValue('density', settings.noteDensity);
-            }
-
-            if (settings.noteFrequency !== undefined) {
-                this.setSliderValue('melodic-frequency', settings.noteFrequency);
-            }
-            if (settings.melodicReverb !== undefined) {
-                this.setSliderValue('melodic-reverb', settings.melodicReverb);
-            }
-
-            // Apply effects
-            if (settings.layerRandomness !== undefined) {
-                this.setSliderValue('layer-randomness', settings.layerRandomness);
-            }
-            if (settings.waveVolume !== undefined) {
-                this.setSliderValue('noise-volume', settings.waveVolume);
-            }
-            if (settings.waveNoiseType !== undefined) {
-                this.setSliderValue('noise-type', settings.waveNoiseType);
-            }
-
-            // Apply instrument selections
-            if (settings.clockTempo !== undefined) {
-                this.setSliderValue('clock-tempo', settings.clockTempo);
-            }
-        }
-
-        setSliderValue(elementId, value) {
-            const slider = document.getElementById(elementId);
-            if (slider) {
-                slider.value = value;
-                // Trigger change event to update any associated displays/logic
-                slider.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        }
-
-        setSelectValue(elementId, value) {
-            const select = document.getElementById(elementId);
-            if (select) {
-                select.value = value;
-                // Trigger change event
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }
-
-        setToggleButton(elementId, enabled) {
-            // Try multiple possible ID variations
-            const possibleIds = [
-                elementId,
-                elementId.replace('-toggle', '-btn'),
-                elementId.replace('-toggle', ''),
-                `toggle-${elementId.replace('-toggle', '')}`,
-                `btn-${elementId.replace('-toggle', '')}`
-            ];
-
-            let toggle = null;
-            let foundId = null;
-
-            for (const id of possibleIds) {
-                toggle = document.getElementById(id);
-                if (toggle) {
-                    foundId = id;
-                    break;
-                }
-            }
-
-            if (!toggle) {
-                console.warn(`Toggle button not found for any of these IDs:`, possibleIds);
-                return;
-            }
-
-            console.debug(`Found toggle with ID: ${foundId}, setting to: ${enabled}`);
-
-            // Get current state
-            const isCurrentlyActive = toggle.classList.contains('active') ||
-                toggle.classList.contains('enabled') ||
-                toggle.checked === true;
-
-            console.debug(`Current state: ${isCurrentlyActive}, target state: ${enabled}`);
-
-            // Only change if needed
-            if (isCurrentlyActive === enabled) {
-                console.debug('Toggle already in correct state');
-                return;
-            }
-
-            // Handle different types of toggle implementations
-            if (toggle.type === 'checkbox') {
-                toggle.checked = enabled;
-                toggle.dispatchEvent(new Event('change', { bubbles: true }));
-            } else if (toggle.tagName === 'BUTTON' || toggle.classList.contains('btn')) {
-                // Most likely a button-based toggle - just click it
-                console.debug('Clicking button toggle');
-                toggle.click();
-            } else if (toggle.classList.contains('toggle')) {
-                // Custom toggle class
-                if (enabled) {
-                    toggle.classList.add('active');
-                    toggle.classList.add('enabled');
-                } else {
-                    toggle.classList.remove('active');
-                    toggle.classList.remove('enabled');
-                }
-                toggle.dispatchEvent(new Event('change', { bubbles: true }));
-            } else {
-                // Default: try clicking
-                console.debug('Fallback: clicking toggle');
-                toggle.click();
-            }
-
-            // Verify the change worked
-            setTimeout(() => {
-                const newState = toggle.classList.contains('active') ||
-                    toggle.classList.contains('enabled') ||
-                    toggle.checked === true;
-                console.debug(`Toggle state after change: ${newState}`);
-            }, 100);
-        }
-
-        setActivePreset(activeButton) {
-            // Remove active class from all preset buttons
-            document.querySelectorAll('.preset-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Add active class to clicked button
-            if (activeButton) {
-                activeButton.classList.add('active');
-            }
-        }
-
-        addPreset(key, presetData) {
-            this.presets[key] = presetData;
-            console.log(`Preset '${key}' added`);
-        }
-
-        getCurrentPreset() {
-            return this.currentPreset;
-        }
-
-        getPresetData(presetKey) {
-            return this.presets[presetKey];
-        }
-    }
-
     // Toggle function (same as before)
     async function toggleThunder() {
         console.log('⛈️ toggleThunder() called from UI');
@@ -2308,20 +1913,6 @@
             console.log('Melody layers access:', isEnabled ? 'enabled' : 'disabled');
         }
     }
-
-    // Initialize the state when the page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        // Ensure the warning is hidden initially since checkbox starts unchecked
-        const warning = document.getElementById('melody-layers-warning');
-        if (warning) {
-            warning.classList.add('hidden');
-        }
-    });
-
-    // Initialize preset manager when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        window.presetManager = new PresetManager();
-    });
 </script>
 
 </body>

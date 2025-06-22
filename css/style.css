@@ -1093,177 +1093,6 @@ Presets
     transform: scale(1.05);
 }
 
-/* Deep Space Pattern - Dark purple/blue with stars */
-.deep-space-pattern {
-    background: radial-gradient(circle, #1a1a3e 0%, #0a0a1a 100%);
-    border-radius: 50%;
-}
-
-.deep-space-pattern .star {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: #ffffff;
-    border-radius: 50%;
-    box-shadow: 0 0 3px #00ffff;
-}
-
-.deep-space-pattern .star:nth-child(1) { top: 6px; left: 8px; }
-.deep-space-pattern .star:nth-child(2) { top: 12px; right: 6px; }
-.deep-space-pattern .star:nth-child(3) { bottom: 8px; left: 12px; }
-.deep-space-pattern .star:nth-child(4) { bottom: 6px; right: 10px; }
-
-/* Minimal Pattern - Concentric circles */
-.minimal-pattern {
-    background: linear-gradient(45deg, #2a2a2a 0%, #1a1a1a 100%);
-    border-radius: 50%;
-}
-
-.minimal-pattern .circle {
-    position: absolute;
-    border: 1px solid #ffffff;
-    border-radius: 50%;
-    opacity: 0.6;
-}
-
-.minimal-pattern .circle:nth-child(1) {
-    width: 8px; height: 8px;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-}
-.minimal-pattern .circle:nth-child(2) {
-    width: 16px; height: 16px;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0.4;
-}
-.minimal-pattern .circle:nth-child(3) {
-    width: 24px; height: 24px;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0.2;
-}
-
-/* Urban Pattern - City silhouette */
-.urban-pattern {
-    background: linear-gradient(180deg, #ff6b6b20 0%, #1a1a1a 100%);
-    border-radius: 4px;
-}
-
-.urban-pattern .building {
-    position: absolute;
-    background: #ffffff;
-    bottom: 0;
-    opacity: 0.8;
-}
-
-.urban-pattern .building:nth-child(1) { width: 4px; height: 12px; left: 4px; }
-.urban-pattern .building:nth-child(2) { width: 5px; height: 18px; left: 10px; }
-.urban-pattern .building:nth-child(3) { width: 4px; height: 15px; left: 17px; }
-.urban-pattern .building:nth-child(4) { width: 3px; height: 20px; right: 4px; }
-
-/* Forest Pattern - Tree shapes */
-.forest-pattern {
-    background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
-    border-radius: 4px;
-}
-
-.forest-pattern .tree {
-    position: absolute;
-    bottom: 0;
-}
-
-.forest-pattern .tree::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 6px;
-    background: #8D6E63;
-}
-
-.forest-pattern .tree::after {
-    content: '';
-    position: absolute;
-    bottom: 4px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 3px solid transparent;
-    border-right: 3px solid transparent;
-    border-bottom: 8px solid #1B5E20;
-}
-
-.forest-pattern .tree:nth-child(1) { left: 4px; }
-.forest-pattern .tree:nth-child(2) { left: 12px; }
-.forest-pattern .tree:nth-child(3) { right: 4px; }
-
-/* Arctic Pattern - Snowflake/crystal */
-.arctic-pattern {
-    background: radial-gradient(circle, #E3F2FD 0%, #BBDEFB 100%);
-    border-radius: 50%;
-}
-
-.arctic-pattern .crystal {
-    position: absolute;
-    width: 1px;
-    height: 8px;
-    background: #ffffff;
-    top: 50%;
-    left: 50%;
-    transform-origin: center;
-    opacity: 0.8;
-}
-
-.arctic-pattern .crystal:nth-child(1) { transform: translate(-50%, -50%) rotate(0deg); }
-.arctic-pattern .crystal:nth-child(2) { transform: translate(-50%, -50%) rotate(45deg); }
-.arctic-pattern .crystal:nth-child(3) { transform: translate(-50%, -50%) rotate(90deg); }
-.arctic-pattern .crystal:nth-child(4) { transform: translate(-50%, -50%) rotate(135deg); }
-
-/* Digital Pattern - Pixel grid */
-.digital-pattern {
-    background: linear-gradient(45deg, #00ffff20 0%, #ff6b6b20 100%);
-    border-radius: 2px;
-}
-
-.digital-pattern .pixel {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: #00ffff;
-    opacity: 0.7;
-}
-
-.digital-pattern .pixel:nth-child(1) { top: 3px; left: 3px; }
-.digital-pattern .pixel:nth-child(2) { top: 3px; left: 12px; }
-.digital-pattern .pixel:nth-child(3) { top: 3px; right: 3px; }
-.digital-pattern .pixel:nth-child(4) { top: 12px; left: 6px; }
-.digital-pattern .pixel:nth-child(5) { top: 12px; right: 6px; }
-.digital-pattern .pixel:nth-child(6) { bottom: 3px; left: 3px; }
-.digital-pattern .pixel:nth-child(7) { bottom: 3px; left: 12px; }
-.digital-pattern .pixel:nth-child(8) { bottom: 3px; right: 3px; }
-.digital-pattern .pixel:nth-child(9) {
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    background: #ff6b6b;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .preset-btn {
-        width: 45px;
-        height: 45px;
-    }
-
-    .preset-pattern {
-        width: 26px;
-        height: 26px;
-    }
-}
-
 /* Loading state for preset buttons */
 .preset-btn.loading {
     opacity: 0.6;
@@ -1272,6 +1101,12 @@ Presets
 
 .preset-btn.loading .preset-pattern {
     opacity: 0.4;
+}
+
+.preset-btn .icon {
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+    display: block;
 }
 
 /*
@@ -1356,9 +1191,25 @@ Protection
 
 .checkbox-label {
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: #ffc107; /* Yellow/amber color */
+    font-weight: 600; /* Bold text */
     cursor: pointer;
     user-select: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255, 193, 7, 0.15); /* Subtle yellow background */
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    transition: all 0.2s ease;
+}
+
+.checkbox-label:hover {
+    background: rgba(255, 193, 7, 0.25);
+    border-color: rgba(255, 193, 7, 0.5);
+    transform: translateY(-1px);
+}
+
+.checkbox-label:active {
+    transform: translateY(0);
 }
 
 .cpu-warning {
