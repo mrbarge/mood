@@ -142,7 +142,32 @@ class PresetManager {
                     clockTempo: 60,
                 }
             },
-
+            'jewel': {
+                name: 'Shining Jewel',
+                description: '',
+                settings: {
+                    // Mood settings
+                    mood: 'serene',
+                    soundEngine: 'glacial-ethereal',
+                    noteDensity: 5,
+                    reverb: 0.5,
+                    // Toggle states
+                    melody: true,
+                    clock: false,
+                    noise: true,
+                    thunder: false,
+                    // Instruments
+                    melodicInstrument: 'rhythmic-piano',
+                    noteFrequency: 8,
+                    melodicReverb: 0.8,
+                    layerRandomness: 0.5,
+                    // Wave
+                    waveVolume: -6,
+                    waveNoiseType: 'pink',
+                    // Clock
+                    clockTempo: 60,
+                }
+            },
             'frost': {
                 name: 'Frost',
                 description: '',
