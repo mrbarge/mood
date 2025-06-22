@@ -11,7 +11,9 @@
     <script src="js/sound-engines.js"></script>
     <script src="js/ocean-waves.js"></script>
     <script src="js/grandfather-clock.js"></script>
+    <script src="js/thunder-system.js"></script>
     <script src="js/sleep-manager.js"></script>
+    <script src="js/preset-manager.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -22,6 +24,33 @@
     </div>
 
     <div class="main-controls">
+
+        <div class="preset-ribbon-container">
+            <h3 class="preset-ribbon-title">Presets</h3>
+            <div class="preset-ribbon">
+                <button class="preset-btn" data-preset="classic" title="Classic">
+                    <span class="icon">1️⃣</span>
+                </button>
+                <button class="preset-btn" data-preset="evolving" title="Ever-evolving">
+                    <span class="icon">♾️</span>
+                </button>
+                <button class="preset-btn" data-preset="jewel" title="Shining Jewel">
+                    <span class="icon">💎</span>
+                </button>
+                <button class="preset-btn" data-preset="minimal-drift" title="Minimal Drift">
+                    <span class="icon">🌱</span>
+                </button>
+                <button class="preset-btn" data-preset="puzzle" title="Puzzle">
+                    <span class="icon">🧩</span>
+                </button>
+                <button class="preset-btn" data-preset="forest" title="Forest Depths">
+                    <span class="icon">🌲</span>
+                </button>
+                <button class="preset-btn" data-preset="frost" title="Frost">
+                    <span class="icon">❄️</span>
+                </button>
+            </div>
+        </div>
 
         <!-- Dice Randomizer -->
         <div class="dice-section">
@@ -162,14 +191,30 @@
                 </div>
 
                 <div class="control-group">
-                    <label class="control-label" for="melody-slot-count">Number of Melody Layers</label>
+                    <div class="control-header-with-protection">
+                        <label class="control-label" for="melody-slot-count">Number of Melody Layers</label>
+                        <div class="protection-controls">
+                            <div class="enable-checkbox">
+                                <input type="checkbox" id="melody-layers-enable" onchange="toggleMelodyLayersAccess()">
+                                <label for="melody-layers-enable" class="checkbox-label">Enable Advanced Control</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cpu-warning" id="melody-layers-warning">
+                        <div class="warning-icon">⚠️</div>
+                        <div class="warning-text">
+                            <strong>Warning:</strong> High melody layer counts can cause significant CPU usage and may affect performance on slower devices.
+                        </div>
+                    </div>
+
                     <div class="slider-container">
                         <div class="slider-wrapper">
-                            <input type="range" id="melody-slot-count" min="1" max="3" value="1" onchange="handleSlotCountChange()">
+                            <input type="range" id="melody-slot-count" min="1" max="3" step="1" value="1" onchange="handleSlotCountChange()" disabled>
                         </div>
                         <div class="slider-labels">
-                            <span>1 Layer</span>
-                            <span>3 Layers</span>
+                            <span>1</span>
+                            <span>3</span>
                         </div>
                     </div>
                 </div>
@@ -380,7 +425,7 @@
             <div class="section-header" onclick="toggleSection('clock')">
                 <div class="section-title">
                     <div class="toggle-btn">
-                        <input type="checkbox" id="clock-toggle" onchange="updateClockStatus(); toggleClock();">
+                        <input type="checkbox" id="clock-toggle" onchange="updateClockStatus(); toggleClock();" onclick="event.stopPropagation()">
                         <span class="toggle-indicator"></span>
                     </div>
                     <div class="section-icon clock-icon">🕰️</div>
@@ -489,9 +534,102 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="clock-info">
-                    <p>Realistic grandfather clock ticking with adjustable tempo and massive reverb for ambient atmosphere.</p>
+        <!-- Thunder Storm Section -->
+        <div class="control-section" id="thunder-section">
+            <div class="section-header" onclick="toggleSection('thunder')">
+                <div class="section-title">
+                    <div class="toggle-btn">
+                        <input type="checkbox" id="thunder-toggle" onchange="updateThunderStatus(); toggleThunder();" onclick="event.stopPropagation()">
+                        <span class="toggle-indicator"></span>
+                    </div>
+                    <div class="section-icon thunder-icon">⛈️</div>
+                    <div>
+                        <div class="section-info">Thunder Storm</div>
+                        <div class="section-status" id="thunder-status">Off</div>
+                    </div>
+                </div>
+                <button class="expand-btn" id="thunder-expand">
+                    <span>▼</span>
+                </button>
+            </div>
+
+            <div class="section-content" id="thunder-content">
+                <div class="control-group">
+                    <label class="control-label" for="thunder-volume">Storm Volume</label>
+                    <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <input type="range" id="thunder-volume" min="-20" max="0" step="1" value="0">
+                        </div>
+                        <div class="slider-labels">
+                            <span>Quiet</span>
+                            <span>Loud</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="thunder-grid">
+                    <div class="thunder-column">
+                        <h4 class="column-header">Thunder Settings</h4>
+
+                        <div class="control-group">
+                            <label class="control-label" for="thunder-intensity">Thunder Intensity</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="thunder-intensity" min="0.3" max="1.0" step="0.1" value="0.7">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Gentle</span>
+                                    <span>Powerful</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="thunder-distance">Thunder Distance</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="thunder-distance" min="0.1" max="1.0" step="0.1" value="0.5">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Close</span>
+                                    <span>Distant</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="thunder-frequency">Thunder Frequency</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="thunder-frequency" min="2" max="15" step="1" value="8">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Frequent (2s)</span>
+                                    <span>Rare (15s)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="thunder-column">
+                        <h4 class="column-header">Rain Settings</h4>
+
+                        <div class="control-group">
+                            <label class="control-label" for="thunder-rain-volume">Rain Volume</label>
+                            <div class="slider-container">
+                                <div class="slider-wrapper">
+                                    <input type="range" id="thunder-rain-volume" min="0.1" max="0.4" step="0.05" value="0.2">
+                                </div>
+                                <div class="slider-labels">
+                                    <span>Light</span>
+                                    <span>Heavy</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -545,11 +683,6 @@
                 <div class="card-label">Play</div>
             </button>
 
-            <button class="control-card stop-card" id="stopBtn" title="Stop Music" disabled>
-                <div class="card-icon">⏹️</div>
-                <div class="card-label">Stop</div>
-            </button>
-
             <button class="control-card sleep-card" id="sleepBtn" title="Sleep Mode">
                 <div class="card-icon">😴</div>
                 <div class="card-label" id="sleepText">Sleep</div>
@@ -573,6 +706,7 @@
     let waveManager = null;
     let clockManager = null;
     let sleepManager = null;
+    let thunderManager = null;
     let clockInitialized = false;
     let isPlaying = false;
     let activeNotes = {};
@@ -602,7 +736,6 @@
 
     // Initialize UI elements
     const startButton = document.getElementById("playBtn");
-    const stopButton = document.getElementById("stopBtn");
     const sleepButton = document.getElementById("sleepBtn");
     const moodSelect = document.getElementById("mood");
     const densitySlider = document.getElementById("density");
@@ -622,6 +755,9 @@
 
     // Clock elements
     const clockToggle = document.getElementById("clock-toggle");
+
+    // Thunder elements
+    const thunderToggle = document.getElementById("thunder-toggle");
 
     // Sound engine element
     const soundEngineSelect = document.getElementById("sound-engine");
@@ -862,6 +998,16 @@
                 console.log('🕰️️ Randomized clock to:', clockToggle.checked ? 'On' : 'Off');
             }
 
+            // Randomize thunder
+            const thunderToggle = document.getElementById('thunder-toggle');
+            if (thunderToggle) {
+                thunderToggle.checked = Math.random() > 0.5;
+                if (typeof thunderManager !== 'undefined' && thunderManager) {
+                    thunderManager.updateStatus();
+                }
+                console.log('⛈️️️ Randomized thunder to:', thunderToggle.checked ? 'On' : 'Off');
+            }
+
             // Randomize sliders
             const densitySlider = document.getElementById('density');
             const reverbSlider = document.getElementById('reverb');
@@ -1063,11 +1209,6 @@
                 activeNotes = {};
             }
 
-            const startButton = document.getElementById('playBtn');
-            const stopButton = document.getElementById('stopBtn');
-            if (startButton) startButton.disabled = true;
-            if (stopButton) stopButton.disabled = false;
-
             // Initialize music manager if not already done
             if (!musicManager) {
                 musicManager = new AmbientMusicManager();
@@ -1164,6 +1305,10 @@
                 await toggleClock();
             }
 
+            if (thunderToggle?.checked) {
+                await toggleThunder();
+            }
+
             // Start visualizer (existing logic)
             if (typeof startVisualizer === 'function') {
                 startVisualizer();
@@ -1181,11 +1326,6 @@
             if (typeof isPlaying !== 'undefined') {
                 isPlaying = false;
             }
-            const startButton = document.getElementById('playBtn');
-            const stopButton = document.getElementById('stopBtn');
-
-            if (startButton) startButton.disabled = false;
-            if (stopButton) stopButton.disabled = true;
         }
     }
 
@@ -1218,6 +1358,16 @@
             updateClockStatus();
             clockManager.toggle();
             console.log('🕰️ Clock manager stopped');
+        }
+
+        if (thunderManager) {
+            const thunderToggle = document.getElementById('thunder-toggle');
+            if (thunderToggle) {
+                thunderToggle.checked = false;
+                updateThunderStatus();
+                thunderManager.toggle();
+            }
+            console.log('⛈️ Thunder manager stopped');
         }
 
         // Stop transport (existing logic)
@@ -1507,6 +1657,7 @@
         melodyManager = new MultiMelodyManager();
         clockManager = new GrandfatherClockManager();
         sleepManager = new SleepModeManager();
+        thunderManager = new ThunderStormManager();
 
         // Set initial sound engine
         if (musicManager) {
@@ -1543,12 +1694,13 @@
 
         // Set up event listeners
         if (startButton) startButton.addEventListener("click", () => {
-            startMusic();
-            updatePlayButton(true);
-        });
-        if (stopButton) stopButton.addEventListener("click", () => {
-            stopMusic();
-            updatePlayButton(false);
+            if (isPlaying) {
+                stopMusic();
+                updatePlayButton(false);
+            } else {
+                startMusic();
+                updatePlayButton(true);
+            }
         });
         if (soundEngineSelect) soundEngineSelect.addEventListener("change", handleSoundEngineChange);
         if (moodSelect) moodSelect.addEventListener("change", handleMoodChange);
@@ -1609,6 +1761,14 @@
         updateClockStatus();
         console.log('🕰️ Clock integration setup complete');
 
+        // Ensure the warning is hidden initially since checkbox starts unchecked
+        const warning = document.getElementById('melody-layers-warning');
+        if (warning) {
+            warning.classList.add('hidden');
+        }
+
+        window.presetManager = new PresetManager();
+
         console.log('✅ Ambient Music System initialized successfully');
     });
 
@@ -1622,6 +1782,9 @@
         }
         if (clockManager) {
             clockManager.dispose();
+        }
+        if (thunderManager) {
+            thunderManager.dispose();
         }
     });
 
@@ -1686,22 +1849,21 @@
 
     function updatePlayButton(isPlaying) {
         const playCard = document.getElementById('playBtn');
-        const stopCard = document.getElementById('stopBtn');
         const playLabel = playCard.querySelector('.card-label');
         const playIcon = playCard.querySelector('.card-icon');
 
         if (isPlaying) {
-            // Change to pause state
-            playIcon.textContent = '⏸️';
-            playLabel.textContent = 'Playing';
-            playCard.disabled = true;
-            stopCard.disabled = false;
+            // Change to stop state
+            playIcon.textContent = '⏹️';
+            playLabel.textContent = 'Stop';
+            playCard.classList.remove('play-card');
+            playCard.classList.add('stop-card');
         } else {
             // Change to play state
             playIcon.textContent = '▶️';
             playLabel.textContent = 'Play';
-            playCard.disabled = false;
-            stopCard.disabled = true;
+            playCard.classList.remove('stop-card');
+            playCard.classList.add('play-card');
         }
     }
 
@@ -1712,6 +1874,49 @@
         }
     }, 3000);
 
+    // Toggle function (same as before)
+    async function toggleThunder() {
+        console.log('⛈️ toggleThunder() called from UI');
+
+        if (thunderManager) {
+            await thunderManager.toggle();
+        } else {
+            console.error('⛈️ thunderManager not available');
+        }
+    }
+
+    function updateThunderStatus() {
+        const status = document.getElementById('thunder-status');
+        const thunderToggle = document.getElementById('thunder-toggle');
+
+        if (status && thunderToggle) {
+            status.textContent = thunderToggle.checked ? 'On' : 'Off';
+        }
+    }
+
+    function toggleMelodyLayersAccess() {
+        const checkbox = document.getElementById('melody-layers-enable');
+        const slider = document.getElementById('melody-slot-count');
+        const warning = document.getElementById('melody-layers-warning');
+
+        if (checkbox && slider && warning) {
+            const isEnabled = checkbox.checked;
+
+            // Enable/disable the slider
+            slider.disabled = !isEnabled;
+
+            // Show/hide the warning
+            if (isEnabled) {
+                warning.classList.remove('hidden');
+            } else {
+                warning.classList.add('hidden');
+                slider.value = '1';
+            }
+
+            console.log('Melody layers access:', isEnabled ? 'enabled' : 'disabled');
+        }
+    }
 </script>
+
 </body>
 </html>
