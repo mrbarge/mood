@@ -115,7 +115,6 @@ class PresetManager {
                     clockTempo: 60,
                 }
             },
-
             'evolving': {
                 name: 'Ever evolving',
                 description: '',
@@ -184,6 +183,58 @@ class PresetManager {
                     thunder: false,
                     // Instruments
                     melodicInstrument: 'crystal-bells',
+                    noteFrequency: 8,
+                    melodicReverb: 0.8,
+                    layerRandomness: 0.5,
+                    // Wave
+                    waveVolume: -6,
+                    waveNoiseType: 'pink',
+                    // Clock
+                    clockTempo: 60,
+                }
+            },
+            'star': {
+                name: 'Falling Star',
+                description: '',
+                settings: {
+                    // Mood settings
+                    mood: 'serene',
+                    soundEngine: 'glacial-ethereal',
+                    noteDensity: 5,
+                    reverb: 0.5,
+                    // Toggle states
+                    melody: true,
+                    clock: false,
+                    noise: false,
+                    thunder: false,
+                    // Instruments
+                    melodicInstrument: 'vintage-celesta',
+                    noteFrequency: 8,
+                    melodicReverb: 0.8,
+                    layerRandomness: 0.5,
+                    // Wave
+                    waveVolume: -6,
+                    waveNoiseType: 'pink',
+                    // Clock
+                    clockTempo: 60,
+                }
+            },
+            'storm': {
+                name: 'Gathering Storm',
+                description: '',
+                settings: {
+                    // Mood settings
+                    mood: 'melancholic',
+                    soundEngine: 'cathedral-ethereal',
+                    noteDensity: 5,
+                    reverb: 0.5,
+                    // Toggle states
+                    melody: true,
+                    clock: false,
+                    noise: false,
+                    thunder: true,
+                    // Instruments
+                    melodicInstrument: 'music-box',
                     noteFrequency: 8,
                     melodicReverb: 0.8,
                     layerRandomness: 0.5,
