@@ -14,80 +14,778 @@
     <script src="js/thunder-system.js"></script>
     <script src="js/sleep-manager.js"></script>
     <script src="js/preset-manager.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            padding: 25px 20px 15px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 100;
+            margin-bottom: 5px;
+            letter-spacing: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 0.85rem;
+        }
+
+        /* Big Play Button */
+        .big-play-section {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .big-play-button {
+            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+            border: none;
+            color: white;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+        }
+
+        .big-play-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .big-play-button.stop {
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+        }
+
+        .play-status {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .quick-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .quick-btn.sleep.active {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        /* Current Settings Display */
+        .current-settings {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .current-title {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .current-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .current-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .current-label {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-bottom: 2px;
+        }
+
+        .current-value {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Expandable Sections */
+        .expandable-section {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-toggle {
+            width: 100%;
+            background: none;
+            border: none;
+            color: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .section-toggle:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .section-toggle.active {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-icon {
+            font-size: 1.1rem;
+        }
+
+        .toggle-indicator {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .section-toggle.active .toggle-indicator {
+            transform: rotate(180deg);
+        }
+
+        .section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .section-content.active {
+            max-height: 1000px;
+        }
+
+        .section-inner {
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Controls */
+        .simple-control {
+            margin-bottom: 15px;
+        }
+
+        .simple-control:last-child {
+            margin-bottom: 0;
+        }
+
+        .simple-label {
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
+
+        .simple-select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        .simple-select option {
+            background-color: #2a2a2a;
+            color: white;
+        }
+
+        .simple-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .simple-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        /* Ambient Sound Toggles */
+        .ambient-toggles {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .ambient-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 10px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .ambient-toggle:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .ambient-toggle.active {
+            border-color: #00ffff;
+            background: rgba(0, 255, 255, 0.15);
+        }
+
+        .ambient-emoji {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .ambient-text {
+            font-size: 0.7rem;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .ambient-settings-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .ambient-toggle.active .ambient-settings-btn {
+            display: block;
+        }
+
+        .ambient-settings-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        /* Ambient Settings Panel */
+        .ambient-settings-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            border-left: 3px solid #00ffff;
+            display: none;
+        }
+
+        .ambient-settings-panel.active {
+            display: block;
+        }
+
+        .ambient-settings-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .settings-group {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .settings-group-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            opacity: 0.8;
+            text-align: center;
+        }
+
+        .mini-control {
+            margin-bottom: 8px;
+        }
+
+        .mini-control:last-child {
+            margin-bottom: 0;
+        }
+
+        .mini-label {
+            font-size: 0.7rem;
+            margin-bottom: 3px;
+            opacity: 0.8;
+        }
+
+        .mini-slider {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .mini-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .mini-select {
+            width: 100%;
+            padding: 4px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.7rem;
+        }
+
+        .mini-select option {
+            background-color: #2a2a2a;
+            color: white;
+        }
+
+        .mini-range {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        /* Preset Pills */
+        .preset-row {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .preset-pill {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .preset-pill:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .preset-pill.active {
+            background: rgba(0, 255, 255, 0.2);
+            border-color: #00ffff;
+        }
+
+        /* Mini Visualizer */
+        .mini-visualizer {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .waves-container {
+            height: 50px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 8px;
+        }
+
+        .wave {
+            background-color: rgba(255, 255, 255, 0.4);
+            width: 2px;
+            height: 20%;
+            border-radius: 1px;
+            transition: height 0.2s ease;
+        }
+
+        .info {
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+
+        .info a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .info a:hover {
+            color: white;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Protection Controls */
+        .control-header-with-protection {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .protection-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .enable-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .checkbox-label {
+            font-size: 0.7rem;
+            color: #ffc107;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            padding: 3px 6px;
+            border-radius: 3px;
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-label:hover {
+            background: rgba(255, 193, 7, 0.25);
+            border-color: rgba(255, 193, 7, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .cpu-warning {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 0.7rem;
+        }
+
+        .cpu-warning.hidden {
+            display: none;
+        }
+
+        .warning-icon {
+            font-size: 0.9rem;
+            margin-top: 1px;
+        }
+
+        .warning-text {
+            line-height: 1.3;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .warning-text strong {
+            color: #ffc107;
+        }
+
+        input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #4a90e2;
+            cursor: pointer;
+        }
+
+        /* Slots Info */
+        .slots-info {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+        }
+
+        .slot-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            border-left: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .slot-info:last-child {
+            margin-bottom: 0;
+        }
+
+        .slot-info.active {
+            border-left-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .slot-info.inactive {
+            opacity: 0.6;
+            border-left-color: #6b7280;
+        }
+
+        .slot-label {
+            font-weight: 600;
+            color: #e5e7eb;
+            min-width: 50px;
+        }
+
+        .slot-instrument {
+            flex: 1;
+            text-align: center;
+            color: #d1d5db;
+            font-size: 0.75rem;
+        }
+
+        .slot-status {
+            font-size: 1rem;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 350px) {
+            .container {
+                margin: 5px;
+                border-radius: 15px;
+            }
+
+            .current-values {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+
+            .ambient-toggles {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .ambient-toggle {
+                display: flex;
+                align-items: center;
+                text-align: left;
+                gap: 10px;
+                padding: 8px 12px;
+            }
+
+            .ambient-emoji {
+                margin-bottom: 0;
+                font-size: 1.3rem;
+            }
+
+            .ambient-text {
+                flex: 1;
+            }
+
+            .ambient-settings-btn {
+                position: static;
+                margin-left: auto;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+
+        /* Hidden class for disabled sliders */
+        input[type="range"]:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        input[type="range"]:disabled::-webkit-slider-thumb {
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
 </head>
 <body>
 <div class="container">
+    <!-- Header -->
     <div class="header">
-        <h1 class="mood-header">Mood</h1>
+        <h1>Mood</h1>
         <p>Each composition is unique and evolves over time using generative principles.</p>
     </div>
 
-    <div class="main-controls">
-
-        <div class="preset-ribbon-container">
-            <h3 class="preset-ribbon-title">Presets</h3>
-            <div class="preset-ribbon">
-                <button class="preset-btn" data-preset="evolving" title="Ever-evolving">
-                    <span class="icon">♾️</span>
-                </button>
-                <button class="preset-btn" data-preset="star" title="Shooting Star">
-                    <span class="icon">🌠</span>
-                </button>
-                <button class="preset-btn" data-preset="storm" title="Gathering Storm">
-                    <span class="icon">🌧️</span>
-                </button>
-                <button class="preset-btn" data-preset="jewel" title="Shining Jewel">
-                    <span class="icon">💎</span>
-                </button>
-                <button class="preset-btn" data-preset="minimal-drift" title="Minimal Drift">
-                    <span class="icon">🌱</span>
-                </button>
-                <button class="preset-btn" data-preset="puzzle" title="Puzzle">
-                    <span class="icon">🧩</span>
-                </button>
-                <button class="preset-btn" data-preset="forest" title="Forest Depths">
-                    <span class="icon">🌲</span>
-                </button>
-                <button class="preset-btn" data-preset="frost" title="Frost">
-                    <span class="icon">❄️</span>
-                </button>
-                <button class="preset-btn" data-preset="classic" title="Classic">
-                    <span class="icon">1️⃣</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Dice Randomizer -->
-        <div class="dice-section">
-            <button class="dice-button" id="dice-button" title="Randomizes mood, sound engine, melody instrument, wave settings, and sliders">
-                <span class="dice-icon">🎲</span>
-                Randomize Everything
+    <!-- Big Play Button -->
+    <div class="big-play-section">
+        <button class="big-play-button" id="playBtn">▶️</button>
+        <div class="quick-actions">
+            <button class="quick-btn" id="dice-button">
+                <span>🎲</span> Random
+            </button>
+            <button class="quick-btn sleep" id="sleepBtn">
+                <span id="sleepIcon">😴</span> <span id="sleepText">Sleep</span>
             </button>
         </div>
+    </div>
 
-        <!-- Mood Section -->
-        <div class="control-section" id="mood-section">
-            <div class="section-header" onclick="toggleSection('mood')">
-                <div class="section-title">
-                    <div class="section-icon mood-icon">🎭</div>
-                    <div>
-                        <div class="section-info">Mood & Engine</div>
-                        <div class="section-status">
-                            <span id="mood-status">Calm</span> •
-                            <span id="sound-engine-status">Standard Ambient</span>
-                        </div>
-                    </div>
-                </div>
-                <button class="expand-btn" id="mood-expand">
-                    <span>▼</span>
-                </button>
+    <!-- Current Settings -->
+    <div class="current-settings">
+        <div class="current-title">Current Configuration</div>
+        <div class="current-values">
+            <div class="current-item">
+                <div class="current-label">Engine</div>
+                <div class="current-value" id="current-engine">Standard</div>
             </div>
-            <div class="section-content" id="mood-content">
-                <!-- Updated Sound Engine Control with Random Option -->
-                <div class="control-group">
-                    <label class="control-label" for="sound-engine">Sound Engine</label>
-                    <select id="sound-engine" onchange="handleSoundEngineChange()">
+            <div class="current-item">
+                <div class="current-label">Mood</div>
+                <div class="current-value" id="current-mood">Calm</div>
+            </div>
+            <div class="current-item">
+                <div class="current-label">Instrument</div>
+                <div class="current-value" id="current-instrument">Piano</div>
+            </div>
+            <div class="current-item">
+                <div class="current-label">Ambient</div>
+                <div class="current-value" id="current-ambient">None</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Presets Section -->
+    <div class="expandable-section">
+        <button class="section-toggle">
+            <div class="toggle-left">
+                <span class="section-icon">⭐</span>
+                <span>Quick Presets</span>
+            </div>
+            <span class="toggle-indicator">▼</span>
+        </button>
+        <div class="section-content">
+            <div class="section-inner">
+                <div class="preset-row">
+                    <div class="preset-pill active" data-preset="classic">1️⃣ Classic</div>
+                    <div class="preset-pill" data-preset="evolving">♾️ Evolving</div>
+                    <div class="preset-pill" data-preset="minimal-drift">🌱 Minimal</div>
+                    <div class="preset-pill" data-preset="puzzle">🧩 Puzzle</div>
+                    <div class="preset-pill" data-preset="forest">🌲 Forest</div>
+                    <div class="preset-pill" data-preset="frost">❄️ Frost</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Music Section -->
+    <div class="expandable-section">
+        <button class="section-toggle">
+            <div class="toggle-left">
+                <span class="section-icon">🎵</span>
+                <span>Music & Sound Engine</span>
+            </div>
+            <span class="toggle-indicator">▼</span>
+        </button>
+        <div class="section-content">
+            <div class="section-inner">
+                <div class="simple-control">
+                    <div class="simple-label">Sound Engine</div>
+                    <select class="simple-select" id="sound-engine">
                         <option value="random">Random (Auto-changing)</option>
                         <option value="standard" selected>Standard Ambient</option>
                         <option value="cathedral-ethereal">Ethereal Cathedral</option>
@@ -110,10 +808,9 @@
                         <option value="ethereal-rhubarb">Ethereal Rhubarb</option>
                     </select>
                 </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="mood">Musical Mood</label>
-                    <select id="mood" onchange="updateMoodStatus()">
+                <div class="simple-control">
+                    <div class="simple-label">Musical Mood</div>
+                    <select class="simple-select" id="mood">
                         <option value="random">Random (Auto-changing)</option>
                         <option value="calm" selected>Calm</option>
                         <option value="ethereal">Ethereal</option>
@@ -126,57 +823,47 @@
                         <option value="serene">Serene</option>
                     </select>
                 </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="density">Note Density</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="density" min="1" max="10" value="5">
-                        </div>
-                        <div class="slider-labels">
-                            <span>Sparse</span>
-                            <span>Dense</span>
-                        </div>
+                <div class="simple-control">
+                    <div class="simple-label">Note Density</div>
+                    <input type="range" class="simple-slider" id="density" min="1" max="10" value="5">
+                    <div class="slider-info">
+                        <span>Sparse</span>
+                        <span>Dense</span>
                     </div>
                 </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="reverb">Reverb Amount</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="reverb" min="0" max="1" step="0.1" value="0.5">
-                        </div>
-                        <div class="slider-labels">
-                            <span>Dry</span>
-                            <span>Wet</span>
-                        </div>
+                <div class="simple-control">
+                    <div class="simple-label">Reverb Amount</div>
+                    <input type="range" class="simple-slider" id="reverb" min="0" max="1" step="0.1" value="0.5">
+                    <div class="slider-info">
+                        <span>Dry</span>
+                        <span>Wet</span>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Melody Section -->
-        <div class="control-section" id="melody-section">
-            <div class="section-header" onclick="toggleSection('melody')">
-                <div class="section-title">
-                    <div class="toggle-btn" onclick="toggleMelody(event)">
-                        <input type="checkbox" id="melody-toggle" onchange="updateMelodyStatus()" onclick="event.stopPropagation()">
-                        <span class="toggle-indicator"></span>
-                    </div>
-                    <div class="section-icon melody-icon">🎹</div>
-                    <div>
-                        <div class="section-info">Melodic Instruments</div>
-                        <div class="section-status" id="melody-status">1 Layer: Soft Piano</div>
-                    </div>
-                </div>
-                <button class="expand-btn" id="melody-expand">
-                    <span>▼</span>
-                </button>
+    <!-- Melody Section -->
+    <div class="expandable-section">
+        <button class="section-toggle">
+            <div class="toggle-left">
+                <span class="section-icon">🎹</span>
+                <span>Melodic Instruments</span>
             </div>
-            <div class="section-content" id="melody-content">
-                <div class="control-group">
-                    <label class="control-label" for="melodic-instrument">Instrument Selection</label>
-                    <select id="melodic-instrument" onchange="updateMelodyStatus()">
+            <span class="toggle-indicator">▼</span>
+        </button>
+        <div class="section-content">
+            <div class="section-inner">
+                <div class="simple-control">
+                    <div class="simple-label">Melodic Instruments</div>
+                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.8rem;">
+                        <input type="checkbox" id="melody-toggle" checked>
+                        Enable Melodic Instruments
+                    </label>
+                </div>
+                <div class="simple-control">
+                    <div class="simple-label">Instrument Selection</div>
+                    <select class="simple-select" id="melodic-instrument">
                         <option value="random">Random (Auto-changing)</option>
                         <option value="piano" selected>Soft Piano (All Layers)</option>
                         <option value="rhythmic-piano">Rhythmic Piano (All Layers)</option>
@@ -192,42 +879,33 @@
                         <option value="glass-harmonics">Glass Harmonics (All Layers)</option>
                         <option value="soft-flute">Soft Flute (All Layers)</option>
                         <option value="vintage-celesta">Vintage Celesta (All Layers)</option>
-                        <option value="deep-bass-melodic">Deep Bass Melodic (All Layers)</option>
                         <option value="mixed">Mixed (Different Per Layer)</option>
                     </select>
                 </div>
-
-                <div class="control-group">
+                <div class="simple-control">
                     <div class="control-header-with-protection">
-                        <label class="control-label" for="melody-slot-count">Number of Melody Layers</label>
+                        <div class="simple-label">Number of Melody Layers</div>
                         <div class="protection-controls">
                             <div class="enable-checkbox">
-                                <input type="checkbox" id="melody-layers-enable" onchange="toggleMelodyLayersAccess()">
-                                <label for="melody-layers-enable" class="checkbox-label">Enable Advanced Control</label>
+                                <input type="checkbox" id="melody-layers-enable">
+                                <label for="melody-layers-enable" class="checkbox-label">Enable Advanced</label>
                             </div>
                         </div>
                     </div>
-
-                    <div class="cpu-warning" id="melody-layers-warning">
+                    <div class="cpu-warning hidden" id="melody-layers-warning">
                         <div class="warning-icon">⚠️</div>
                         <div class="warning-text">
-                            <strong>Warning:</strong> High melody layer counts can cause significant CPU usage and may affect performance on slower devices.
+                            <strong>Warning:</strong> High melody layer counts can cause significant CPU usage.
                         </div>
                     </div>
-
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="melody-slot-count" min="1" max="3" step="1" value="1" onchange="handleSlotCountChange()" disabled>
-                        </div>
-                        <div class="slider-labels">
-                            <span>1</span>
-                            <span>3</span>
-                        </div>
+                    <input type="range" class="simple-slider" id="melody-slot-count" min="1" max="3" value="1" disabled>
+                    <div class="slider-info">
+                        <span>1 Layer</span>
+                        <span>3 Layers</span>
                     </div>
                 </div>
-
-                <div class="control-group">
-                    <label class="control-label">Active Melody Layers</label>
+                <div class="simple-control">
+                    <div class="simple-label">Active Melody Layers</div>
                     <div id="melody-slots-info" class="slots-info">
                         <div class="slot-info active">
                             <span class="slot-label">Layer 1:</span>
@@ -236,469 +914,321 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="melodic-frequency">Global Note Frequency</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="melodic-frequency" min="1" max="10" value="6">
-                        </div>
-                        <div class="slider-labels">
-                            <span>Rare</span>
-                            <span>Often</span>
-                        </div>
+                <div class="simple-control">
+                    <div class="simple-label">Global Note Frequency</div>
+                    <input type="range" class="simple-slider" id="melodic-frequency" min="1" max="10" value="6">
+                    <div class="slider-info">
+                        <span>Rare</span>
+                        <span>Often</span>
                     </div>
                 </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="melodic-reverb">Melodic Reverb</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="melodic-reverb" min="0" max="1" step="0.05" value="0.8">
-                        </div>
-                        <div class="slider-labels">
-                            <span>Dry</span>
-                            <span>Wet</span>
-                        </div>
+                <div class="simple-control">
+                    <div class="simple-label">Melodic Reverb</div>
+                    <input type="range" class="simple-slider" id="melodic-reverb" min="0" max="1" step="0.05" value="0.8">
+                    <div class="slider-info">
+                        <span>Dry</span>
+                        <span>Wet</span>
                     </div>
                 </div>
-
-                <div class="control-group">
-                    <label class="control-label" for="layer-randomness">Layer Randomness</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="layer-randomness" min="0" max="1" step="0.1" value="0.5">
-                        </div>
-                        <div class="slider-labels">
-                            <span>Synchronized</span>
-                            <span>Chaotic</span>
-                        </div>
+                <div class="simple-control">
+                    <div class="simple-label">Layer Randomness</div>
+                    <input type="range" class="simple-slider" id="layer-randomness" min="0" max="1" step="0.1" value="0.5">
+                    <div class="slider-info">
+                        <span>Synchronized</span>
+                        <span>Chaotic</span>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Ocean Waves Section -->
-        <div class="control-section" id="waves-section">
-            <div class="section-header" onclick="toggleSection('waves')">
-                <div class="section-title">
-                    <div class="toggle-btn" onclick="toggleWaves()">
-                        <input type="checkbox" id="noise-toggle" onchange="updateWavesStatus()" onclick="event.stopPropagation()">
-                        <span class="toggle-indicator"></span>
+    <!-- Ambient Sounds Section -->
+    <div class="expandable-section">
+        <button class="section-toggle">
+            <div class="toggle-left">
+                <span class="section-icon">🌊</span>
+                <span>Environmental Sounds</span>
+            </div>
+            <span class="toggle-indicator">▼</span>
+        </button>
+        <div class="section-content">
+            <div class="section-inner">
+                <div class="ambient-toggles">
+                    <div class="ambient-toggle" data-sound="waves">
+                        <span class="ambient-emoji">🌊</span>
+                        <span class="ambient-text">Ocean<br>Waves</span>
+                        <button class="ambient-settings-btn">⚙️</button>
                     </div>
-                    <div class="section-icon waves-icon">🌊</div>
-                    <div>
-                        <div class="section-info">Ocean Waves</div>
-                        <div class="section-status" id="waves-status">Off</div>
+                    <div class="ambient-toggle" data-sound="clock">
+                        <span class="ambient-emoji">🕰️</span>
+                        <span class="ambient-text">Clock<br>Ticking</span>
+                        <button class="ambient-settings-btn">⚙️</button>
+                    </div>
+                    <div class="ambient-toggle" data-sound="thunder">
+                        <span class="ambient-emoji">⛈️</span>
+                        <span class="ambient-text">Thunder<br>Storm</span>
+                        <button class="ambient-settings-btn">⚙️</button>
                     </div>
                 </div>
-                <button class="expand-btn" id="waves-expand">
-                    <span>▼</span>
-                </button>
-            </div>
 
-            <div class="section-content" id="waves-content">
-                <!-- Single column controls -->
-                <div class="control-group">
-                    <label class="control-label" for="noise-volume">Wave Volume</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="noise-volume" min="-15" max="5" step="1" value="-6">
-                        </div>
-                        <div class="slider-labels">
+                <!-- Ocean Waves Settings -->
+                <div class="ambient-settings-panel" id="waves-settings">
+                    <div class="ambient-settings-title">
+                        <span>🌊</span> Ocean Waves Configuration
+                    </div>
+                    <div class="simple-control">
+                        <div class="simple-label">Wave Volume</div>
+                        <input type="range" class="simple-slider" id="noise-volume" min="-15" max="5" step="1" value="-6">
+                        <div class="slider-info">
                             <span>Quiet</span>
                             <span>Loud</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Two-column layout for detailed controls -->
-                <div class="waves-grid">
-                    <!-- Left column - Wave Characteristics -->
-                    <div class="waves-column">
-                        <h4 class="column-header">Wave Characteristics</h4>
-
-                        <div class="control-group">
-                            <label class="control-label" for="base-level">Base Level</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="base-level" min="0" max="0.3" step="0.01" value="0.05">
-                                </div>
-                                <div class="slider-labels">
+                    <div class="settings-grid">
+                        <div class="settings-group">
+                            <div class="settings-group-title">Wave Character</div>
+                            <div class="mini-control">
+                                <div class="mini-label">Base Level</div>
+                                <input type="range" class="mini-slider" id="base-level" min="0" max="0.3" step="0.01" value="0.05">
+                                <div class="mini-range">
                                     <span>Silent</span>
                                     <span>Audible</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="peak-level">Peak Level</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="peak-level" min="0.1" max="0.8" step="0.01" value="0.4">
-                                </div>
-                                <div class="slider-labels">
+                            <div class="mini-control">
+                                <div class="mini-label">Peak Level</div>
+                                <input type="range" class="mini-slider" id="peak-level" min="0.1" max="0.8" step="0.01" value="0.4">
+                                <div class="mini-range">
                                     <span>Gentle</span>
                                     <span>Powerful</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="build-speed">Build Speed</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="build-speed" min="0.5" max="5" step="0.1" value="2">
-                                </div>
-                                <div class="slider-labels">
+                            <div class="mini-control">
+                                <div class="mini-label">Build Speed</div>
+                                <input type="range" class="mini-slider" id="build-speed" min="0.5" max="5" step="0.1" value="2">
+                                <div class="mini-range">
                                     <span>Slow</span>
                                     <span>Fast</span>
                                 </div>
                             </div>
+                            <div class="mini-control">
+                                <div class="mini-label">Noise Type</div>
+                                <select class="mini-select" id="noise-type">
+                                    <option value="white">White</option>
+                                    <option value="pink" selected>Pink</option>
+                                    <option value="brown">Brown</option>
+                                </select>
+                            </div>
                         </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="noise-type">Noise Type</label>
-                            <select id="noise-type">
-                                <option value="white">White (Bright)</option>
-                                <option value="pink" selected>Pink (Natural)</option>
-                                <option value="brown">Brown (Deep)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Right column - Timing & Filter -->
-                    <div class="waves-column">
-                        <h4 class="column-header">Timing & Filter</h4>
-
-                        <div class="control-group">
-                            <label class="control-label" for="min-duration">Min Duration (s)</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="min-duration" min="2" max="15" step="0.5" value="4">
-                                </div>
-                                <div class="slider-labels">
+                        <div class="settings-group">
+                            <div class="settings-group-title">Timing & Filter</div>
+                            <div class="mini-control">
+                                <div class="mini-label">Min Duration</div>
+                                <input type="range" class="mini-slider" id="min-duration" min="2" max="15" step="0.5" value="4">
+                                <div class="mini-range">
                                     <span>2s</span>
                                     <span>15s</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="max-duration">Max Duration (s)</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="max-duration" min="5" max="25" step="0.5" value="12">
-                                </div>
-                                <div class="slider-labels">
+                            <div class="mini-control">
+                                <div class="mini-label">Max Duration</div>
+                                <input type="range" class="mini-slider" id="max-duration" min="5" max="25" step="0.5" value="12">
+                                <div class="mini-range">
                                     <span>5s</span>
                                     <span>25s</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="pause-between">Pause Between (s)</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="pause-between" min="0.5" max="8" step="0.25" value="2">
-                                </div>
-                                <div class="slider-labels">
+                            <div class="mini-control">
+                                <div class="mini-label">Pause Between</div>
+                                <input type="range" class="mini-slider" id="pause-between" min="0.5" max="8" step="0.25" value="2">
+                                <div class="mini-range">
                                     <span>0.5s</span>
                                     <span>8s</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="filter-freq">Filter Frequency</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="filter-freq" min="200" max="8000" step="50" value="2000">
-                                </div>
-                                <div class="slider-labels">
-                                    <span>200 Hz</span>
-                                    <span>8000 Hz</span>
+                            <div class="mini-control">
+                                <div class="mini-label">Filter Frequency</div>
+                                <input type="range" class="mini-slider" id="filter-freq" min="200" max="8000" step="50" value="2000">
+                                <div class="mini-range">
+                                    <span>200Hz</span>
+                                    <span>8kHz</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Grandfather Clock Section -->
-        <div class="control-section" id="clock-section">
-            <div class="section-header" onclick="toggleSection('clock')">
-                <div class="section-title">
-                    <div class="toggle-btn">
-                        <input type="checkbox" id="clock-toggle" onchange="updateClockStatus(); toggleClock();" onclick="event.stopPropagation()">
-                        <span class="toggle-indicator"></span>
+                <!-- Clock Settings -->
+                <div class="ambient-settings-panel" id="clock-settings">
+                    <div class="ambient-settings-title">
+                        <span>🕰️</span> Grandfather Clock Configuration
                     </div>
-                    <div class="section-icon clock-icon">🕰️</div>
-                    <div>
-                        <div class="section-info">Grandfather Clock</div>
-                        <div class="section-status" id="clock-status">Off</div>
-                    </div>
-                </div>
-                <button class="expand-btn" id="clock-expand">
-                    <span>▼</span>
-                </button>
-            </div>
-
-            <div class="section-content" id="clock-content">
-                <div class="control-group">
-                    <label class="control-label" for="clock-volume">Clock Volume</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="clock-volume" min="-20" max="0" step="1" value="-6">
-                        </div>
-                        <div class="slider-labels">
+                    <div class="simple-control">
+                        <div class="simple-label">Clock Volume</div>
+                        <input type="range" class="simple-slider" id="clock-volume" min="-20" max="0" step="1" value="-6">
+                        <div class="slider-info">
                             <span>Quiet</span>
                             <span>Loud</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="clock-grid">
-                    <div class="clock-column">
-                        <h4 class="column-header">Clock Characteristics</h4>
-
-                        <div class="control-group">
-                            <label class="control-label" for="clock-tempo">Tempo (BPM)</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="clock-tempo" min="30" max="120" step="1" value="60">
-                                </div>
-                                <div class="slider-labels">
+                    <div class="settings-grid">
+                        <div class="settings-group">
+                            <div class="settings-group-title">Clock Character</div>
+                            <div class="mini-control">
+                                <div class="mini-label">Tempo (BPM)</div>
+                                <input type="range" class="mini-slider" id="clock-tempo" min="30" max="120" step="1" value="60">
+                                <div class="mini-range">
                                     <span>30</span>
                                     <span>120</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="clock-brightness">Tick Brightness</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="clock-brightness" min="800" max="4000" step="50" value="2000">
-                                </div>
-                                <div class="slider-labels">
+                            <div class="mini-control">
+                                <div class="mini-label">Tick Brightness</div>
+                                <input type="range" class="mini-slider" id="clock-brightness" min="800" max="4000" step="50" value="2000">
+                                <div class="mini-range">
                                     <span>Warm</span>
                                     <span>Bright</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="clock-resonance">Wood Resonance</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="clock-resonance" min="0.5" max="15" step="0.5" value="8">
-                                </div>
-                                <div class="slider-labels">
+                            <div class="mini-control">
+                                <div class="mini-label">Wood Resonance</div>
+                                <input type="range" class="mini-slider" id="clock-resonance" min="0.5" max="15" step="0.5" value="8">
+                                <div class="mini-range">
                                     <span>Muted</span>
                                     <span>Resonant</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="clock-column">
-                        <h4 class="column-header">Ambient Processing</h4>
-
-                        <div class="control-group">
-                            <label class="control-label" for="clock-reverb">Reverb Amount</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="clock-reverb" min="0" max="1" step="0.05" value="0.8">
-                                </div>
-                                <div class="slider-labels">
+                        <div class="settings-group">
+                            <div class="settings-group-title">Ambient Processing</div>
+                            <div class="mini-control">
+                                <div class="mini-label">Reverb Amount</div>
+                                <input type="range" class="mini-slider" id="clock-reverb" min="0" max="1" step="0.05" value="0.8">
+                                <div class="mini-range">
                                     <span>Dry</span>
                                     <span>Wet</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="clock-decay">Reverb Decay</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="clock-decay" min="5" max="40" step="1" value="25">
-                                </div>
-                                <div class="slider-labels">
+                            <div class="mini-control">
+                                <div class="mini-label">Reverb Decay</div>
+                                <input type="range" class="mini-slider" id="clock-decay" min="5" max="40" step="1" value="25">
+                                <div class="mini-range">
                                     <span>5s</span>
                                     <span>40s</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label">Current Tempo</label>
-                            <div class="tempo-display">
-                                <span id="clock-tempo-display">60 BPM</span>
+                            <div class="mini-control">
+                                <div class="mini-label">Current Tempo</div>
+                                <div id="clock-tempo-display" style="background: rgba(139, 69, 19, 0.3); border-radius: 4px; padding: 4px 6px; text-align: center; font-size: 0.7rem; color: #FFD700; border: 1px solid rgba(255, 215, 0, 0.3);">
+                                    60 BPM
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Thunder Storm Section -->
-        <div class="control-section" id="thunder-section">
-            <div class="section-header" onclick="toggleSection('thunder')">
-                <div class="section-title">
-                    <div class="toggle-btn">
-                        <input type="checkbox" id="thunder-toggle" onchange="updateThunderStatus(); toggleThunder();" onclick="event.stopPropagation()">
-                        <span class="toggle-indicator"></span>
+                <!-- Thunder Settings -->
+                <div class="ambient-settings-panel" id="thunder-settings">
+                    <div class="ambient-settings-title">
+                        <span>⛈️</span> Thunder Storm Configuration
                     </div>
-                    <div class="section-icon thunder-icon">⛈️</div>
-                    <div>
-                        <div class="section-info">Thunder Storm</div>
-                        <div class="section-status" id="thunder-status">Off</div>
-                    </div>
-                </div>
-                <button class="expand-btn" id="thunder-expand">
-                    <span>▼</span>
-                </button>
-            </div>
-
-            <div class="section-content" id="thunder-content">
-                <div class="control-group">
-                    <label class="control-label" for="thunder-volume">Storm Volume</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="thunder-volume" min="-20" max="0" step="1" value="0">
-                        </div>
-                        <div class="slider-labels">
+                    <div class="simple-control">
+                        <div class="simple-label">Storm Volume</div>
+                        <input type="range" class="simple-slider" id="thunder-volume" min="-20" max="0" step="1" value="0">
+                        <div class="slider-info">
                             <span>Quiet</span>
                             <span>Loud</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="thunder-grid">
-                    <div class="thunder-column">
-                        <h4 class="column-header">Thunder Settings</h4>
-
-                        <div class="control-group">
-                            <label class="control-label" for="thunder-intensity">Thunder Intensity</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="thunder-intensity" min="0.3" max="1.0" step="0.1" value="0.7">
-                                </div>
-                                <div class="slider-labels">
+                    <div class="settings-grid">
+                        <div class="settings-group">
+                            <div class="settings-group-title">Thunder Settings</div>
+                            <div class="mini-control">
+                                <div class="mini-label">Thunder Intensity</div>
+                                <input type="range" class="mini-slider" id="thunder-intensity" min="0.3" max="1.0" step="0.1" value="0.7">
+                                <div class="mini-range">
                                     <span>Gentle</span>
                                     <span>Powerful</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="thunder-distance">Thunder Distance</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="thunder-distance" min="0.1" max="1.0" step="0.1" value="0.5">
-                                </div>
-                                <div class="slider-labels">
+                            <div class="mini-control">
+                                <div class="mini-label">Thunder Distance</div>
+                                <input type="range" class="mini-slider" id="thunder-distance" min="0.1" max="1.0" step="0.1" value="0.5">
+                                <div class="mini-range">
                                     <span>Close</span>
                                     <span>Distant</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="control-group">
-                            <label class="control-label" for="thunder-frequency">Thunder Frequency</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="thunder-frequency" min="2" max="15" step="1" value="8">
-                                </div>
-                                <div class="slider-labels">
-                                    <span>Frequent (2s)</span>
-                                    <span>Rare (15s)</span>
+                            <div class="mini-control">
+                                <div class="mini-label">Thunder Frequency</div>
+                                <input type="range" class="mini-slider" id="thunder-frequency" min="2" max="15" step="1" value="8">
+                                <div class="mini-range">
+                                    <span>Frequent</span>
+                                    <span>Rare</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="thunder-column">
-                        <h4 class="column-header">Rain Settings</h4>
-
-                        <div class="control-group">
-                            <label class="control-label" for="thunder-rain-volume">Rain Volume</label>
-                            <div class="slider-container">
-                                <div class="slider-wrapper">
-                                    <input type="range" id="thunder-rain-volume" min="0.1" max="0.4" step="0.05" value="0.2">
-                                </div>
-                                <div class="slider-labels">
+                        <div class="settings-group">
+                            <div class="settings-group-title">Rain Settings</div>
+                            <div class="mini-control">
+                                <div class="mini-label">Rain Volume</div>
+                                <input type="range" class="mini-slider" id="thunder-rain-volume" min="0.1" max="0.4" step="0.05" value="0.2">
+                                <div class="mini-range">
                                     <span>Light</span>
                                     <span>Heavy</span>
                                 </div>
                             </div>
+                            <div class="mini-control">
+                                <div class="mini-label">Rain Type</div>
+                                <select class="mini-select">
+                                    <option>Light Drizzle</option>
+                                    <option selected>Steady Rain</option>
+                                    <option>Heavy Downpour</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Settings section -->
-        <div class="control-section" id="settings-section">
-            <div class="section-header" onclick="toggleSection('settings')">
-                <div class="section-title">
-                    <div class="section-icon settings-icon">⚙️</div>
-                    <div>
-                        <div class="section-info">Settings</div>
-                    </div>
-                </div>
-                <button class="expand-btn" id="settings-expand">
-                    <span>▼</span>
-                </button>
-            </div>
-            <div class="section-content" id="settings-content">
-                <div class="control-group">
-                    <label class="control-label" for="volume">Master Volume</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="volume" min="-30" max="0" step="1" value="-15">
-                        </div>
-                        <div class="slider-labels">
-                            <span>🔇 Quiet</span>
-                            <span>Loud 🔊</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="control-group" id="settings-random-interval">
-                    <label class="control-label" for="random-interval">Random Change Interval</label>
-                    <div class="slider-container">
-                        <div class="slider-wrapper">
-                            <input type="range" id="random-interval" min="1" max="30" step="1" value="10">
-                        </div>
-                        <div class="slider-labels">
-                            <span>1 min</span>
-                            <span>30 min</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Playback Controls -->
-        <div class="music-controls-cards">
-            <button class="control-card play-card" id="playBtn" title="Play Music">
-                <div class="card-icon">▶️</div>
-                <div class="card-label">Play</div>
-            </button>
-
-            <button class="control-card sleep-card" id="sleepBtn" title="Sleep Mode">
-                <div class="card-icon">😴</div>
-                <div class="card-label" id="sleepText">Sleep</div>
-            </button>
         </div>
     </div>
 
-    <!-- Visualizer -->
-    <div class="visualizer" id="waves">
+    <!-- Settings Section -->
+    <div class="expandable-section">
+        <button class="section-toggle">
+            <div class="toggle-left">
+                <span class="section-icon">⚙️</span>
+                <span>Audio Settings</span>
+            </div>
+            <span class="toggle-indicator">▼</span>
+        </button>
+        <div class="section-content">
+            <div class="section-inner">
+                <div class="simple-control">
+                    <div class="simple-label">Master Volume</div>
+                    <input type="range" class="simple-slider" id="volume" min="-30" max="0" step="1" value="-15">
+                    <div class="slider-info">
+                        <span>🔇 Quiet</span>
+                        <span>Loud 🔊</span>
+                    </div>
+                </div>
+                <div class="simple-control">
+                    <div class="simple-label">Random Change Interval</div>
+                    <input type="range" class="simple-slider" id="random-interval" min="1" max="30" step="1" value="10">
+                    <div class="slider-info">
+                        <span>1 min</span>
+                        <span>30 min</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mini Visualizer -->
+    <div class="mini-visualizer">
+        <div class="waves-container" id="waves">
+            <!-- Waves will be created by JavaScript -->
+        </div>
     </div>
 
     <div class="info">
@@ -707,22 +1237,22 @@
 </div>
 
 <script>
-    // Global variables
+    // Global variables (same as original)
     let musicManager = null;
     let melodyManager = null;
     let waveManager = null;
     let clockManager = null;
     let sleepManager = null;
     let thunderManager = null;
+    let presetManager = null;
     let clockInitialized = false;
     let isPlaying = false;
     let activeNotes = {};
     let currentActiveMood = "calm";
     let visualizerInterval = null;
 
-    // Create audio context and effects (global audio nodes)
+    // Create audio context and effects (same as original)
     const masterVolume = new Tone.Volume(-15).toDestination();
-
     const reverb = new Tone.Reverb({
         decay: 10,
         wet: 0.5,
@@ -741,35 +1271,12 @@
         Q: 1
     }).connect(delay);
 
-    // Initialize UI elements
-    const startButton = document.getElementById("playBtn");
-    const sleepButton = document.getElementById("sleepBtn");
-    const moodSelect = document.getElementById("mood");
-    const densitySlider = document.getElementById("density");
-    const reverbSlider = document.getElementById("reverb");
-    const volumeSlider = document.getElementById("volume");
-    const randomIntervalSlider = document.getElementById("random-interval");
-    const wavesContainer = document.getElementById("waves");
+    // Element references
+    const playBtn = document.getElementById('playBtn');
+    const sleepBtn = document.getElementById('sleepBtn');
+    const diceButton = document.getElementById('dice-button');
 
-    // Melody elements
-    const melodyToggle = document.getElementById("melody-toggle");
-    const melodicInstrumentSelect = document.getElementById("melodic-instrument");
-    const melodicFrequencySlider = document.getElementById("melodic-frequency");
-    const melodicReverbSlider = document.getElementById("melodic-reverb");
-
-    // Wave elements
-    const noiseToggle = document.getElementById("noise-toggle");
-
-    // Clock elements
-    const clockToggle = document.getElementById("clock-toggle");
-
-    // Thunder elements
-    const thunderToggle = document.getElementById("thunder-toggle");
-
-    // Sound engine element
-    const soundEngineSelect = document.getElementById("sound-engine");
-
-    // Scale definitions for different moods
+    // Scale definitions (same as original)
     const scales = {
         calm: ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5"],
         ethereal: ["D3", "F#3", "A3", "B3", "D4", "F#4", "A4", "B4", "D5"],
@@ -794,1137 +1301,476 @@
         serene: ["E4", "G4", "C5"]
     };
 
-    // ===============================================
-    // CORE UI FUNCTIONS
-    // ===============================================
+    // UI Functions
+    function updateCurrentSettings() {
+        // Update engine
+        const soundEngine = document.getElementById('sound-engine');
+        const engineText = soundEngine.selectedOptions[0].text;
+        document.getElementById('current-engine').textContent = engineText.includes('Random') ? 'Random' : engineText.split(' ')[0];
 
-    // Toggle section expansion
-    function toggleSection(sectionName) {
-        const section = document.getElementById(`${sectionName}-section`);
-        const content = document.getElementById(`${sectionName}-content`);
-        const expandBtn = document.getElementById(`${sectionName}-expand`);
+        // Update mood
+        const mood = document.getElementById('mood');
+        const moodText = mood.selectedOptions[0].text;
+        document.getElementById('current-mood').textContent = moodText.includes('Random') ? 'Random' : moodText;
 
-        if (!section || !content || !expandBtn) return;
+        // Update instrument
+        const instrument = document.getElementById('melodic-instrument');
+        let instrumentText = 'None';
+        if (document.getElementById('melody-toggle').checked) {
+            instrumentText = instrument.selectedOptions[0].text.includes('Random') ? 'Random' :
+                instrument.selectedOptions[0].text.split(' ')[0];
+        }
+        document.getElementById('current-instrument').textContent = instrumentText;
 
-        const isExpanded = section.classList.contains('expanded');
+        // Update ambient
+        const activeAmbient = Array.from(document.querySelectorAll('.ambient-toggle.active'))
+            .map(toggle => toggle.querySelector('.ambient-text').textContent.split('\n')[0])
+            .join(', ');
+        document.getElementById('current-ambient').textContent = activeAmbient || 'None';
+    }
 
-        if (isExpanded) {
-            section.classList.remove('expanded');
-            content.classList.remove('expanded');
-            expandBtn.classList.remove('expanded');
+    function updatePlayButton(playing) {
+        if (playing) {
+            playBtn.innerHTML = '⏹️';
+            playBtn.classList.add('stop');
         } else {
-            section.classList.add('expanded');
-            content.classList.add('expanded');
-            expandBtn.classList.add('expanded');
+            playBtn.innerHTML = '▶️';
+            playBtn.classList.remove('stop');
         }
     }
 
-    // Update status displays
-    function updateMoodStatus() {
-        const status = document.getElementById('mood-status');
-        if (!status || !moodSelect) return;
+    // Section toggle functionality
+    document.querySelectorAll('.section-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const content = toggle.nextElementSibling;
+            const isActive = toggle.classList.contains('active');
 
-        const selectedOption = moodSelect.options[moodSelect.selectedIndex];
-        if (selectedOption && selectedOption.value === 'random') {
-            status.textContent = 'Random Mode';
-        } else {
-            status.textContent = selectedOption ? selectedOption.text : 'Calm';
-        }
-    }
+            // Close all sections
+            document.querySelectorAll('.section-toggle').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.section-content').forEach(c => c.classList.remove('active'));
 
-    function handleMelodicReverbChange() {
-        const melodicReverbSlider = document.getElementById('melodic-reverb');
-        if (!melodicReverbSlider || !melodyManager) return;
-
-        const reverbAmount = parseFloat(melodicReverbSlider.value);
-        console.debug(`Setting melodic reverb to: ${reverbAmount}`);
-
-        // Update reverb for all slots (each slot gets slightly different reverb)
-        for (let i = 0; i < melodyManager.getCurrentSlotCount(); i++) {
-            const slotReverb = reverbAmount + (i * 0.1); // Each layer gets more reverb
-            melodyManager.updateSlotConfig(i, {
-                reverbAmount: Math.min(1.0, slotReverb)
-            });
-        }
-    }
-
-    function updateMelodyStatus() {
-        const status = document.getElementById('melody-status');
-        const instrumentSelect = document.getElementById('melodic-instrument');
-
-        if (!status || !melodyManager) return;
-
-        const slotCount = melodyManager.getCurrentSlotCount();
-
-        if (instrumentSelect) {
-            const selectedValue = instrumentSelect.value;
-            const selectedOption = instrumentSelect.options[instrumentSelect.selectedIndex];
-
-            if (selectedValue === 'mixed') {
-                status.textContent = `${slotCount} Layers: Mixed Instruments`;
-            } else if (selectedValue === 'random') {
-                status.textContent = `${slotCount} Layers: Random Mode`;
-            } else {
-                const instrumentName = selectedOption ? selectedOption.text.replace(' (All Layers)', '') : 'Piano';
-                status.textContent = `${slotCount} Layer${slotCount > 1 ? 's' : ''}: ${instrumentName}`;
+            // Open clicked section if it wasn't active
+            if (!isActive) {
+                toggle.classList.add('active');
+                content.classList.add('active');
             }
-        } else {
-            status.textContent = `${slotCount} Layer${slotCount > 1 ? 's' : ''}: Piano`;
-        }
-    }
+        });
+    });
 
-    function updateWavesStatus() {
-        const status = document.getElementById('waves-status');
-        if (!status) return;
+    // Preset selection
+    document.querySelectorAll('.preset-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            updateCurrentSettings();
+        });
+    });
 
-        status.textContent = (noiseToggle && noiseToggle.checked) ? 'On' : 'Off';
-    }
+    // Ambient toggles and settings
+    document.querySelectorAll('.ambient-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            // Don't trigger toggle if clicking settings button
+            if (e.target.classList.contains('ambient-settings-btn')) {
+                e.stopPropagation();
+                const soundType = toggle.dataset.sound;
+                const settingsPanel = document.getElementById(`${soundType}-settings`);
 
-    function updateSoundEngineStatus(engineName = null) {
-        const status = document.getElementById('sound-engine-status');
-        if (!status) return;
-
-        if (engineName) {
-            status.textContent = engineName;
-        } else if (soundEngineSelect) {
-            const selectedOption = soundEngineSelect.options[soundEngineSelect.selectedIndex];
-            if (selectedOption && selectedOption.value === 'random') {
-                status.textContent = 'Random Mode';
-            } else {
-                status.textContent = selectedOption ? selectedOption.text : 'Standard Ambient';
-            }
-        }
-    }
-
-    function updateRandomizationStatus() {
-        const moodStatus = document.getElementById('mood-random-status');
-        const engineStatus = document.getElementById('engine-random-status');
-        const melodyStatus = document.getElementById('melody-random-status');
-
-        // Update mood randomization status
-        if (moodStatus) {
-            const isRandom = moodSelect && moodSelect.value === 'random';
-            moodStatus.textContent = isRandom ? 'Auto' : 'Manual';
-            moodStatus.className = isRandom ? 'status-value active' : 'status-value';
-        }
-
-        // Update engine randomization status
-        if (engineStatus) {
-            const isRandom = soundEngineSelect && soundEngineSelect.value === 'random';
-            engineStatus.textContent = isRandom ? 'Auto' : 'Manual';
-            engineStatus.className = isRandom ? 'status-value active' : 'status-value';
-        }
-
-        // Update melody randomization status
-        if (melodyStatus) {
-            const isRandom = melodicInstrumentSelect && melodicInstrumentSelect.value === 'random';
-            melodyStatus.textContent = isRandom ? 'Auto' : 'Manual';
-            melodyStatus.className = isRandom ? 'status-value active' : 'status-value';
-        }
-    }
-
-    // ===============================================
-    // DICE RANDOMIZER
-    // ===============================================
-
-    function randomizeEverything() {
-        const diceButton = document.getElementById('dice-button');
-        if (!diceButton) return;
-
-        console.log('🎲 Starting complete randomization with multi-melody...');
-
-        diceButton.style.transform = 'scale(0.95)';
-        diceButton.innerHTML = '<span class="dice-icon">🎲</span> Rolling...';
-
-        setTimeout(() => {
-            // Randomize slot count (1-4 layers)
-            const slotCountSlider = document.getElementById('melody-slot-count');
-            if (slotCountSlider) {
-                const newSlotCount = Math.floor(Math.random() * 3) + 1;
-                slotCountSlider.value = newSlotCount;
-                handleSlotCountChange();
-                console.log('🎹 Randomized melody layers to:', newSlotCount);
-            }
-
-            // Randomize layer randomness
-            const layerRandomnessSlider = document.getElementById('layer-randomness');
-            if (layerRandomnessSlider) {
-                const newRandomness = (Math.random() * 0.8 + 0.2).toFixed(1);
-                layerRandomnessSlider.value = newRandomness;
-                handleLayerRandomnessChange();
-                console.log('🔀 Randomized layer randomness to:', newRandomness);
-            }
-
-            // Randomize melody instrument assignment
-            const melodicInstrumentSelect = document.getElementById('melodic-instrument');
-            if (melodicInstrumentSelect) {
-                const melodyOptions = ['piano', 'marimba', 'harp', 'music-box',
-                    'crystal-bells', 'warm-strings', 'ethereal-choir', 'wind-chimes',
-                    'glass-harmonics', 'soft-flute', 'vintage-celesta', 'deep-bass-melodic', 'mixed'
-                ];
-                const randomMelody = melodyOptions[Math.floor(Math.random() * melodyOptions.length)];
-                melodicInstrumentSelect.value = randomMelody;
-                handleMultiInstrumentChange();
-                console.log('🎼 Randomized melody to:', randomMelody);
-            }
-
-            // Rest of existing randomization...
-            const moodSelect = document.getElementById('mood');
-            if (moodSelect) {
-                const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
-                const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
-                moodSelect.value = randomMood.value;
-                console.log('🎭 Randomized mood to:', randomMood.value);
-            }
-
-            const soundEngineSelect = document.getElementById('sound-engine');
-            if (soundEngineSelect) {
-                const engineOptions = Array.from(soundEngineSelect.options).filter(option => option.value !== 'random');
-                const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
-                soundEngineSelect.value = randomEngine.value;
-                console.log('🔧 Randomized engine to:', randomEngine.value);
-            }
-
-            // Randomize waves
-            const noiseToggle = document.getElementById('noise-toggle');
-            if (noiseToggle) {
-                noiseToggle.checked = Math.random() > 0.5;
-                if (typeof waveManager !== 'undefined' && waveManager) {
-                    waveManager.updateStatus();
-                }
-                console.log('🌊 Randomized waves to:', noiseToggle.checked ? 'On' : 'Off');
-            }
-
-            // Randomize clock
-            const clockToggle = document.getElementById('clock-toggle');
-            if (clockToggle) {
-                clockToggle.checked = Math.random() > 0.5;
-                if (typeof clockManager !== 'undefined' && clockManager) {
-                    clockManager.updateStatus();
-                }
-                console.log('🕰️️ Randomized clock to:', clockToggle.checked ? 'On' : 'Off');
-            }
-
-            // Randomize thunder
-            const thunderToggle = document.getElementById('thunder-toggle');
-            if (thunderToggle) {
-                thunderToggle.checked = Math.random() > 0.5;
-                if (typeof thunderManager !== 'undefined' && thunderManager) {
-                    thunderManager.updateStatus();
-                }
-                console.log('⛈️️️ Randomized thunder to:', thunderToggle.checked ? 'On' : 'Off');
-            }
-
-            // Randomize sliders
-            const densitySlider = document.getElementById('density');
-            const reverbSlider = document.getElementById('reverb');
-            const melodicFrequencySlider = document.getElementById('melodic-frequency');
-            const melodicReverbSlider = document.getElementById('melodic-reverb');
-
-            if (densitySlider) {
-                densitySlider.value = Math.floor(Math.random() * 8) + 2;
-                console.log('🎵 Randomized density to:', densitySlider.value);
-            }
-            if (reverbSlider) {
-                reverbSlider.value = (Math.random() * 0.8 + 0.2).toFixed(1);
-                console.log('🔊 Randomized reverb to:', reverbSlider.value);
-            }
-            if (melodicFrequencySlider) {
-                melodicFrequencySlider.value = Math.floor(Math.random() * 8) + 2;
-                console.log('🎼 Randomized melody frequency to:', melodicFrequencySlider.value);
-            }
-            if (melodicReverbSlider) {
-                const newMelodicReverb = (Math.random() * 0.6 + 0.4).toFixed(2);
-                melodicReverbSlider.value = newMelodicReverb;
-                handleMelodicReverbChange();
-                console.log('🎭 Randomized melodic reverb to:', newMelodicReverb);
-            }
-
-            // Apply changes if music is playing
-            if (typeof isPlaying !== 'undefined' && isPlaying && typeof applySettingsGradually === 'function') {
-                applySettingsGradually();
-            }
-
-            // Update all status displays
-            if (typeof updateMoodStatus === 'function') updateMoodStatus();
-            updateMelodyStatus();
-            if (typeof updateWavesStatus === 'function') updateWavesStatus();
-            if (typeof updateSoundEngineStatus === 'function') updateSoundEngineStatus();
-            if (typeof updateRandomizationStatus === 'function') updateRandomizationStatus();
-            updateSlotsInfoDisplay();
-
-            // Reset button with success animation
-            diceButton.style.transform = 'scale(1)';
-            diceButton.innerHTML = '<span class="dice-icon">🎲</span> Randomize Everything';
-
-            // Brief success feedback
-            diceButton.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
-            setTimeout(() => {
-                diceButton.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }, 1000);
-
-            console.log('✅ Complete multi-melody randomization finished!');
-        }, 800);
-    }
-
-    // ===============================================
-    // EVENT HANDLERS
-    // ===============================================
-
-    async function handleSoundEngineChange() {
-        if (!soundEngineSelect || !musicManager) return;
-
-        const selectedEngine = soundEngineSelect.value;
-        console.debug("🔧 Sound engine changed to:", selectedEngine);
-
-        try {
-            if (selectedEngine !== "random") {
-                await musicManager.setSoundEngine(selectedEngine, {
-                    density: densitySlider ? parseInt(densitySlider.value) : 5,
-                    reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+                // Hide all other settings panels
+                document.querySelectorAll('.ambient-settings-panel').forEach(panel => {
+                    if (panel !== settingsPanel) {
+                        panel.classList.remove('active');
+                    }
                 });
 
-                if (musicManager.randomEngineInterval) {
-                    clearInterval(musicManager.randomEngineInterval);
-                    musicManager.randomEngineInterval = null;
-                }
-
-                updateSoundEngineStatus();
-            } else {
-                console.debug("🎲 Starting random engine cycle");
-                musicManager.startRandomEngineCycle();
-                updateSoundEngineStatus('Random Mode');
+                // Toggle this settings panel
+                settingsPanel.classList.toggle('active');
+                return;
             }
 
-            updateRandomizationStatus();
+            // Normal toggle functionality
+            const wasActive = toggle.classList.contains('active');
+            toggle.classList.toggle('active');
 
-        } catch (error) {
-            console.error("Error changing sound engine:", error);
-        }
-    }
-
-    function handleMoodChange() {
-        if (!moodSelect || !musicManager) return;
-
-        const selectedMood = moodSelect.value;
-        console.debug("🎭 Mood changed to:", selectedMood);
-
-        if (selectedMood !== "random") {
-            currentActiveMood = selectedMood;
-            musicManager.setMood(selectedMood);
-
-            if (musicManager.randomMoodInterval) {
-                clearInterval(musicManager.randomMoodInterval);
-                musicManager.randomMoodInterval = null;
+            // Handle the actual audio toggle
+            const soundType = toggle.dataset.sound;
+            if (soundType === 'waves') {
+                // document.getElementById('noise-toggle').checked = !wasActive;
+                console.log("hdasdfasdf");
+                if (waveManager) waveManager.toggle();
+            } else if (soundType === 'clock') {
+                // document.getElementById('clock-toggle').checked = !wasActive;
+                if (clockManager) clockManager.toggle();
+            } else if (soundType === 'thunder') {
+                // document.getElementById('thunder-toggle').checked = !wasActive;
+                if (thunderManager) thunderManager.toggle();
             }
+
+            // Hide settings panel if sound is turned off
+            if (wasActive) {
+                const settingsPanel = document.getElementById(`${soundType}-settings`);
+                settingsPanel.classList.remove('active');
+            }
+
+            updateCurrentSettings();
+        });
+    });
+
+    // Advanced melody layers control
+    document.getElementById('melody-layers-enable').addEventListener('change', function() {
+        const slider = document.getElementById('melody-slot-count');
+        const warning = document.getElementById('melody-layers-warning');
+
+        slider.disabled = !this.checked;
+        if (this.checked) {
+            warning.classList.remove('hidden');
         } else {
-            console.debug("🎲 Starting random mood cycle");
-            musicManager.startRandomMoodCycle();
+            warning.classList.add('hidden');
+            slider.value = '1';
         }
+    });
 
-        updateMoodStatus();
-        updateRandomizationStatus();
-    }
+    // Clock tempo display update
+    document.getElementById('clock-tempo').addEventListener('input', function() {
+        document.getElementById('clock-tempo-display').textContent = `${this.value} BPM`;
+    });
 
-    async function handleInstrumentChange() {
-        if (!melodyManager || !melodicInstrumentSelect) return;
+    // Update current settings when controls change
+    document.getElementById('sound-engine').addEventListener('change', updateCurrentSettings);
+    document.getElementById('mood').addEventListener('change', updateCurrentSettings);
+    document.getElementById('melodic-instrument').addEventListener('change', updateCurrentSettings);
+    document.getElementById('melody-toggle').addEventListener('change', updateCurrentSettings);
 
-        const selectedInstrument = melodicInstrumentSelect.value;
-        console.debug("🎹 Instrument changed to:", selectedInstrument);
+    // Main play button
+    playBtn.addEventListener('click', () => {
+        if (isPlaying) {
+            stopMusic();
+            updatePlayButton(false);
+        } else {
+            startMusic();
+            updatePlayButton(true);
+        }
+    });
 
-        try {
-            if (selectedInstrument !== "random" && melodyToggle?.checked) {
-                await melodyManager.setInstrument(selectedInstrument, {
-                    volume: -5,
-                    reverbAmount: melodicReverbSlider ? parseFloat(melodicReverbSlider.value) : 0.8
-                });
-
-                if (isPlaying) {
-                    const effectiveMood = moodSelect?.value === "random" ? currentActiveMood : (moodSelect?.value || 'calm');
-                    const currentScale = scales[effectiveMood];
-                    const melodicPattern = melodicPatterns[effectiveMood];
-
-                    await melodyManager.start(currentScale, melodicPattern);
-                }
-            } else if (selectedInstrument === "random") {
-                melodyManager.startRandomCycle();
-            } else if (!melodyToggle?.checked) {
-                melodyManager.stop();
+    // Sleep button
+    sleepBtn.addEventListener('click', () => {
+        if (sleepManager) {
+            sleepManager.toggle();
+            sleepBtn.classList.toggle('active');
+            const icon = document.getElementById('sleepIcon');
+            const text = document.getElementById('sleepText');
+            if (sleepBtn.classList.contains('active')) {
+                icon.textContent = '😴';
+                text.textContent = 'Wake';
+            } else {
+                icon.textContent = '😴';
+                text.textContent = 'Sleep';
             }
-
-            updateMelodyStatus();
-            updateRandomizationStatus();
-
-        } catch (error) {
-            console.error("Error changing instrument:", error);
         }
+    });
+
+    // Wave animation
+    function animateWaves() {
+        document.querySelectorAll('.wave').forEach((wave, index) => {
+            const height = Math.random() * 60 + 20;
+            wave.style.height = height + '%';
+        });
     }
 
-    function toggleMelody(event) {
-        if (event) {
-            event.stopPropagation();
-            event.preventDefault();
-        }
-
-        const melodyToggle = document.getElementById('melody-toggle');
-        console.debug("Multi-melody toggle called, enabled:", melodyToggle?.checked);
-
-        if (melodyManager) {
-            melodyManager.setEnabled(melodyToggle?.checked || false);
-        }
-
-        if (typeof isPlaying !== 'undefined' && isPlaying) {
-            handleMultiInstrumentChange();
-        }
-
-        updateMelodyStatus();
-        updateSlotsInfoDisplay();
+    function startVisualizer() {
+        if (visualizerInterval) clearInterval(visualizerInterval);
+        visualizerInterval = setInterval(animateWaves, 300);
+        animateWaves();
     }
 
-    async function toggleWaves() {
-        console.log('🌊 Toggling ocean waves...');
-
-        if (!waveManager) {
-            waveManager = new OceanWaveManager();
-        }
-
-        try {
-            await waveManager.toggle();
-            updateWavesStatus();
-            console.log('✅ Waves toggled successfully');
-        } catch (error) {
-            console.error('❌ Error toggling waves:', error);
-        }
-    }
-
-    // ===============================================
-    // START/STOP MUSIC
-    // ===============================================
-
+    // Music functions (adapted from original)
     async function startMusic() {
-        if (typeof isPlaying !== 'undefined' && isPlaying) return;
+        if (isPlaying) return;
 
-        console.log('🎵 Starting ambient music system with multi-melody...');
+        console.log('🎵 Starting ambient music system...');
 
         try {
             await Tone.start();
+            isPlaying = true;
+            activeNotes = {};
 
-            if (typeof isPlaying !== 'undefined') {
-                isPlaying = true;
-            }
-            if (typeof activeNotes !== 'undefined') {
-                activeNotes = {};
-            }
+            // Initialize managers if needed
+            if (!musicManager) musicManager = new AmbientMusicManager();
+            if (!melodyManager) melodyManager = new MultiMelodyManager();
+            if (!waveManager) waveManager = new OceanWaveManager();
+            if (!clockManager) clockManager = new GrandfatherClockManager();
+            if (!sleepManager) sleepManager = new SleepModeManager();
+            if (!thunderManager) thunderManager = new ThunderStormManager();
 
-            // Initialize music manager if not already done
-            if (!musicManager) {
-                musicManager = new AmbientMusicManager();
-            }
-
-            // Set up sound engine (existing logic)
+            // Set up sound engine
             const soundEngineSelect = document.getElementById('sound-engine');
-            const selectedEngine = soundEngineSelect?.value || 'standard';
-            console.debug("Starting with engine:", selectedEngine);
+            const selectedEngine = soundEngineSelect.value;
 
             if (selectedEngine !== "random") {
                 await musicManager.setSoundEngine(selectedEngine, {
-                    density: densitySlider ? parseInt(densitySlider.value) : 5,
-                    reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+                    density: parseInt(document.getElementById('density').value),
+                    reverbAmount: parseFloat(document.getElementById('reverb').value)
                 });
             } else {
                 const availableEngines = musicManager.getAvailableSoundEngines();
                 const randomEngine = availableEngines[Math.floor(Math.random() * availableEngines.length)];
-                console.log('🎲 Starting with random engine:', randomEngine.key);
-
                 await musicManager.setSoundEngine(randomEngine.key, {
-                    density: densitySlider ? parseInt(densitySlider.value) : 5,
-                    reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+                    density: parseInt(document.getElementById('density').value),
+                    reverbAmount: parseFloat(document.getElementById('reverb').value)
                 });
-
-                updateSoundEngineStatus(randomEngine.name);
             }
 
-            // Initialize mood (existing logic)
+            // Set mood
             const moodSelect = document.getElementById('mood');
-            if (moodSelect?.value !== "random") {
+            if (moodSelect.value !== "random") {
                 currentActiveMood = moodSelect.value;
             } else {
                 const availableMoods = musicManager.getAvailableMoods();
                 currentActiveMood = availableMoods[Math.floor(Math.random() * availableMoods.length)];
             }
-
             musicManager.setMood(currentActiveMood);
 
             // Start random cycles if needed
-            if (moodSelect?.value === "random") {
+            if (moodSelect.value === "random") {
                 musicManager.startRandomMoodCycle();
             }
-            if (soundEngineSelect?.value === "random") {
+            if (soundEngineSelect.value === "random") {
                 musicManager.startRandomEngineCycle();
             }
 
-            // Update audio settings (existing logic)
-            if (reverbSlider && typeof reverb !== 'undefined') {
-                reverb.wet.value = parseFloat(reverbSlider.value);
-            }
-            if (volumeSlider && typeof masterVolume !== 'undefined') {
-                masterVolume.volume.value = parseInt(volumeSlider.value);
-            }
+            // Update audio settings
+            reverb.wet.value = parseFloat(document.getElementById('reverb').value);
+            masterVolume.volume.value = parseInt(document.getElementById('volume').value);
 
-            if (typeof Tone !== 'undefined') {
-                Tone.Transport.bpm.value = 60;
-                Tone.Transport.start();
-            }
+            Tone.Transport.bpm.value = 60;
+            Tone.Transport.start();
 
-            // Start the sound engine
             await musicManager.start();
 
-            // Handle multi-melody instruments
+            // Handle melody
             const melodyToggle = document.getElementById('melody-toggle');
-            if (melodyToggle?.checked && melodyManager) {
-                console.log('🎹 Starting multi-melody system...');
-
-                // Make sure melodyManager is properly initialized
+            if (melodyToggle.checked && melodyManager) {
                 if (melodyManager.getCurrentSlotCount() === 0) {
                     melodyManager.initializeSlots(1);
                 }
 
-                // Set up instruments based on current selection
-                await handleMultiInstrumentChange();
+                const selectedInstrument = document.getElementById('melodic-instrument').value;
+                if (selectedInstrument !== "random") {
+                    await melodyManager.setAllSlotsToInstrument(selectedInstrument, {
+                        reverbAmount: parseFloat(document.getElementById('melodic-reverb').value)
+                    });
+                }
 
-                // Start playback with current scale and pattern
-                const effectiveMood = getCurrentEffectiveMood();
-                const currentScale = typeof scales !== 'undefined' ? scales[effectiveMood] : [];
-                const melodicPattern = typeof melodicPatterns !== 'undefined' ? melodicPatterns[effectiveMood] : [];
-
-                if (currentScale.length > 0 && melodicPattern.length > 0) {
+                const currentScale = scales[currentActiveMood];
+                const melodicPattern = melodicPatterns[currentActiveMood];
+                if (currentScale && melodicPattern) {
                     await melodyManager.start(currentScale, melodicPattern);
-                    console.log('✅ Multi-melody started successfully');
                 }
             }
 
+            // Handle ambient sounds
+            document.querySelectorAll('.ambient-toggle.active').forEach(toggle => {
+                const soundType = toggle.dataset.sound;
+                if (soundType === 'waves' && waveManager) {
+                    waveManager.toggle();
+                } else if (soundType === 'clock' && clockManager) {
+                    clockManager.toggle();
+                } else if (soundType === 'thunder' && thunderManager) {
+                    thunderManager.toggle();
+                }
+            });
 
-            if (noiseToggle?.checked) {
-                await toggleWaves();
-            }
-
-            if (clockToggle?.checked) {
-                await toggleClock();
-            }
-
-            if (thunderToggle?.checked) {
-                await toggleThunder();
-            }
-
-            // Start visualizer (existing logic)
-            if (typeof startVisualizer === 'function') {
-                startVisualizer();
-            }
-
-            // Update status displays
-            updateSlotsInfoDisplay();
-
-            console.log('✅ Music started successfully with multi-melody support!');
+            startVisualizer();
+            console.log('✅ Music started successfully!');
 
         } catch (error) {
             console.error('❌ Error starting music:', error);
-
-            // Reset UI on error
-            if (typeof isPlaying !== 'undefined') {
-                isPlaying = false;
-            }
+            isPlaying = false;
         }
     }
 
     function stopMusic() {
         console.log('🛑 Stopping ambient music system...');
+        isPlaying = false;
 
-        if (typeof isPlaying !== 'undefined') {
-            isPlaying = false;
-        }
-
-        // Stop all managers
-        if (musicManager) {
-            musicManager.stop();
-        }
-
-        if (melodyManager) {
-            melodyManager.stop();
-            console.log('🎹 Multi-melody stopped');
-        }
-
-        if (waveManager) {
-            noiseToggle.checked = false;
-            updateWavesStatus();
+        if (musicManager) musicManager.stop();
+        if (melodyManager) melodyManager.stop();
+        if (waveManager && document.querySelector('.ambient-toggle[data-sound="waves"]').classList.contains('active')) {
             waveManager.toggle();
-            console.log('🌊 Wave manager stopped');
         }
+        if (clockManager && document.querySelector('.ambient-toggle[data-sound="clock"]').classList.contains('active')) {
+            console.log("Stopping clock");
 
-        if (clockManager) {
-            clockToggle.checked = false;
-            updateClockStatus();
             clockManager.toggle();
-            console.log('🕰️ Clock manager stopped');
+        }
+        if (thunderManager && document.querySelector('.ambient-toggle[data-sound="thunder"]').classList.contains('active')) {
+            thunderManager.toggle();
         }
 
-        if (thunderManager) {
-            const thunderToggle = document.getElementById('thunder-toggle');
-            if (thunderToggle) {
-                thunderToggle.checked = false;
-                updateThunderStatus();
-                thunderManager.toggle();
-            }
-            console.log('⛈️ Thunder manager stopped');
-        }
+        Tone.Transport.stop();
 
-        // Stop transport (existing logic)
-        if (typeof Tone !== 'undefined') {
-            Tone.Transport.stop();
-        }
-
-        // Update UI (existing logic)
-        const startButton = document.getElementById('playBtn');
-        const stopButton = document.getElementById('stopBtn');
-        if (startButton) startButton.disabled = false;
-        if (stopButton) stopButton.disabled = true;
-
-        // Stop visualizer (existing logic)
-        if (typeof visualizerInterval !== 'undefined' && visualizerInterval) {
+        if (visualizerInterval) {
             clearInterval(visualizerInterval);
             visualizerInterval = null;
         }
 
-        // Clear active notes (existing logic)
-        if (typeof activeNotes !== 'undefined') {
-            activeNotes = {};
-        }
-
-        // Update displays
-        updateSlotsInfoDisplay();
-
+        activeNotes = {};
         console.log("✅ Music stopped successfully");
     }
 
-    // ===============================================
-    // VISUALIZER
-    // ===============================================
-
-    function startVisualizer() {
-        // Clear any existing interval
-        if (visualizerInterval) {
-            clearInterval(visualizerInterval);
-        }
-
-        const waves = document.querySelectorAll('.wave');
-
-        visualizerInterval = setInterval(() => {
-            // Update each wave based on audio activity
-            waves.forEach((wave, index) => {
-                if (isPlaying) {
-                    // Change color based on active instruments
-                    if (noiseToggle?.checked && index % 4 === 0) {
-                        // Blue-green for ocean waves
-                        wave.style.backgroundColor = `hsla(${180 + Math.random() * 40}, 80%, 70%, 0.2)`;
-                    } else if (melodicInstrumentSelect?.value !== "none" && index % 5 === 0) {
-                        // Gold/yellow for melodic instruments
-                        wave.style.backgroundColor = `hsla(${40 + Math.random() * 20}, 90%, 65%, 0.25)`;
-                    } else {
-                        // Create random but smooth movements
-                        const heightPercent = Math.random() * 50 + 10;
-                        wave.style.height = `${heightPercent}%`;
-
-                        // Add some color variation based on active notes
-                        const hue = (index * 9) % 360;
-                        wave.style.backgroundColor = `hsla(${hue}, 80%, 70%, 0.2)`;
-                    }
-                } else {
-                    wave.style.height = "30%";
-                    wave.style.backgroundColor = "rgba(255, 255, 255, 0.2)";
-                }
-            });
-        }, 200);
-    }
-
-    // ===============================================
-    // SETTINGS APPLICATION
-    // ===============================================
-
-    async function applySettingsGradually() {
-        if (!isPlaying) return;
-
-        console.log('🔄 Applying settings changes gradually...');
-
-        try {
-            // Gradually ramp reverb changes
-            if (reverbSlider) {
-                const targetReverb = parseFloat(reverbSlider.value);
-                reverb.wet.rampTo(targetReverb, 1.5);
-            }
-
-            // Handle mood change during playback
-            if (moodSelect?.value !== "random" && musicManager) {
-                currentActiveMood = moodSelect.value;
-                musicManager.setMood(currentActiveMood);
-            }
-
-            // Handle sound engine change during playback
-            await handleSoundEngineChange();
-
-            // Handle instrument change during playback
-            await handleInstrumentChange();
-
-            // Update wave system settings if active
-            if (waveManager && waveManager.isActive()) {
-                waveManager.updateVolume();
-                waveManager.updateNoiseType();
-                waveManager.updateFilter();
-                waveManager.updateBaseLevel();
-            }
-
-            // Update configuration
-            if (musicManager) {
-                musicManager.updateConfig({
-                    density: densitySlider ? parseInt(densitySlider.value) : 5,
-                    reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
-                });
-            }
-
-            console.log('✅ Settings applied successfully');
-
-        } catch (error) {
-            console.error('❌ Error applying settings:', error);
-        }
-    }
-
-    function setupMultiMelodyEventListeners() {
-        // Slot count slider
-        const slotCountSlider = document.getElementById('melody-slot-count');
-        if (slotCountSlider) {
-            slotCountSlider.addEventListener('input', handleSlotCountChange);
-        }
-
-        // Layer randomness slider
-        const layerRandomnessSlider = document.getElementById('layer-randomness');
-        if (layerRandomnessSlider) {
-            layerRandomnessSlider.addEventListener('input', handleLayerRandomnessChange);
-        }
-
-        // Enhanced instrument selection
-        const melodicInstrumentSelect = document.getElementById('melodic-instrument');
-        if (melodicInstrumentSelect) {
-            melodicInstrumentSelect.addEventListener('change', handleMultiInstrumentChange);
-        }
-
-        // Enhanced melodic reverb slider
-        const melodicReverbSlider = document.getElementById('melodic-reverb');
-        if (melodicReverbSlider) {
-            melodicReverbSlider.addEventListener('input', handleMelodicReverbChange);
-        }
-
-        console.log('✅ Multi-melody event listeners set up');
-    }
-
-    function getInstrumentDisplayName(instrumentKey) {
-        const displayNames = {
-            'piano': 'Piano',
-            'rhythmic-piano': 'Rhythmic Piano',
-            'algorithmic-melody': 'Algorithmic Melody',
-            'marimba': 'Marimba',
-            'harp': 'Harp',
-            'music-box': 'Music Box',
-            'glitch-electronic': 'Glitch Electronic',
-            'sampled-piano': 'Sampled Piano',
-            'crystal-bells': 'Crystal Bells',
-            'warm-strings': 'Warm Strings',
-            'ethereal-choir': 'Ethereal Choir',
-            'wind-chimes': 'Wind Chimes',
-            'glass-harmonics': 'Glass Harmonics',
-            'soft-flute': 'Soft Flute',
-            'vintage-celesta': 'Vintage Celesta',
-            'deep-bass-melodic': 'Deep Bass Melodic',
-        };
-        return displayNames[instrumentKey] || instrumentKey;
-    }
-
-    function handleSlotCountChange() {
-        const slotCountSlider = document.getElementById('melody-slot-count');
-        if (!slotCountSlider || !melodyManager) return;
-
-        const newCount = parseInt(slotCountSlider.value);
-        console.debug(`Changing melody layers to: ${newCount}`);
-
-        melodyManager.setSlotCount(newCount);
-
-        // If we're in mixed mode, randomize instruments for new slots
-        const instrumentSelect = document.getElementById('melodic-instrument');
-        if (instrumentSelect && instrumentSelect.value === 'mixed') {
-            setTimeout(async () => {
-                await melodyManager.randomizeSlotInstruments();
-                updateSlotsInfoDisplay();
-            }, 100);
-        }
-
-        updateSlotsInfoDisplay();
-        updateMelodyStatus();
-
-        console.log(`✅ Melody layers changed to: ${newCount}`);
-    }
-
-    function getCurrentEffectiveMood() {
-        const moodSelect = document.getElementById('mood');
-        if (moodSelect?.value === "random") {
-            return typeof currentActiveMood !== 'undefined' ? currentActiveMood : 'calm';
-        }
-        return moodSelect?.value || 'calm';
-    }
-
-    function getReverbAmount() {
-        const melodicReverbSlider = document.getElementById('melodic-reverb');
-        return melodicReverbSlider ? parseFloat(melodicReverbSlider.value) : 0.8;
-    }
-
-    function handleLayerRandomnessChange() {
-        const layerRandomnessSlider = document.getElementById('layer-randomness');
-        if (!layerRandomnessSlider || !melodyManager) return;
-
-        const randomnessLevel = parseFloat(layerRandomnessSlider.value);
-        console.debug(`Setting layer randomness to: ${randomnessLevel}`);
-
-        // Update randomness for all slots with different patterns per slot
-        for (let i = 0; i < melodyManager.getCurrentSlotCount(); i++) {
-            melodyManager.updateSlotConfig(i, {
-                randomness: {
-                    timing: 0.2 + (randomnessLevel * 0.6) + (i * 0.1), // Each layer more random
-                    noteChoice: 0.1 + (randomnessLevel * 0.4) + (i * 0.05),
-                    octaveShift: i > 0 ? randomnessLevel * 0.3 : 0 // Only higher layers shift octaves
-                }
-            });
-        }
-
-        console.log(`✅ Layer randomness updated to: ${randomnessLevel}`);
-    }
-
-    async function handleMultiInstrumentChange() {
-        const instrumentSelect = document.getElementById('melodic-instrument');
-        const melodyToggle = document.getElementById('melody-toggle');
-        if (!instrumentSelect || !melodyManager) return;
-
-        const selectedInstrument = instrumentSelect.value;
-        console.debug(`Multi-instrument changed to: ${selectedInstrument}`);
-
-        try {
-            if (selectedInstrument === 'mixed') {
-                // Assign different instruments to each slot
-                console.log('🎼 Setting mixed instruments...');
-                await melodyManager.randomizeSlotInstruments();
-
-            } else if (selectedInstrument === 'random') {
-                // Start random cycling for all slots
-                console.log('🎲 Starting random instrument cycling...');
-                melodyManager.startRandomCycle();
-
-            } else if (selectedInstrument !== 'random') {
-                // Set all slots to the same instrument
-                console.log(`🎹 Setting all layers to: ${selectedInstrument}`);
-                await melodyManager.setAllSlotsToInstrument(selectedInstrument, {
-                    reverbAmount: getReverbAmount()
-                });
-            }
-
-            // Start playback if enabled and playing
-            if (melodyToggle?.checked && typeof isPlaying !== 'undefined' && isPlaying) {
-                const effectiveMood = getCurrentEffectiveMood();
-                const currentScale = typeof scales !== 'undefined' ? scales[effectiveMood] : [];
-                const melodicPattern = typeof melodicPatterns !== 'undefined' ? melodicPatterns[effectiveMood] : [];
-
-                console.log('🎵 Starting multi-melody playback...');
-                await melodyManager.start(currentScale, melodicPattern);
-            }
-
-            updateSlotsInfoDisplay();
-            updateMelodyStatus();
-
-            console.log('✅ Multi-instrument change completed');
-
-        } catch (error) {
-            console.error("❌ Error in multi-instrument change:", error);
-        }
-    }
-
-    // ===============================================
-    // INITIALIZATION
-    // ===============================================
-
-    // Initialize the new sound system
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🎵 Initializing Ambient Music System...');
+        console.log('🎵 Initializing Mood App...');
 
         // Initialize managers
-        musicManager = new AmbientMusicManager();
-        waveManager = new OceanWaveManager();
         melodyManager = new MultiMelodyManager();
-        clockManager = new GrandfatherClockManager();
-        sleepManager = new SleepModeManager();
-        thunderManager = new ThunderStormManager();
+        melodyManager.initializeSlots(1);
 
-        // Set initial sound engine
-        if (musicManager) {
-            musicManager.setSoundEngine('standard', {
-                density: densitySlider ? parseInt(densitySlider.value) : 5,
-                reverbAmount: reverbSlider ? parseFloat(reverbSlider.value) : 0.5
+        const melodyToggle = document.getElementById('melody-toggle');
+        if (melodyToggle) {
+            // Set initial state based on checkbox
+            melodyManager.setEnabled(melodyToggle.checked);
+
+            // Listen for changes
+            melodyToggle.addEventListener('change', async function() {
+                melodyManager.setEnabled(this.checked);
+                console.log(`🎵 Melody manager ${this.checked ? 'enabled' : 'disabled'}`);
+
+                if (this.checked && isPlaying) {
+                    // When re-enabling, restart the melody if music is currently playing
+                    try {
+                        // Make sure we have slots initialized
+                        if (melodyManager.getCurrentSlotCount() === 0) {
+                            melodyManager.initializeSlots(1);
+                        }
+
+                        // Set the current instrument
+                        const selectedInstrument = document.getElementById('melodic-instrument').value;
+                        if (selectedInstrument !== "random") {
+                            await melodyManager.setAllSlotsToInstrument(selectedInstrument, {
+                                reverbAmount: parseFloat(document.getElementById('melodic-reverb').value || 0.8)
+                            });
+                        } else {
+                            await melodyManager.randomizeSlotInstruments();
+                        }
+
+                        // Start melody with current scale and pattern
+                        const currentMood = typeof currentActiveMood !== 'undefined' ? currentActiveMood :
+                            (document.getElementById('mood').value === 'random' ? 'calm' : document.getElementById('mood').value);
+
+                        if (scales[currentMood] && melodicPatterns[currentMood]) {
+                            await melodyManager.start(scales[currentMood], melodicPatterns[currentMood]);
+                        }
+
+                        console.log('🎵 Melody restarted after re-enabling');
+                    } catch (error) {
+                        console.error('🎵 Error restarting melody:', error);
+                    }
+                }
+
+                // Update current settings display
+                updateCurrentSettings();
             });
         }
 
-        melodyManager.initializeSlots(1); // Start with 1 slot
+        const melodicInstrumentSelect = document.getElementById('melodic-instrument');
+        if (melodicInstrumentSelect) {
+            melodicInstrumentSelect.addEventListener('change', async function() {
+                if (melodyManager && melodyManager.isEnabled && isPlaying) {
+                    console.log(`🎵 Changing instrument to: ${this.value}`);
 
-        // Update the UI to show multi-melody controls
-        updateMelodyStatus();
-        updateSlotsInfoDisplay();
+                    try {
+                        // Set the new instrument
+                        if (this.value !== "random") {
+                            await melodyManager.setAllSlotsToInstrument(this.value, {
+                                reverbAmount: parseFloat(document.getElementById('melodic-reverb').value || 0.8)
+                            });
+                        } else {
+                            // Handle random selection
+                            await melodyManager.randomizeSlotInstruments();
+                            melodyManager.startRandomCycle();
+                        }
 
-        // Set up additional event listeners
-        setupMultiMelodyEventListeners();
+                        // Restart melody with current scale and pattern
+                        const currentMood = typeof currentActiveMood !== 'undefined' ? currentActiveMood :
+                            (document.getElementById('mood').value === 'random' ? 'calm' : document.getElementById('mood').value);
+
+                        if (scales[currentMood] && melodicPatterns[currentMood]) {
+                            await melodyManager.start(scales[currentMood], melodicPatterns[currentMood]);
+                        }
+
+                        updateCurrentSettings();
+                    } catch (error) {
+                        console.error('🎵 Error changing instrument:', error);
+                    }
+                }
+            });
+        }
 
         // Create wave elements for visualizer
-        if (wavesContainer) {
-            for (let i = 0; i < 40; i++) {
-                const wave = document.createElement("div");
-                wave.className = "wave";
-                wavesContainer.appendChild(wave);
-            }
+        const wavesContainer = document.getElementById('waves');
+        for (let i = 0; i < 20; i++) {
+            const wave = document.createElement("div");
+            wave.className = "wave";
+            wavesContainer.appendChild(wave);
         }
 
-        // Update status displays
-        updateMoodStatus();
-        updateMelodyStatus();
-        updateWavesStatus();
-        updateSoundEngineStatus();
-        updateRandomizationStatus();
-
-        // Set up event listeners
-        if (startButton) startButton.addEventListener("click", () => {
-            if (isPlaying) {
-                stopMusic();
-                updatePlayButton(false);
-            } else {
-                startMusic();
-                updatePlayButton(true);
-            }
-        });
-        if (soundEngineSelect) soundEngineSelect.addEventListener("change", handleSoundEngineChange);
-        if (moodSelect) moodSelect.addEventListener("change", handleMoodChange);
-        if (melodicInstrumentSelect) melodicInstrumentSelect.addEventListener("change", handleInstrumentChange);
-        if (noiseToggle) noiseToggle.addEventListener("change", toggleWaves);
-        if (melodyToggle) melodyToggle.addEventListener("change", toggleMelody);
-
-        // Slider event listeners
-        if (reverbSlider) {
-            reverbSlider.addEventListener("input", (e) => {
-                reverb.wet.value = parseFloat(e.target.value);
-                if (musicManager) {
-                    musicManager.updateConfig({ reverbAmount: parseFloat(e.target.value) });
-                }
-            });
+        // Initialize preset manager
+        if (typeof PresetManager !== 'undefined') {
+            presetManager = new PresetManager();
         }
 
-        if (densitySlider) {
-            densitySlider.addEventListener("input", (e) => {
-                if (musicManager) {
-                    musicManager.updateConfig({ density: parseInt(e.target.value) });
-                }
-            });
-        }
-
-        if (volumeSlider) {
-            volumeSlider.addEventListener("input", (e) => {
-                masterVolume.volume.value = parseInt(e.target.value);
-            });
-        }
-
-        if (melodicReverbSlider) {
-            melodicReverbSlider.addEventListener("input", function() {
-                const reverbAmount = parseFloat(this.value);
-                console.debug("Setting melodic reverb to:", reverbAmount);
-                if (melodyManager) {
-                    melodyManager.updateReverbAmount(reverbAmount);
-                }
-            });
-        }
-
-        // Dice button event listener
-        const diceButton = document.getElementById('dice-button');
-        if (diceButton) {
-            diceButton.addEventListener('click', randomizeEverything);
-        }
-
-        // Clock-specific setup
-        console.log('🕰️ Setting up clock integration...');
-        const tempoSlider = document.getElementById('clock-tempo');
-        if (tempoSlider) {
-            tempoSlider.addEventListener('input', function() {
-                console.log('🕰️ Tempo slider moved to:', tempoSlider.value);
-                updateClockTempoDisplay();
-            });
-        }
-        updateClockTempoDisplay();
-        updateClockStatus();
-        console.log('🕰️ Clock integration setup complete');
-
-        // Ensure the warning is hidden initially since checkbox starts unchecked
-        const warning = document.getElementById('melody-layers-warning');
-        if (warning) {
-            warning.classList.add('hidden');
-        }
-
-        window.presetManager = new PresetManager();
-
-        console.log('✅ Ambient Music System initialized successfully');
+        updateCurrentSettings();
+        console.log('✅ Mood App initialized successfully');
     });
 
-    // Handle page unload
-    window.addEventListener('beforeunload', function() {
-        if (melodyManager) {
-            melodyManager.dispose();
-        }
-        if (musicManager) {
-            musicManager.stop();
-        }
-        if (clockManager) {
-            clockManager.dispose();
-        }
-        if (thunderManager) {
-            thunderManager.dispose();
-        }
+    // Dice randomizer (same logic as original)
+    diceButton.addEventListener('click', function() {
+        console.log('🎲 Starting randomization...');
+
+        this.style.transform = 'scale(0.95)';
+        this.innerHTML = '<span>🎲</span> Rolling...';
+
+        setTimeout(() => {
+            // Randomize all the things...
+            const moodSelect = document.getElementById('mood');
+            const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
+            const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
+            moodSelect.value = randomMood.value;
+
+            const soundEngineSelect = document.getElementById('sound-engine');
+            const engineOptions = Array.from(soundEngineSelect.options).filter(option => option.value !== 'random');
+            const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
+            soundEngineSelect.value = randomEngine.value;
+
+            const instrumentSelect = document.getElementById('melodic-instrument');
+            const instrumentOptions = Array.from(instrumentSelect.options).filter(option => option.value !== 'random');
+            const randomInstrument = instrumentOptions[Math.floor(Math.random() * instrumentOptions.length)];
+            instrumentSelect.value = randomInstrument.value;
+
+            // Randomize ambient sounds
+            document.querySelectorAll('.ambient-toggle').forEach(toggle => {
+                if (Math.random() > 0.6) {
+                    toggle.classList.add('active');
+                } else {
+                    toggle.classList.remove('active');
+                }
+            });
+
+            // Randomize sliders
+            document.getElementById('density').value = Math.floor(Math.random() * 8) + 2;
+            document.getElementById('reverb').value = (Math.random() * 0.8 + 0.2).toFixed(1);
+            document.getElementById('melodic-frequency').value = Math.floor(Math.random() * 8) + 2;
+            document.getElementById('melodic-reverb').value = (Math.random() * 0.6 + 0.4).toFixed(2);
+
+            updateCurrentSettings();
+
+            // Reset button
+            this.style.transform = 'scale(1)';
+            this.innerHTML = '<span>🎲</span> Random';
+
+            console.log('✅ Randomization complete!');
+        }, 800);
     });
-
-    async function initializeClock() {
-        console.log('🕰️ Initializing clock from integration...');
-
-        if (clockInitialized) {
-            console.log('🕰️ Clock already initialized');
-            return;
-        }
-
-        try {
-            clockManager = new GrandfatherClockManager();
-            await clockManager.initialize();
-            clockInitialized = true;
-            console.log('🕰️ Clock integration complete');
-        } catch (error) {
-            console.error('🕰️ Clock initialization failed:', error);
-        }
-    }
-
-    async function toggleClock() {
-        console.log('🕰️ toggleClock() called from UI');
-
-        // Initialize on first use
-        if (!clockInitialized) {
-            await initializeClock();
-        }
-
-        if (clockManager) {
-            await clockManager.toggle();
-        } else {
-            console.error('🕰️ clockManager not available');
-        }
-    }
-
-    function updateClockStatus() {
-        console.log('🕰️ updateClockStatus() called');
-
-        const status = document.getElementById('clock-status');
-        const clockToggle = document.getElementById('clock-toggle');
-
-        if (status && clockToggle) {
-            status.textContent = clockToggle.checked ? 'On' : 'Off';
-            console.log(`🕰️ Status set to: ${status.textContent}`);
-        } else {
-            console.warn('🕰️ Status elements not found');
-        }
-
-        // Update tempo display
-        updateClockTempoDisplay();
-    }
-
-    function updateClockTempoDisplay() {
-        const tempoSlider = document.getElementById('clock-tempo');
-        const tempoDisplay = document.getElementById('clock-tempo-display');
-
-        if (tempoSlider && tempoDisplay) {
-            tempoDisplay.textContent = `${tempoSlider.value} BPM`;
-        }
-    }
-
-    function updatePlayButton(isPlaying) {
-        const playCard = document.getElementById('playBtn');
-        const playLabel = playCard.querySelector('.card-label');
-        const playIcon = playCard.querySelector('.card-icon');
-
-        if (isPlaying) {
-            // Change to stop state
-            playIcon.textContent = '⏹️';
-            playLabel.textContent = 'Stop';
-            playCard.classList.remove('play-card');
-            playCard.classList.add('stop-card');
-        } else {
-            // Change to play state
-            playIcon.textContent = '▶️';
-            playLabel.textContent = 'Play';
-            playCard.classList.remove('stop-card');
-            playCard.classList.add('play-card');
-        }
-    }
-
-    // Auto-update slots display every few seconds
-    setInterval(() => {
-        if (typeof isPlaying !== 'undefined' && isPlaying && melodyManager) {
-            updateSlotsInfoDisplay();
-        }
-    }, 3000);
-
-    // Toggle function (same as before)
-    async function toggleThunder() {
-        console.log('⛈️ toggleThunder() called from UI');
-
-        if (thunderManager) {
-            await thunderManager.toggle();
-        } else {
-            console.error('⛈️ thunderManager not available');
-        }
-    }
-
-    function updateThunderStatus() {
-        const status = document.getElementById('thunder-status');
-        const thunderToggle = document.getElementById('thunder-toggle');
-
-        if (status && thunderToggle) {
-            status.textContent = thunderToggle.checked ? 'On' : 'Off';
-        }
-    }
-
-    function toggleMelodyLayersAccess() {
-        const checkbox = document.getElementById('melody-layers-enable');
-        const slider = document.getElementById('melody-slot-count');
-        const warning = document.getElementById('melody-layers-warning');
-
-        if (checkbox && slider && warning) {
-            const isEnabled = checkbox.checked;
-
-            // Enable/disable the slider
-            slider.disabled = !isEnabled;
-
-            // Show/hide the warning
-            if (isEnabled) {
-                warning.classList.remove('hidden');
-            } else {
-                warning.classList.add('hidden');
-                slider.value = '1';
-            }
-
-            console.log('Melody layers access:', isEnabled ? 'enabled' : 'disabled');
-        }
-    }
 </script>
-
 </body>
 </html>

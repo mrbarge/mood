@@ -249,7 +249,7 @@ class PresetManager {
     }
 
     setupEventListeners() {
-        const presetButtons = document.querySelectorAll('.preset-btn');
+        const presetButtons = document.querySelectorAll('.preset-pill');
         presetButtons.forEach(button => {
             button.addEventListener('click', (e) => {
                 const presetKey = button.getAttribute('data-preset');
@@ -311,13 +311,13 @@ class PresetManager {
             this.setToggleButton('melody-toggle', settings.melody);
         }
         if (settings.clock !== undefined) {
-            this.setToggleButton('clock-toggle', settings.clock);
+            this.setAmbientToggle('clock', settings.clock);
         }
         if (settings.noise !== undefined) {
-            this.setToggleButton('noise-toggle', settings.noise);
+            this.setAmbientToggle('waves', settings.noise);
         }
         if (settings.thunder !== undefined) {
-            this.setToggleButton('thunder-toggle', settings.thunder);
+            this.setAmbientToggle('thunder', settings.thunder);
         }
 
         if (settings.reverb !== undefined) {
@@ -368,6 +368,19 @@ class PresetManager {
             select.value = value;
             // Trigger change event
             select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    setAmbientToggle(elementId, enabled) {
+        const toggle = document.querySelector('.ambient-toggle[data-sound=' + elementId+']');
+        if (enabled) {
+            if (!toggle.classList.contains('active')) {
+                toggle.classList.add('active');
+            }
+        } else {
+            if (toggle.classList.contains('active')) {
+                toggle.classList.remove('active');
+            }
         }
     }
 
@@ -446,8 +459,7 @@ class PresetManager {
     }
 
     setActivePreset(activeButton) {
-        // Remove active class from all preset buttons
-        document.querySelectorAll('.preset-btn').forEach(btn => {
+        document.querySelectorAll('.preset-pill').forEach(btn => {
             btn.classList.remove('active');
         });
 

@@ -377,13 +377,8 @@ class ThunderStormManager {
     }
 
     setupEventListeners() {
-        const thunderToggle = document.getElementById("thunder-toggle");
         const volumeSlider = document.getElementById("thunder-volume");
         const rainVolumeSlider = document.getElementById("thunder-rain-volume");
-
-        if (thunderToggle) {
-            thunderToggle.addEventListener("change", () => this.toggle());
-        }
 
         if (volumeSlider) {
             volumeSlider.addEventListener("input", () => this.updateVolume());
@@ -399,13 +394,20 @@ class ThunderStormManager {
             await this.initialize();
         }
 
-        const thunderToggle = document.getElementById("thunder-toggle");
-
-        if (thunderToggle && thunderToggle.checked) {
-            this.thunderSystem.start();
-        } else {
-            if (this.thunderSystem) {
-                this.thunderSystem.stop();
+        const thunderToggle = document.querySelector('.ambient-toggle[data-sound="thunder"]');
+        if (thunderToggle) {
+            if (thunderToggle.classList.contains('active')) {
+                // Button is active, start the thunder
+                if (!this.thunderSystem.isActive) {
+                    console.log('⛈️ Starting thunder...');
+                    this.thunderSystem.start();
+                }
+            } else {
+                // Button is not active, stop the thunder
+                if (this.thunderSystem.isActive) {
+                    console.log('⛈️ Stopping thunder...');
+                    this.thunderSystem.stop();
+                }
             }
         }
 
@@ -425,13 +427,6 @@ class ThunderStormManager {
     }
 
     updateStatus() {
-        const thunderToggle = document.getElementById("thunder-toggle");
-        const status = document.getElementById("thunder-status");
-
-        if (status) {
-            const isOn = thunderToggle && thunderToggle.checked;
-            status.textContent = isOn ? 'On' : 'Off';
-        }
     }
 
     isActive() {
