@@ -28,11 +28,14 @@
         <div class="preset-ribbon-container">
             <h3 class="preset-ribbon-title">Presets</h3>
             <div class="preset-ribbon">
-                <button class="preset-btn" data-preset="classic" title="Classic">
-                    <span class="icon">1️⃣</span>
-                </button>
                 <button class="preset-btn" data-preset="evolving" title="Ever-evolving">
                     <span class="icon">♾️</span>
+                </button>
+                <button class="preset-btn" data-preset="star" title="Shooting Star">
+                    <span class="icon">🌠</span>
+                </button>
+                <button class="preset-btn" data-preset="storm" title="Gathering Storm">
+                    <span class="icon">🌧️</span>
                 </button>
                 <button class="preset-btn" data-preset="jewel" title="Shining Jewel">
                     <span class="icon">💎</span>
@@ -48,6 +51,9 @@
                 </button>
                 <button class="preset-btn" data-preset="frost" title="Frost">
                     <span class="icon">❄️</span>
+                </button>
+                <button class="preset-btn" data-preset="classic" title="Classic">
+                    <span class="icon">1️⃣</span>
                 </button>
             </div>
         </div>
@@ -186,6 +192,7 @@
                         <option value="glass-harmonics">Glass Harmonics (All Layers)</option>
                         <option value="soft-flute">Soft Flute (All Layers)</option>
                         <option value="vintage-celesta">Vintage Celesta (All Layers)</option>
+                        <option value="deep-bass-melodic">Deep Bass Melodic (All Layers)</option>
                         <option value="mixed">Mixed (Different Per Layer)</option>
                     </select>
                 </div>
@@ -953,7 +960,7 @@
             if (melodicInstrumentSelect) {
                 const melodyOptions = ['piano', 'marimba', 'harp', 'music-box',
                     'crystal-bells', 'warm-strings', 'ethereal-choir', 'wind-chimes',
-                    'glass-harmonics', 'soft-flute', 'vintage-celesta', 'mixed'
+                    'glass-harmonics', 'soft-flute', 'vintage-celesta', 'deep-bass-melodic', 'mixed'
                 ];
                 const randomMelody = melodyOptions[Math.floor(Math.random() * melodyOptions.length)];
                 melodicInstrumentSelect.value = randomMelody;
@@ -1534,6 +1541,7 @@
             'glass-harmonics': 'Glass Harmonics',
             'soft-flute': 'Soft Flute',
             'vintage-celesta': 'Vintage Celesta',
+            'deep-bass-melodic': 'Deep Bass Melodic',
         };
         return displayNames[instrumentKey] || instrumentKey;
     }

@@ -3161,6 +3161,433 @@ class AlgorithmicMelodyInstrument extends BaseMelodyInstrument {
     }
 }
 
+class DeepBassMelodicInstrument extends BaseMelodyInstrument {
+    constructor() {
+        super('Deep Bass Melodic');
+        this.bassVariants = [
+            'subBass', 'resonantBass', 'fmBass', 'uprightBass', 'synthBass'
+        ];
+        this.currentVariant = 'subBass';
+        this.variantChangeInterval = null;
+    }
+
+    async initialize(masterVolume, globalReverb) {
+        super.initialize(masterVolume, globalReverb);
+
+        // Create multiple bass synthesis approaches
+        this.createBassSynths();
+
+        // Deep bass processing chain
+        this.createBassEffectsChain(masterVolume);
+
+        // Start with sub-bass variant
+        this.selectBassVariant('subBass');
+
+        // Schedule variant changes for variety
+        this.scheduleVariantChanges();
+    }
+
+    createBassSynths() {
+        // 1. SUB-BASS: Pure sine wave bass
+        this.subBassSynth = new Tone.MonoSynth({
+            oscillator: {
+                type: "sine",
+                detune: 0
+            },
+            filter: {
+                type: "lowpass",
+                frequency: 150,
+                Q: 1
+            },
+            envelope: {
+                attack: 0.3,
+                decay: 1.5,
+                sustain: 0.8,
+                release: 2.5
+            },
+            volume: 5  // Boost for deep bass
+        });
+
+        // 2. RESONANT BASS: Filtered sawtooth with resonance
+        this.resonantBassSynth = new Tone.MonoSynth({
+            oscillator: {
+                type: "sawtooth",
+                detune: -5
+            },
+            filter: {
+                type: "lowpass",
+                frequency: 200,
+                Q: 8  // High resonance
+            },
+            envelope: {
+                attack: 0.1,
+                decay: 0.8,
+                sustain: 0.6,
+                release: 1.8
+            },
+            volume: 2
+        });
+
+        // 3. FM BASS: Rich harmonic content
+        this.fmBassSynth = new Tone.FMSynth({
+            harmonicity: 0.5,  // Lower harmonic for deeper sound
+            modulationIndex: 15, // High modulation for richness
+            oscillator: { type: "sine" },
+            envelope: {
+                attack: 0.2,
+                decay: 1.2,
+                sustain: 0.7,
+                release: 2.0
+            },
+            modulation: { type: "triangle" },
+            modulationEnvelope: {
+                attack: 0.1,
+                decay: 0.8,
+                sustain: 0.4,
+                release: 1.5
+            },
+            volume: 0
+        });
+
+        // 4. UPRIGHT BASS: Plucked string simulation
+        this.uprightBassSynth = new Tone.PluckSynth({
+            attackNoise: 2,     // More attack noise for pluck character
+            dampening: 2000,    // Lower dampening for longer sustain
+            resonance: 0.9,     // High resonance for woody character
+            volume: 8
+        });
+
+        // 5. SYNTH BASS: Modern electronic bass
+        this.synthBassSynth = new Tone.MonoSynth({
+            oscillator: {
+                type: "triangle",
+                detune: 3
+            },
+            filter: {
+                type: "lowpass",
+                frequency: 300,
+                Q: 4
+            },
+            envelope: {
+                attack: 0.05,
+                decay: 0.3,
+                sustain: 0.9,
+                release: 1.0
+            },
+            volume: 3
+        });
+
+        this.bassSynths = {
+            subBass: this.subBassSynth,
+            resonantBass: this.resonantBassSynth,
+            fmBass: this.fmBassSynth,
+            uprightBass: this.uprightBassSynth,
+            synthBass: this.synthBassSynth
+        };
+    }
+
+    createBassEffectsChain(masterVolume) {
+        // Sub-harmonic generator for extra depth
+        this.subHarmonic = new Tone.Gain(0.3);
+
+        // Tube-style saturation for warmth
+        this.bassDistortion = new Tone.Distortion({
+            distortion: 0.1,
+            wet: 0.4
+        });
+
+        // Multi-stage filtering for sculpting
+        this.bassFilter1 = new Tone.Filter({
+            type: "highpass",
+            frequency: 30,  // Remove sub-sonic rumble
+            Q: 0.5
+        });
+
+        this.bassFilter2 = new Tone.Filter({
+            type: "lowpass",
+            frequency: 400, // Keep it bassy
+            Q: 2
+        });
+
+        // Compressor for punch and consistency
+        this.bassCompressor = new Tone.Compressor({
+            threshold: -15,
+            ratio: 6,
+            attack: 0.005,
+            release: 0.1
+        });
+
+        // Chorus for width and movement
+        this.bassChorus = new Tone.Chorus({
+            frequency: 0.3,
+            delayTime: 4,
+            depth: 0.2,
+            wet: 0.25
+        }).start();
+
+        // Deep reverb for space
+        this.bassReverb = new Tone.Reverb({
+            decay: 8,
+            wet: this.config.reverbAmount || 0.4,
+            preDelay: 0.05,
+            roomSize: 0.8
+        });
+
+        // Connect the effects chain
+        // (Individual synths connect to this chain in selectBassVariant)
+        this.bassFilter1.connect(this.bassDistortion);
+        this.bassDistortion.connect(this.bassFilter2);
+        this.bassFilter2.connect(this.bassCompressor);
+        this.bassCompressor.connect(this.bassChorus);
+        this.bassChorus.connect(this.bassReverb);
+        this.bassReverb.connect(masterVolume);
+
+        this.effects.push(
+            this.bassDistortion, this.bassFilter1, this.bassFilter2,
+            this.bassCompressor, this.bassChorus, this.bassReverb
+        );
+    }
+
+    selectBassVariant(variantName) {
+        console.debug(`Switching to bass variant: ${variantName}`);
+
+        // Disconnect all synths first
+        Object.values(this.bassSynths).forEach(synth => {
+            try {
+                synth.disconnect();
+            } catch (e) {}
+        });
+
+        // Connect the selected variant
+        const selectedSynth = this.bassSynths[variantName];
+        if (selectedSynth) {
+            selectedSynth.connect(this.bassFilter1);
+            this.synth = selectedSynth; // Set for parent class compatibility
+            this.currentVariant = variantName;
+
+            // Apply variant-specific filter settings
+            this.applyVariantSettings(variantName);
+        }
+    }
+
+    applyVariantSettings(variantName) {
+        switch (variantName) {
+            case 'subBass':
+                this.bassFilter2.frequency.value = 120;
+                this.bassFilter2.Q.value = 1;
+                this.bassDistortion.wet.value = 0.2;
+                break;
+
+            case 'resonantBass':
+                this.bassFilter2.frequency.value = 250;
+                this.bassFilter2.Q.value = 6;
+                this.bassDistortion.wet.value = 0.4;
+                break;
+
+            case 'fmBass':
+                this.bassFilter2.frequency.value = 300;
+                this.bassFilter2.Q.value = 3;
+                this.bassDistortion.wet.value = 0.3;
+                break;
+
+            case 'uprightBass':
+                this.bassFilter2.frequency.value = 400;
+                this.bassFilter2.Q.value = 2;
+                this.bassDistortion.wet.value = 0.5; // More character
+                break;
+
+            case 'synthBass':
+                this.bassFilter2.frequency.value = 350;
+                this.bassFilter2.Q.value = 4;
+                this.bassDistortion.wet.value = 0.35;
+                break;
+        }
+    }
+
+    scheduleVariantChanges() {
+        if (this.variantChangeInterval) {
+            clearTimeout(this.variantChangeInterval);
+        }
+
+        // Change variant every 20-40 seconds for variety
+        const changeInterval = (20 + Math.random() * 20) * 1000;
+
+        this.variantChangeInterval = setTimeout(() => {
+            if (this.isActive) {
+                const currentIndex = this.bassVariants.indexOf(this.currentVariant);
+                let nextVariant;
+
+                // Pick a different variant
+                do {
+                    nextVariant = this.bassVariants[Math.floor(Math.random() * this.bassVariants.length)];
+                } while (nextVariant === this.currentVariant && this.bassVariants.length > 1);
+
+                this.selectBassVariant(nextVariant);
+                this.scheduleVariantChanges(); // Schedule next change
+            }
+        }, changeInterval);
+    }
+
+    playMelodicSequence(melody) {
+        // Focus on lower octaves for bass melodies
+        const bassNoteDuration = 2.5 + Math.random() * 1.5; // Longer notes for bass
+        const bassNoteSpacing = 1.8 + Math.random() * 0.8;  // Slower pacing
+
+        // Transform melody to bass register and add some bass-specific variations
+        const bassifiedMelody = this.createBassifiedMelody(melody);
+
+        bassifiedMelody.forEach((noteData, index) => {
+            let timing = index * bassNoteSpacing * 1000;
+            timing += (Math.random() - 0.5) * 500; // Less timing chaos for bass
+
+            setTimeout(() => {
+                if (!this.isActive) return;
+
+                const { note, duration, velocity } = noteData;
+
+                // Track for visualization
+                if (typeof activeNotes !== 'undefined') {
+                    if (!activeNotes[note]) {
+                        activeNotes[note] = { count: 1, type: 'bass' };
+                    } else {
+                        activeNotes[note].count++;
+                    }
+                }
+
+                try {
+                    // Different triggering for different bass types
+                    this.triggerBassByVariant(note, duration, velocity);
+
+                } catch (error) {
+                    console.debug("Deep bass playback error:", error.message);
+                }
+
+                // Cleanup note tracking
+                setTimeout(() => {
+                    if (typeof isPlaying !== 'undefined' && isPlaying &&
+                        typeof activeNotes !== 'undefined' && activeNotes[note]) {
+                        activeNotes[note].count--;
+                        if (activeNotes[note].count <= 0) {
+                            delete activeNotes[note];
+                        }
+                    }
+                }, duration * 1000 + 1000);
+            }, timing);
+        });
+    }
+
+    createBassifiedMelody(melody) {
+        return melody.map(note => {
+            // Convert to lower octaves (1-3 range primarily)
+            const noteName = note.slice(0, -1);
+            const originalOctave = parseInt(note.slice(-1));
+
+            // Map to bass range
+            let bassOctave;
+            if (originalOctave >= 5) {
+                bassOctave = 2; // High notes become deep bass
+            } else if (originalOctave >= 4) {
+                bassOctave = Math.random() < 0.7 ? 2 : 3; // Mid notes mostly bass
+            } else {
+                bassOctave = originalOctave <= 3 ? originalOctave : 3; // Keep bass notes
+            }
+
+            const bassNote = noteName + bassOctave;
+
+            // Vary duration and velocity based on bass variant
+            let duration = 2.5;
+            let velocity = 0.8;
+
+            switch (this.currentVariant) {
+                case 'subBass':
+                    duration = 3.5 + Math.random() * 2; // Very long sustains
+                    velocity = 0.9 + Math.random() * 0.1;
+                    break;
+
+                case 'uprightBass':
+                    duration = 1.5 + Math.random() * 1; // Shorter, more percussive
+                    velocity = 0.7 + Math.random() * 0.3;
+                    break;
+
+                case 'resonantBass':
+                    duration = 2 + Math.random() * 1.5;
+                    velocity = 0.8 + Math.random() * 0.2;
+                    break;
+
+                case 'fmBass':
+                    duration = 2.5 + Math.random() * 1.5;
+                    velocity = 0.75 + Math.random() * 0.25;
+                    break;
+
+                case 'synthBass':
+                    duration = 1.8 + Math.random() * 1.2;
+                    velocity = 0.8 + Math.random() * 0.2;
+                    break;
+            }
+
+            return { note: bassNote, duration, velocity };
+        });
+    }
+
+    triggerBassByVariant(note, duration, velocity) {
+        switch (this.currentVariant) {
+            case 'uprightBass':
+                // Pluck synth doesn't take duration parameter
+                this.synth.triggerAttackRelease(note, "4n", undefined, velocity);
+                break;
+
+            default:
+                // Standard triggering for other bass types
+                this.synth.triggerAttackRelease(note, duration, undefined, velocity);
+                break;
+        }
+    }
+
+    stop() {
+        super.stop();
+
+        if (this.variantChangeInterval) {
+            clearTimeout(this.variantChangeInterval);
+            this.variantChangeInterval = null;
+        }
+    }
+
+    dispose() {
+        if (this.variantChangeInterval) {
+            clearTimeout(this.variantChangeInterval);
+            this.variantChangeInterval = null;
+        }
+
+        // Dispose all bass synths
+        Object.values(this.bassSynths).forEach(synth => {
+            if (synth && synth.dispose) {
+                try {
+                    synth.dispose();
+                } catch (error) {
+                    console.debug("Error disposing bass synth:", error);
+                }
+            }
+        });
+
+        super.dispose();
+    }
+
+    // Public method to manually change variant (for UI control if desired)
+    changeBassVariant(variantName) {
+        if (this.bassVariants.includes(variantName)) {
+            this.selectBassVariant(variantName);
+        }
+    }
+
+    getCurrentVariant() {
+        return this.currentVariant;
+    }
+
+    getAvailableVariants() {
+        return this.bassVariants.slice(); // Return a copy
+    }
+}
+
 // ===============================================
 // MELODY INSTRUMENT REGISTRY
 // ===============================================
@@ -3189,6 +3616,7 @@ class MelodyInstrumentRegistry {
         this.register('vintage-celesta', VintageCelestaInstrument);
 
         this.register('algorithmic-melody', AlgorithmicMelodyInstrument);
+        this.register('deep-bass-melodic', DeepBassMelodicInstrument);
     }
 
     register(key, InstrumentClass) {
