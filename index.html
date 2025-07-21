@@ -1706,6 +1706,100 @@
             });
         }
 
+        const moodSelect = document.getElementById('mood');
+        if (moodSelect) {
+            moodSelect.addEventListener('change', function() {
+                if (musicManager && isPlaying) {
+                    if (this.value !== "random") {
+                        musicManager.setMood(this.value);
+                        currentActiveMood = this.value;
+
+                        // Also update melody manager with new scale
+                        if (melodyManager && melodyManager.isEnabled) {
+                            const newScale = scales[this.value];
+                            const newPattern = melodicPatterns[this.value];
+                            if (newScale && newPattern) {
+                                melodyManager.setScaleAndPattern(newScale, newPattern);
+                            }
+                        }
+                    } else {
+                        // Start random mood cycle
+                        musicManager.startRandomMoodCycle();
+                    }
+                }
+                updateCurrentSettings();
+            });
+        }
+
+        const densitySlider = document.getElementById('density');
+        if (densitySlider) {
+            densitySlider.addEventListener('input', function() {
+                if (musicManager && musicManager.currentSoundEngine && isPlaying) {
+                    musicManager.updateConfig({
+                        density: parseInt(this.value)
+                    });
+                }
+                updateCurrentSettings();
+            });
+        }
+
+        // Connect reverb slider to live updates
+        const reverbSlider = document.getElementById('reverb');
+        if (reverbSlider) {
+            reverbSlider.addEventListener('input', function() {
+                if (musicManager && musicManager.currentSoundEngine && isPlaying) {
+                    musicManager.updateConfig({
+                        reverbAmount: parseFloat(this.value)
+                    });
+                }
+                // Also update global reverb
+                if (typeof reverb !== 'undefined') {
+                    reverb.wet.value = parseFloat(this.value);
+                }
+                updateCurrentSettings();
+            });
+        }
+
+        const soundEngineSelect = document.getElementById('sound-engine');
+        if (soundEngineSelect) {
+            soundEngineSelect.addEventListener('change', async function() {
+                if (musicManager && isPlaying) {
+                    console.log(`🎵 Changing sound engine to: ${this.value}`);
+
+                    try {
+                        if (this.value !== "random") {
+                            // Set specific engine
+                            await musicManager.setSoundEngine(this.value, {
+                                density: parseInt(document.getElementById('density').value || 5),
+                                reverbAmount: parseFloat(document.getElementById('reverb').value || 0.5)
+                            });
+                        } else {
+                            // Handle random selection - pick a random engine immediately
+                            const availableEngines = musicManager.getAvailableSoundEngines();
+                            if (availableEngines.length > 0) {
+                                const randomEngine = availableEngines[Math.floor(Math.random() * availableEngines.length)];
+                                await musicManager.setSoundEngine(randomEngine.key, {
+                                    density: parseInt(document.getElementById('density').value || 5),
+                                    reverbAmount: parseFloat(document.getElementById('reverb').value || 0.5)
+                                });
+
+                                // Start the random cycle for future changes
+                                musicManager.startRandomEngineCycle();
+                            }
+                        }
+
+                        updateCurrentSettings();
+                        console.log('🎵 Sound engine changed successfully');
+                    } catch (error) {
+                        console.error('🎵 Error changing sound engine:', error);
+                    }
+                } else if (!isPlaying) {
+                    // If not playing, just update the display
+                    updateCurrentSettings();
+                }
+            });
+        }
+
         // Create wave elements for visualizer
         const wavesContainer = document.getElementById('waves');
         for (let i = 0; i < 20; i++) {
@@ -1723,52 +1817,74 @@
         console.log('✅ Mood App initialized successfully');
     });
 
-    // Dice randomizer (same logic as original)
     diceButton.addEventListener('click', function() {
         console.log('🎲 Starting randomization...');
 
         this.style.transform = 'scale(0.95)';
         this.innerHTML = '<span>🎲</span> Rolling...';
 
-        setTimeout(() => {
-            // Randomize all the things...
-            const moodSelect = document.getElementById('mood');
-            const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
-            const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
-            moodSelect.value = randomMood.value;
+        setTimeout(async () => {
+            try {
+                // Randomize mood
+                const moodSelect = document.getElementById('mood');
+                const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
+                const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
+                moodSelect.value = randomMood.value;
+                moodSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
 
-            const soundEngineSelect = document.getElementById('sound-engine');
-            const engineOptions = Array.from(soundEngineSelect.options).filter(option => option.value !== 'random');
-            const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
-            soundEngineSelect.value = randomEngine.value;
+                // Randomize sound engine
+                const soundEngineSelect = document.getElementById('sound-engine');
+                const engineOptions = Array.from(soundEngineSelect.options).filter(option => option.value !== 'random');
+                const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
+                soundEngineSelect.value = randomEngine.value;
+                soundEngineSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
 
-            const instrumentSelect = document.getElementById('melodic-instrument');
-            const instrumentOptions = Array.from(instrumentSelect.options).filter(option => option.value !== 'random');
-            const randomInstrument = instrumentOptions[Math.floor(Math.random() * instrumentOptions.length)];
-            instrumentSelect.value = randomInstrument.value;
+                // Randomize instrument
+                const instrumentSelect = document.getElementById('melodic-instrument');
+                const instrumentOptions = Array.from(instrumentSelect.options).filter(option => option.value !== 'random');
+                const randomInstrument = instrumentOptions[Math.floor(Math.random() * instrumentOptions.length)];
+                instrumentSelect.value = randomInstrument.value;
+                instrumentSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
 
-            // Randomize ambient sounds
-            document.querySelectorAll('.ambient-toggle').forEach(toggle => {
-                if (Math.random() > 0.6) {
-                    toggle.classList.add('active');
-                } else {
-                    toggle.classList.remove('active');
-                }
-            });
+                // Randomize sliders and trigger live updates
+                const densitySlider = document.getElementById('density');
+                densitySlider.value = Math.floor(Math.random() * 8) + 2;
+                densitySlider.dispatchEvent(new Event('input', { bubbles: true }));
 
-            // Randomize sliders
-            document.getElementById('density').value = Math.floor(Math.random() * 8) + 2;
-            document.getElementById('reverb').value = (Math.random() * 0.8 + 0.2).toFixed(1);
-            document.getElementById('melodic-frequency').value = Math.floor(Math.random() * 8) + 2;
-            document.getElementById('melodic-reverb').value = (Math.random() * 0.6 + 0.4).toFixed(2);
+                const reverbSlider = document.getElementById('reverb');
+                reverbSlider.value = (Math.random() * 0.8 + 0.2).toFixed(1);
+                reverbSlider.dispatchEvent(new Event('input', { bubbles: true }));
 
-            updateCurrentSettings();
+                const melodicFrequencySlider = document.getElementById('melodic-frequency');
+                melodicFrequencySlider.value = Math.floor(Math.random() * 8) + 2;
+                melodicFrequencySlider.dispatchEvent(new Event('input', { bubbles: true }));
+
+                const melodicReverbSlider = document.getElementById('melodic-reverb');
+                melodicReverbSlider.value = (Math.random() * 0.6 + 0.4).toFixed(2);
+                melodicReverbSlider.dispatchEvent(new Event('input', { bubbles: true }));
+
+                // Randomize ambient sounds
+                const ambientToggles = document.querySelectorAll('.ambient-toggle');
+                ambientToggles.forEach(toggle => {
+                    const shouldBeActive = Math.random() > 0.6;
+                    const isCurrentlyActive = toggle.classList.contains('active');
+
+                    if (shouldBeActive !== isCurrentlyActive) {
+                        // Only click if we need to change the state
+                        toggle.click();
+                    }
+                });
+
+                updateCurrentSettings();
+
+                console.log('✅ Randomization complete with live updates!');
+            } catch (error) {
+                console.error('❌ Error during randomization:', error);
+            }
 
             // Reset button
             this.style.transform = 'scale(1)';
             this.innerHTML = '<span>🎲</span> Random';
-
-            console.log('✅ Randomization complete!');
         }, 800);
     });
 </script>
