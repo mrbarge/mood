@@ -372,15 +372,20 @@ class PresetManager {
     }
 
     setAmbientToggle(elementId, enabled) {
-        const toggle = document.querySelector('.ambient-toggle[data-sound=' + elementId+']');
-        if (enabled) {
-            if (!toggle.classList.contains('active')) {
-                toggle.classList.add('active');
-            }
+        const toggle = document.querySelector('.ambient-toggle[data-sound=' + elementId + ']');
+        if (!toggle) {
+            console.warn(`Ambient toggle not found for: ${elementId}`);
+            return;
+        }
+
+        const isCurrentlyActive = toggle.classList.contains('active');
+
+        if (enabled !== isCurrentlyActive) {
+            // State needs to change - trigger a click to activate the audio systems
+            console.debug(`Preset: ${enabled ? 'Enabling' : 'Disabling'} ${elementId} ambient sound`);
+            toggle.click();
         } else {
-            if (toggle.classList.contains('active')) {
-                toggle.classList.remove('active');
-            }
+            console.debug(`Preset: ${elementId} ambient sound already in correct state (${enabled})`);
         }
     }
 

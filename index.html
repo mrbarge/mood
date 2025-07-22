@@ -761,12 +761,15 @@
         <div class="section-content">
             <div class="section-inner">
                 <div class="preset-row">
-                    <div class="preset-pill active" data-preset="classic">1️⃣ Classic</div>
-                    <div class="preset-pill" data-preset="evolving">♾️ Evolving</div>
-                    <div class="preset-pill" data-preset="minimal-drift">🌱 Minimal</div>
-                    <div class="preset-pill" data-preset="puzzle">🧩 Puzzle</div>
-                    <div class="preset-pill" data-preset="forest">🌲 Forest</div>
-                    <div class="preset-pill" data-preset="frost">❄️ Frost</div>
+                    <div class="preset-pill" data-preset="evolving" title="Evolving">♾️</div>
+                    <div class="preset-pill" data-preset="star" title="Shooting Star">🌠</div>
+                    <div class="preset-pill" data-preset="storm" title="Gathering Storm">🌧️</div>
+                    <div class="preset-pill" data-preset="jewel" title="Shining Jewel">💎</div>
+                    <div class="preset-pill" data-preset="minimal-drift" title="Minimal Drift">🌱</div>
+                    <div class="preset-pill" data-preset="puzzle" title="Taunting Puzzle">🧩</div>
+                    <div class="preset-pill" data-preset="forest" title="Forest Depths">🌲</div>
+                    <div class="preset-pill" data-preset="frost" title="Burning Frost">❄️</div>
+                    <div class="preset-pill active" data-preset="classic" title="The O.G.">1️⃣</div>
                 </div>
             </div>
         </div>
@@ -821,6 +824,16 @@
                         <option value="nostalgic">Nostalgic</option>
                         <option value="peaceful">Peaceful</option>
                         <option value="serene">Serene</option>
+                        <option value="meditative">Meditative</option>
+                        <option value="dramatic">Dramatic</option>
+                        <option value="celestial">Celestial</option>
+                        <option value="earthy">Earthy</option>
+                        <option value="twilight">Twilight</option>
+                        <option value="awakening">Awakening</option>
+                        <option value="wandering">Wandering</option>
+                        <option value="introspective">Introspective</option>
+                        <option value="ethereal_bright">Ethereal-bright</option>
+                        <option value="oceanic">Oceanic</option>
                     </select>
                 </div>
                 <div class="simple-control">
@@ -1287,7 +1300,18 @@
         dreamy: ["C3", "D3", "E3", "F#3", "G3", "A3", "B3", "C4", "D4", "E4", "F#4", "G4", "A4", "B4", "C5"],
         nostalgic: ["A2", "B2", "C3", "D3", "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4"],
         peaceful: ["D3", "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5"],
-        serene: ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5", "G5"]
+        serene: ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5", "G5"],
+        meditative: ["C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5", "E5"],
+        dramatic: ["A2", "B2", "C3", "D3", "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4"],
+        celestial: ["C3", "E3", "F#3", "G3", "B3", "C4", "E4", "F#4", "G4", "B4", "C5", "E5", "F#5", "G5"],
+        earthy: ["G2", "A2", "B2", "D3", "E3", "G3", "A3", "B3", "D4", "E4", "G4", "A4", "B4"],
+        twilight: ["B2", "C3", "D3", "F3", "G3", "A3", "B3", "C4", "D4", "F4", "G4", "A4", "B4", "C5"],
+        awakening: ["D3", "F#3", "G3", "A3", "B3", "D4", "F#4", "G4", "A4", "B4", "D5", "F#5", "G5"],
+        wandering: ["G3", "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5", "E5", "F5"],
+        introspective: ["A2", "C3", "D3", "E3", "G3", "A3", "C4", "D4", "E4", "G4", "A4", "C5", "D5"],
+        ethereal_bright: ["E3", "F#3", "G#3", "A3", "B3", "D4", "E4", "F#4", "G#4", "A4", "B4", "D5", "E5"],
+        oceanic: ["C3", "D3", "F3", "G3", "A3", "C4", "D4", "F4", "G4", "A4", "C5", "D5", "F5"],
+        sacred: ["F3", "G3", "A3", "Bb3", "C4", "D4", "E4", "F4", "G4", "A4", "Bb4", "C5", "D5", "E5"]
     };
 
     const melodicPatterns = {
@@ -1299,7 +1323,18 @@
         dreamy: ["E4", "F#4", "A4", "B4"],
         nostalgic: ["C4", "E4", "F4", "A4"],
         peaceful: ["D4", "F4", "A4", "C5"],
-        serene: ["E4", "G4", "C5"]
+        serene: ["E4", "G4", "C5"],
+        meditative: ["E4", "G4", "A4"],
+        dramatic: ["C4", "F4", "A4", "C5"],
+        celestial: ["E4", "F#4", "B4", "C5"],
+        earthy: ["D4", "G4", "A4"],
+        twilight: ["F4", "G4", "A4", "C5"],
+        awakening: ["F#4", "A4", "B4", "D5"],
+        wandering: ["C4", "E4", "F4", "G4"],
+        introspective: ["C4", "E4", "G4"],
+        ethereal_bright: ["G#4", "B4", "D5"],
+        oceanic: ["F4", "G4", "C5"],
+        sacred: ["A4", "C5", "D5", "F5"]
     };
 
     // UI Functions
@@ -1814,79 +1849,79 @@
             presetManager = new PresetManager();
         }
 
+        diceButton.addEventListener('click', function() {
+            console.log('🎲 Starting randomization...');
+
+            this.style.transform = 'scale(0.95)';
+            this.innerHTML = '<span>🎲</span> Rolling...';
+
+            setTimeout(async () => {
+                try {
+                    // Randomize mood
+                    const moodSelect = document.getElementById('mood');
+                    const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
+                    const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
+                    moodSelect.value = randomMood.value;
+                    moodSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
+
+                    // Randomize sound engine
+                    const soundEngineSelect = document.getElementById('sound-engine');
+                    const engineOptions = Array.from(soundEngineSelect.options).filter(option => option.value !== 'random');
+                    const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
+                    soundEngineSelect.value = randomEngine.value;
+                    soundEngineSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
+
+                    // Randomize instrument
+                    const instrumentSelect = document.getElementById('melodic-instrument');
+                    const instrumentOptions = Array.from(instrumentSelect.options).filter(option => option.value !== 'random');
+                    const randomInstrument = instrumentOptions[Math.floor(Math.random() * instrumentOptions.length)];
+                    instrumentSelect.value = randomInstrument.value;
+                    instrumentSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
+
+                    // Randomize sliders and trigger live updates
+                    const densitySlider = document.getElementById('density');
+                    densitySlider.value = Math.floor(Math.random() * 8) + 2;
+                    densitySlider.dispatchEvent(new Event('input', { bubbles: true }));
+
+                    const reverbSlider = document.getElementById('reverb');
+                    reverbSlider.value = (Math.random() * 0.8 + 0.2).toFixed(1);
+                    reverbSlider.dispatchEvent(new Event('input', { bubbles: true }));
+
+                    const melodicFrequencySlider = document.getElementById('melodic-frequency');
+                    melodicFrequencySlider.value = Math.floor(Math.random() * 8) + 2;
+                    melodicFrequencySlider.dispatchEvent(new Event('input', { bubbles: true }));
+
+                    const melodicReverbSlider = document.getElementById('melodic-reverb');
+                    melodicReverbSlider.value = (Math.random() * 0.6 + 0.4).toFixed(2);
+                    melodicReverbSlider.dispatchEvent(new Event('input', { bubbles: true }));
+
+                    // Randomize ambient sounds
+                    const ambientToggles = document.querySelectorAll('.ambient-toggle');
+                    ambientToggles.forEach(toggle => {
+                        const shouldBeActive = Math.random() > 0.6;
+                        const isCurrentlyActive = toggle.classList.contains('active');
+
+                        if (shouldBeActive !== isCurrentlyActive) {
+                            // Only click if we need to change the state
+                            toggle.click();
+                        }
+                    });
+
+                    updateCurrentSettings();
+
+                    console.log('✅ Randomization complete with live updates!');
+                } catch (error) {
+                    console.error('❌ Error during randomization:', error);
+                }
+
+                // Reset button
+                this.style.transform = 'scale(1)';
+                this.innerHTML = '<span>🎲</span> Random';
+            }, 800);
+        });
+
         updateCurrentSettings();
         console.log('✅ Mood App initialized successfully');
-    });
-
-    diceButton.addEventListener('click', function() {
-        console.log('🎲 Starting randomization...');
-
-        this.style.transform = 'scale(0.95)';
-        this.innerHTML = '<span>🎲</span> Rolling...';
-
-        setTimeout(async () => {
-            try {
-                // Randomize mood
-                const moodSelect = document.getElementById('mood');
-                const moodOptions = Array.from(moodSelect.options).filter(option => option.value !== 'random');
-                const randomMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
-                moodSelect.value = randomMood.value;
-                moodSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
-
-                // Randomize sound engine
-                const soundEngineSelect = document.getElementById('sound-engine');
-                const engineOptions = Array.from(soundEngineSelect.options).filter(option => option.value !== 'random');
-                const randomEngine = engineOptions[Math.floor(Math.random() * engineOptions.length)];
-                soundEngineSelect.value = randomEngine.value;
-                soundEngineSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
-
-                // Randomize instrument
-                const instrumentSelect = document.getElementById('melodic-instrument');
-                const instrumentOptions = Array.from(instrumentSelect.options).filter(option => option.value !== 'random');
-                const randomInstrument = instrumentOptions[Math.floor(Math.random() * instrumentOptions.length)];
-                instrumentSelect.value = randomInstrument.value;
-                instrumentSelect.dispatchEvent(new Event('change', { bubbles: true })); // Trigger live update
-
-                // Randomize sliders and trigger live updates
-                const densitySlider = document.getElementById('density');
-                densitySlider.value = Math.floor(Math.random() * 8) + 2;
-                densitySlider.dispatchEvent(new Event('input', { bubbles: true }));
-
-                const reverbSlider = document.getElementById('reverb');
-                reverbSlider.value = (Math.random() * 0.8 + 0.2).toFixed(1);
-                reverbSlider.dispatchEvent(new Event('input', { bubbles: true }));
-
-                const melodicFrequencySlider = document.getElementById('melodic-frequency');
-                melodicFrequencySlider.value = Math.floor(Math.random() * 8) + 2;
-                melodicFrequencySlider.dispatchEvent(new Event('input', { bubbles: true }));
-
-                const melodicReverbSlider = document.getElementById('melodic-reverb');
-                melodicReverbSlider.value = (Math.random() * 0.6 + 0.4).toFixed(2);
-                melodicReverbSlider.dispatchEvent(new Event('input', { bubbles: true }));
-
-                // Randomize ambient sounds
-                const ambientToggles = document.querySelectorAll('.ambient-toggle');
-                ambientToggles.forEach(toggle => {
-                    const shouldBeActive = Math.random() > 0.6;
-                    const isCurrentlyActive = toggle.classList.contains('active');
-
-                    if (shouldBeActive !== isCurrentlyActive) {
-                        // Only click if we need to change the state
-                        toggle.click();
-                    }
-                });
-
-                updateCurrentSettings();
-
-                console.log('✅ Randomization complete with live updates!');
-            } catch (error) {
-                console.error('❌ Error during randomization:', error);
-            }
-
-            // Reset button
-            this.style.transform = 'scale(1)';
-            this.innerHTML = '<span>🎲</span> Random';
-        }, 800);
     });
 </script>
 </body>
