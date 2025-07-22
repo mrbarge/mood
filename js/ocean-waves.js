@@ -240,7 +240,6 @@ class OceanWaveManager {
 
     setupEventListeners() {
         // Get UI elements
-        const noiseToggle = document.getElementById("noise-toggle");
         const noiseVolumeSlider = document.getElementById("noise-volume");
         const baseLevelSlider = document.getElementById("base-level");
         const peakLevelSlider = document.getElementById("peak-level");
@@ -252,10 +251,6 @@ class OceanWaveManager {
         const filterFreqSlider = document.getElementById("filter-freq");
 
         // Set up event listeners
-        if (noiseToggle) {
-            noiseToggle.addEventListener("change", () => this.toggle());
-        }
-
         if (noiseVolumeSlider) {
             noiseVolumeSlider.addEventListener("input", () => this.updateVolume());
         }
@@ -298,13 +293,20 @@ class OceanWaveManager {
             await this.initialize();
         }
 
-        const noiseToggle = document.getElementById("noise-toggle");
-
-        if (noiseToggle && noiseToggle.checked) {
-            this.waveSystem.start();
-        } else {
-            if (this.waveSystem) {
-                this.waveSystem.stop();
+        const noiseToggle = document.querySelector('.ambient-toggle[data-sound="waves"]');
+        if (noiseToggle) {
+            if (noiseToggle.classList.contains('active')) {
+                // Button is active, start the sound
+                if (!this.waveSystem.isActive) {
+                    console.log('🌊 Starting waves...');
+                    this.waveSystem.start();
+                }
+            } else {
+                // Button is not active, stop the sound
+                if (this.waveSystem.isActive) {
+                    console.log('🌊 Stopping waves...');
+                    this.waveSystem.stop();
+                }
             }
         }
 
@@ -346,12 +348,6 @@ class OceanWaveManager {
     }
 
     updateStatus() {
-        const noiseToggle = document.getElementById("noise-toggle");
-        const status = document.getElementById("waves-status");
-
-        if (status) {
-            status.textContent = (noiseToggle && noiseToggle.checked) ? 'On' : 'Off';
-        }
     }
 
     // Public API methods

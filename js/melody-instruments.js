@@ -3588,6 +3588,507 @@ class DeepBassMelodicInstrument extends BaseMelodyInstrument {
     }
 }
 
+class ArpeggiatorInstrument extends BaseMelodyInstrument {
+    constructor() {
+        super('Arpeggiator');
+
+        // Arpeggiator-specific properties
+        this.sequence = null;
+        this.chordChangeTimeout = null;
+        this.currentChordIndex = 0;
+        this.delay = null;
+
+        // Randomizable settings
+        this.settings = {
+            pattern: 'upDown',
+            speed: 4, // 1-7 scale
+            octaves: 2,
+            chordProgression: 'simple',
+            synthesis: 'piano',
+            noteLength: 0.8,
+            chordChangeRate: 8, // seconds
+            arpeggioVolume: -8
+        };
+
+        // Available options for randomization
+        this.patterns = ['up', 'down', 'upDown', 'downUp', 'random', 'cascade', 'bounce'];
+        this.chordProgressions = ['simple', 'jazzy', 'mysterious', 'floating', 'epic'];
+        this.synthesisTypes = ['piano', 'harp', 'pad', 'pluck'];
+        this.speeds = ['2n', '4n', '4n.', '8n', '8n.', '16n', '16n.'];
+
+        // Evolution system
+        this.evolutionTimeout = null;
+        this.evolutionInterval = 25000; // Change settings every 25 seconds
+
+        console.log('🎹 Arpeggiator instrument created');
+    }
+
+    async initialize(masterVolume, globalReverb) {
+        super.initialize(masterVolume, globalReverb);
+
+        console.log('🎹 Initializing arpeggiator instrument...');
+
+        // Create delay effect for arpeggiator-specific character
+        this.delay = new Tone.PingPongDelay({
+            delayTime: "8n",
+            feedback: 0.2,
+            wet: 0.15
+        });
+
+        // Create reverb specific to arpeggiator
+        this.reverbNode = new Tone.Reverb({
+            decay: 8,
+            wet: this.config.reverbAmount,
+            preDelay: 0.03
+        });
+
+        // Connect effects chain: delay -> reverb -> master
+        this.delay.connect(this.reverbNode);
+        this.reverbNode.connect(masterVolume);
+
+        // Create initial synth
+        this.createArpeggiatorSynth();
+
+        // Randomize initial settings
+        this.randomizeSettings();
+
+        this.effects.push(this.delay, this.reverbNode);
+
+        console.log('🎹 Arpeggiator initialized with random settings');
+    }
+
+    createArpeggiatorSynth() {
+        if (this.synth) {
+            this.synth.dispose();
+        }
+
+        try {
+            switch (this.settings.synthesis) {
+                case 'piano':
+                    this.synth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.02, decay: 0.3, sustain: 0.3, release: 1 },
+                        volume: this.settings.arpeggioVolume
+                    });
+                    break;
+
+                case 'bells':
+                    // MetalSynth works better as a single instance with manual polyphony
+                    this.synth = new Tone.MetalSynth({
+                        harmonicity: 2.1,
+                        resonance: 2400,
+                        modulationIndex: 15,
+                        envelope: { attack: 0.001, decay: 1.5, sustain: 0.2, release: 3 },
+                        volume: this.settings.arpeggioVolume - 15
+                    });
+                    break;
+
+                case 'harp':
+                    this.synth = new Tone.PolySynth(Tone.FMSynth, {
+                        harmonicity: 1.5,
+                        modulationIndex: 10,
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.01, decay: 0.7, sustain: 0.1, release: 1 },
+                        volume: this.settings.arpeggioVolume
+                    });
+                    break;
+
+                case 'pad':
+                    this.synth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 2, decay: 1, sustain: 0.8, release: 4 },
+                        volume: this.settings.arpeggioVolume
+                    });
+                    break;
+
+                case 'pluck':
+                    // PluckSynth is monophonic, so we use it directly
+                    this.synth = new Tone.PluckSynth({
+                        attackNoise: 1,
+                        dampening: 4000,
+                        resonance: 0.7,
+                        volume: this.settings.arpeggioVolume + 5
+                    });
+                    break;
+
+                default:
+                    // Fallback to piano if unknown synthesis type
+                    console.warn(`🎹 Unknown synthesis type: ${this.settings.synthesis}, falling back to piano`);
+                    this.settings.synthesis = 'piano';
+                    this.synth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.02, decay: 0.3, sustain: 0.3, release: 1 },
+                        volume: this.settings.arpeggioVolume
+                    });
+                    break;
+            }
+
+            // Connect to effects chain
+            if (this.synth && this.delay) {
+                this.synth.connect(this.delay);
+            }
+
+        } catch (error) {
+            console.error('🎹 Error creating arpeggiator synth:', error);
+            // Fallback to a simple synth
+            this.synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.02, decay: 0.3, sustain: 0.3, release: 1 },
+                volume: this.settings.arpeggioVolume
+            });
+            if (this.synth && this.delay) {
+                this.synth.connect(this.delay);
+            }
+        }
+    }
+
+    randomizeSettings() {
+        this.settings.pattern = this.patterns[Math.floor(Math.random() * this.patterns.length)];
+        this.settings.chordProgression = this.chordProgressions[Math.floor(Math.random() * this.chordProgressions.length)];
+        this.settings.synthesis = this.synthesisTypes[Math.floor(Math.random() * this.synthesisTypes.length)];
+        this.settings.speed = Math.floor(Math.random() * 7) + 1; // 1-7
+        this.settings.octaves = Math.floor(Math.random() * 3) + 1; // 1-3 octaves
+        this.settings.noteLength = 0.4 + Math.random() * 1.2; // 0.4-1.6 seconds
+        this.settings.chordChangeRate = 6 + Math.random() * 8; // 6-14 seconds
+
+        console.log('🎹 Randomized arpeggiator settings:', this.settings);
+    }
+
+    getChordProgressions() {
+        // Convert your app's current scale to chord progressions
+        if (!this.currentScale || this.currentScale.length === 0) {
+            // Fallback chord progressions
+            return {
+                simple: [["C4", "E4", "G4"], ["G4", "B4", "D5"], ["A4", "C5", "E5"], ["F4", "A4", "C5"]],
+                jazzy: [["D4", "F4", "A4"], ["G4", "B4", "D5"], ["C4", "E4", "G4"], ["A4", "C5", "E5"]],
+                mysterious: [["C4", "Eb4", "G4"], ["Bb3", "D4", "F4"], ["Ab3", "C4", "Eb4"], ["Bb3", "D4", "F4"]],
+                floating: [["C4", "E4", "G4"], ["D4", "F4", "A4"], ["E4", "G4", "B4"], ["D4", "F4", "A4"]],
+                epic: [["A4", "C5", "E5"], ["F4", "A4", "C5"], ["C4", "E4", "G4"], ["G4", "B4", "D5"]]
+            };
+        }
+
+        // Build chord progressions from the current scale
+        const scale = this.currentScale;
+        const chords = this.buildChordsFromScale(scale);
+
+        return {
+            simple: [chords[0], chords[4], chords[5], chords[3]], // I-V-vi-IV
+            jazzy: [chords[1], chords[4], chords[0], chords[5]], // ii-V-I-vi
+            mysterious: [chords[0], chords[6], chords[5], chords[6]], // i-VII-vi-VII
+            floating: [chords[0], chords[1], chords[2], chords[1]], // I-ii-iii-ii
+            epic: [chords[5], chords[3], chords[0], chords[4]] // vi-IV-I-V
+        };
+    }
+
+    buildChordsFromScale(scale) {
+        // Build triads from scale degrees
+        const chords = [];
+        const scaleNotes = scale.slice(0, 7); // Take first 7 notes for chord building
+
+        for (let i = 0; i < 7; i++) {
+            const root = scaleNotes[i];
+            const third = scaleNotes[(i + 2) % 7];
+            const fifth = scaleNotes[(i + 4) % 7];
+            chords.push([root, third, fifth]);
+        }
+
+        return chords;
+    }
+
+    generateArpeggioPattern(chord) {
+        let notes = [...chord];
+
+        // Extend across octaves
+        for (let oct = 1; oct < this.settings.octaves; oct++) {
+            chord.forEach(note => {
+                const noteName = note.slice(0, -1);
+                const octave = parseInt(note.slice(-1)) + oct;
+                if (octave <= 6) {
+                    notes.push(noteName + octave);
+                }
+            });
+        }
+
+        // Apply pattern
+        switch (this.settings.pattern) {
+            case 'up':
+                return notes.sort((a, b) => this.noteToMidi(a) - this.noteToMidi(b));
+
+            case 'down':
+                return notes.sort((a, b) => this.noteToMidi(b) - this.noteToMidi(a));
+
+            case 'upDown':
+                const up = notes.sort((a, b) => this.noteToMidi(a) - this.noteToMidi(b));
+                const down = [...up].reverse().slice(1, -1);
+                return [...up, ...down];
+
+            case 'downUp':
+                const down2 = notes.sort((a, b) => this.noteToMidi(b) - this.noteToMidi(a));
+                const up2 = [...down2].reverse().slice(1, -1);
+                return [...down2, ...up2];
+
+            case 'random':
+                return this.shuffleArray([...notes]);
+
+            case 'cascade':
+                // Play each octave in sequence
+                const octaveGroups = {};
+                notes.forEach(note => {
+                    const oct = parseInt(note.slice(-1));
+                    if (!octaveGroups[oct]) octaveGroups[oct] = [];
+                    octaveGroups[oct].push(note);
+                });
+                let cascade = [];
+                Object.keys(octaveGroups).sort().forEach(oct => {
+                    cascade.push(...octaveGroups[oct].sort((a, b) => this.noteToMidi(a) - this.noteToMidi(b)));
+                });
+                return cascade;
+
+            case 'bounce':
+                // Bounce between high and low
+                const sorted = notes.sort((a, b) => this.noteToMidi(a) - this.noteToMidi(b));
+                let bounce = [];
+                for (let i = 0; i < sorted.length; i++) {
+                    if (i % 2 === 0) {
+                        bounce.push(sorted[Math.floor(i / 2)]);
+                    } else {
+                        bounce.push(sorted[sorted.length - 1 - Math.floor(i / 2)]);
+                    }
+                }
+                return bounce;
+
+            default:
+                return notes;
+        }
+    }
+
+    noteToMidi(note) {
+        const noteMap = { 'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11 };
+        const octave = parseInt(note.slice(-1));
+        const noteName = note.slice(0, -1);
+        return (octave + 1) * 12 + noteMap[noteName];
+    }
+
+    shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    start(scale, melodicPattern) {
+        super.start(scale, melodicPattern);
+
+        console.log('🎹 Starting arpeggiator with scale:', scale);
+
+        // Start transport if needed
+        if (Tone.Transport.state !== 'started') {
+            Tone.Transport.start();
+        }
+
+        this.startArpeggiatorSequence();
+        this.scheduleChordChanges();
+        this.scheduleEvolution();
+    }
+
+    startArpeggiatorSequence() {
+        if (!this.isActive) return;
+
+        const progressions = this.getChordProgressions();
+        const currentProgression = progressions[this.settings.chordProgression];
+        const currentChord = currentProgression[this.currentChordIndex];
+        const pattern = this.generateArpeggioPattern(currentChord);
+
+        console.log(`🎹 Starting arpeggio sequence: ${this.settings.pattern} pattern with ${pattern.length} notes`);
+
+        // Clean up existing sequence
+        if (this.sequence) {
+            this.sequence.stop();
+            this.sequence.dispose();
+        }
+
+        this.sequence = new Tone.Sequence((time, note) => {
+            if (this.isActive && note && this.synth) {
+                // Track active notes for visualization
+                if (typeof activeNotes !== 'undefined') {
+                    if (!activeNotes[note]) {
+                        activeNotes[note] = { count: 1, type: 'arpeggio' };
+                    } else {
+                        activeNotes[note].count++;
+                    }
+                }
+
+                try {
+                    this.synth.triggerAttackRelease(note, this.settings.noteLength, time);
+                } catch (error) {
+                    console.warn('🎹 Arpeggiator note trigger error:', error.message);
+                    // Continue playing, just skip this note
+                }
+
+                // Clean up note tracking
+                setTimeout(() => {
+                    if (typeof isPlaying !== 'undefined' && isPlaying &&
+                        typeof activeNotes !== 'undefined' && activeNotes[note]) {
+                        activeNotes[note].count--;
+                        if (activeNotes[note].count <= 0) {
+                            delete activeNotes[note];
+                        }
+                    }
+                }, this.settings.noteLength * 1000 + 500);
+            }
+        }, pattern, this.speeds[this.settings.speed - 1]);
+
+        this.sequence.loop = true;
+        this.sequence.start(0);
+    }
+
+    scheduleChordChanges() {
+        if (this.chordChangeTimeout) {
+            clearTimeout(this.chordChangeTimeout);
+        }
+
+        this.chordChangeTimeout = setTimeout(() => {
+            if (this.isActive) {
+                const progressions = this.getChordProgressions();
+                const currentProgression = progressions[this.settings.chordProgression];
+                this.currentChordIndex = (this.currentChordIndex + 1) % currentProgression.length;
+
+                console.log(`🎹 Chord change to index ${this.currentChordIndex}`);
+                this.startArpeggiatorSequence();
+                this.scheduleChordChanges();
+            }
+        }, this.settings.chordChangeRate * 1000);
+    }
+
+    scheduleEvolution() {
+        if (this.evolutionTimeout) {
+            clearTimeout(this.evolutionTimeout);
+        }
+
+        this.evolutionTimeout = setTimeout(() => {
+            if (this.isActive) {
+                console.log('🎹 Evolving arpeggiator settings...');
+                this.evolveSettings();
+                this.scheduleEvolution();
+            }
+        }, this.evolutionInterval);
+    }
+
+    evolveSettings() {
+        // Randomly change 1-2 settings
+        const settingsToChange = Math.floor(Math.random() * 2) + 1;
+        const changableSettings = ['pattern', 'speed', 'octaves', 'noteLength'];
+
+        for (let i = 0; i < settingsToChange; i++) {
+            const settingToChange = changableSettings[Math.floor(Math.random() * changableSettings.length)];
+
+            switch (settingToChange) {
+                case 'pattern':
+                    const oldPattern = this.settings.pattern;
+                    do {
+                        this.settings.pattern = this.patterns[Math.floor(Math.random() * this.patterns.length)];
+                    } while (this.settings.pattern === oldPattern);
+                    break;
+
+                case 'speed':
+                    this.settings.speed = Math.max(1, Math.min(7, this.settings.speed + (Math.random() < 0.5 ? -1 : 1)));
+                    break;
+
+                case 'octaves':
+                    this.settings.octaves = Math.max(1, Math.min(3, this.settings.octaves + (Math.random() < 0.5 ? -1 : 1)));
+                    break;
+
+                case 'noteLength':
+                    this.settings.noteLength = Math.max(0.2, Math.min(2.0, this.settings.noteLength + (Math.random() - 0.5) * 0.4));
+                    break;
+            }
+        }
+
+        // Occasionally change synthesis type (less frequent)
+        if (Math.random() < 0.3) {
+            const oldSynthesis = this.settings.synthesis;
+            do {
+                this.settings.synthesis = this.synthesisTypes[Math.floor(Math.random() * this.synthesisTypes.length)];
+            } while (this.settings.synthesis === oldSynthesis);
+
+            try {
+                this.createArpeggiatorSynth();
+                console.log(`🎹 Synthesis evolved to: ${this.settings.synthesis}`);
+            } catch (error) {
+                console.warn(`🎹 Failed to evolve to ${this.settings.synthesis}, reverting to ${oldSynthesis}:`, error.message);
+                this.settings.synthesis = oldSynthesis;
+                this.createArpeggiatorSynth();
+            }
+        }
+
+        // Restart sequence with new settings
+        try {
+            this.startArpeggiatorSequence();
+            console.log('🎹 Settings evolved:', this.settings);
+        } catch (error) {
+            console.error('🎹 Error restarting sequence after evolution:', error);
+        }
+    }
+
+    stop() {
+        super.stop();
+
+        console.log('🎹 Stopping arpeggiator...');
+
+        if (this.sequence) {
+            this.sequence.stop();
+            this.sequence.dispose();
+            this.sequence = null;
+        }
+
+        if (this.chordChangeTimeout) {
+            clearTimeout(this.chordChangeTimeout);
+            this.chordChangeTimeout = null;
+        }
+
+        if (this.evolutionTimeout) {
+            clearTimeout(this.evolutionTimeout);
+            this.evolutionTimeout = null;
+        }
+
+        this.currentChordIndex = 0;
+    }
+
+    dispose() {
+        this.stop();
+
+        // Dispose arpeggiator-specific effects
+        if (this.delay) {
+            this.delay.dispose();
+        }
+
+        super.dispose();
+    }
+
+    // Override parent's melody system since we use our own sequencer
+    startMelodicPhrases() {
+        // Don't use parent's phrase system - we have our own arpeggiator
+    }
+
+    playMelodicSequence(melody) {
+        // Don't use parent's sequence system - we have arpeggiator patterns
+    }
+
+    // Get current settings for debugging/display
+    getCurrentSettings() {
+        return {
+            pattern: this.settings.pattern,
+            synthesis: this.settings.synthesis,
+            chordProgression: this.settings.chordProgression,
+            speed: this.speeds[this.settings.speed - 1],
+            octaves: this.settings.octaves,
+            noteLength: this.settings.noteLength.toFixed(1) + 's',
+            chordChangeRate: this.settings.chordChangeRate.toFixed(1) + 's'
+        };
+    }
+}
+
 // ===============================================
 // MELODY INSTRUMENT REGISTRY
 // ===============================================
@@ -3617,6 +4118,8 @@ class MelodyInstrumentRegistry {
 
         this.register('algorithmic-melody', AlgorithmicMelodyInstrument);
         this.register('deep-bass-melodic', DeepBassMelodicInstrument);
+
+        this.register('arpeggiator', ArpeggiatorInstrument);
     }
 
     register(key, InstrumentClass) {

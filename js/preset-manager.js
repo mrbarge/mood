@@ -249,7 +249,7 @@ class PresetManager {
     }
 
     setupEventListeners() {
-        const presetButtons = document.querySelectorAll('.preset-btn');
+        const presetButtons = document.querySelectorAll('.preset-pill');
         presetButtons.forEach(button => {
             button.addEventListener('click', (e) => {
                 const presetKey = button.getAttribute('data-preset');
@@ -311,13 +311,13 @@ class PresetManager {
             this.setToggleButton('melody-toggle', settings.melody);
         }
         if (settings.clock !== undefined) {
-            this.setToggleButton('clock-toggle', settings.clock);
+            this.setAmbientToggle('clock', settings.clock);
         }
         if (settings.noise !== undefined) {
-            this.setToggleButton('noise-toggle', settings.noise);
+            this.setAmbientToggle('waves', settings.noise);
         }
         if (settings.thunder !== undefined) {
-            this.setToggleButton('thunder-toggle', settings.thunder);
+            this.setAmbientToggle('thunder', settings.thunder);
         }
 
         if (settings.reverb !== undefined) {
@@ -368,6 +368,24 @@ class PresetManager {
             select.value = value;
             // Trigger change event
             select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+
+    setAmbientToggle(elementId, enabled) {
+        const toggle = document.querySelector('.ambient-toggle[data-sound=' + elementId + ']');
+        if (!toggle) {
+            console.warn(`Ambient toggle not found for: ${elementId}`);
+            return;
+        }
+
+        const isCurrentlyActive = toggle.classList.contains('active');
+
+        if (enabled !== isCurrentlyActive) {
+            // State needs to change - trigger a click to activate the audio systems
+            console.debug(`Preset: ${enabled ? 'Enabling' : 'Disabling'} ${elementId} ambient sound`);
+            toggle.click();
+        } else {
+            console.debug(`Preset: ${elementId} ambient sound already in correct state (${enabled})`);
         }
     }
 
@@ -446,8 +464,7 @@ class PresetManager {
     }
 
     setActivePreset(activeButton) {
-        // Remove active class from all preset buttons
-        document.querySelectorAll('.preset-btn').forEach(btn => {
+        document.querySelectorAll('.preset-pill').forEach(btn => {
             btn.classList.remove('active');
         });
 

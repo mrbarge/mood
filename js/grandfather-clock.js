@@ -373,21 +373,13 @@ class GrandfatherClockManager {
         console.log('🕰️ Setting up event listeners...');
 
         // Get UI elements
-        const clockToggle = document.getElementById("clock-toggle");
+        const clockToggle = document.querySelector('.ambient-toggle[data-sound="clock"]');
         const tempoSlider = document.getElementById("clock-tempo");
         const volumeSlider = document.getElementById("clock-volume");
         const brightnessSlider = document.getElementById("clock-brightness");
         const resonanceSlider = document.getElementById("clock-resonance");
         const reverbSlider = document.getElementById("clock-reverb");
         const decaySlider = document.getElementById("clock-decay");
-
-        // Set up event listeners
-        if (clockToggle) {
-            clockToggle.addEventListener("change", () => this.toggle());
-            console.log('🕰️ Added toggle listener');
-        } else {
-            console.warn('🕰️ Clock toggle element not found');
-        }
 
         if (tempoSlider) {
             tempoSlider.addEventListener("input", () => {
@@ -429,15 +421,20 @@ class GrandfatherClockManager {
                 await this.initialize();
             }
 
-            const clockToggle = document.getElementById("clock-toggle");
-
-            if (clockToggle && clockToggle.checked) {
-                console.log('🕰️ Starting clock...');
-                this.clockSystem.start();
-            } else {
-                console.log('🕰️ Stopping clock...');
-                if (this.clockSystem) {
-                    this.clockSystem.stop();
+            const clockToggle = document.querySelector('.ambient-toggle[data-sound="clock"]');
+            if (clockToggle) {
+                if (clockToggle.classList.contains('active')) {
+                    // Button is active, start the clock
+                    if (!this.clockSystem.isActive) {
+                        console.log('🕰️ Starting clock...');
+                        this.clockSystem.start();
+                    }
+                } else {
+                    // Button is not active, stop the clock
+                    if (this.clockSystem.isActive) {
+                        console.log('🕰️ Stopping clock...');
+                        this.clockSystem.stop();
+                    }
                 }
             }
 
@@ -476,14 +473,6 @@ class GrandfatherClockManager {
     }
 
     updateStatus() {
-        const clockToggle = document.getElementById("clock-toggle");
-        const status = document.getElementById("clock-status");
-
-        if (status) {
-            const isOn = clockToggle && clockToggle.checked;
-            status.textContent = isOn ? 'On' : 'Off';
-            console.log(`🕰️ Status updated: ${status.textContent}`);
-        }
     }
 
     // Public API methods
