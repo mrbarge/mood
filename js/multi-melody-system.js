@@ -433,11 +433,14 @@ class MultiMelodyManager {
         if (this.globalRandomInterval) {
             clearInterval(this.globalRandomInterval);
         }
-
+        const randomIntervalSlider = document.getElementById('random-interval');
         const minutesValue = typeof randomIntervalSlider !== 'undefined' ?
             parseInt(randomIntervalSlider.value) : 10;
         const milliseconds = minutesValue * 60 * 1000;
 
+        console.debug(`🎵 Starting melody random cycle: ${minutesValue} minutes`);
+
+        const melodicInstrumentSelect = document.getElementById('melodic-instrument');
         this.globalRandomInterval = setInterval(() => {
             if (typeof isPlaying !== 'undefined' && isPlaying &&
                 typeof melodicInstrumentSelect !== 'undefined' &&
@@ -446,6 +449,7 @@ class MultiMelodyManager {
             } else {
                 clearInterval(this.globalRandomInterval);
                 this.globalRandomInterval = null;
+                console.debug('🎵 Stopped melody random cycle - conditions not met');
             }
         }, milliseconds);
     }
@@ -560,21 +564,6 @@ class MultiMelodyManager {
         this.melodySlots = [];
     }
 
-    // ===============================================
-    // UTILITY METHODS
-    // ===============================================
-
-    getSlotInfo() {
-        return this.melodySlots.map(slot => ({
-            id: slot.id,
-            instrument: slot.config.instrumentType,
-            isActive: slot.isActive,
-            volume: slot.config.volume,
-            frequency: slot.config.frequency,
-            randomness: slot.config.randomness
-        }));
-    }
-
     getCurrentSlotCount() {
         return this.currentSlotCount;
     }
@@ -582,41 +571,6 @@ class MultiMelodyManager {
     getMaxSlots() {
         return this.maxSlots;
     }
-}
-
-// Handler for slot count changes
-function handleSlotCountChange() {
-    const slotCountSlider = document.getElementById('melody-slot-count');
-    if (!slotCountSlider || !melodyManager) return;
-
-    const newCount = parseInt(slotCountSlider.value);
-    melodyManager.setSlotCount(newCount);
-
-    updateSlotsInfoDisplay();
-    updateMelodyStatus();
-}
-
-// Update slots info display
-function updateSlotsInfoDisplay() {
-    const slotsInfo = document.getElementById('melody-slots-info');
-    if (!slotsInfo || !melodyManager) return;
-
-    const slotInfos = melodyManager.getSlotInfo();
-
-    slotsInfo.innerHTML = slotInfos.map(slot => {
-        const instrumentName = getInstrumentDisplayName(slot.instrument);
-        const statusIcon = slot.isActive ? '♪' : '○';
-        const statusClass = slot.isActive ? 'playing' : 'stopped';
-        const slotClass = slot.isActive ? 'active' : 'inactive';
-
-        return `
-            <div class="slot-info ${slotClass}">
-                <span class="slot-label">Layer ${slot.id + 1}:</span>
-                <span class="slot-instrument">${instrumentName}</span>
-                <span class="slot-status ${statusClass}">${statusIcon}</span>
-            </div>
-        `;
-    }).join('');
 }
 
 console.log("✅ Multi-Melody System loaded");

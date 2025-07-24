@@ -1225,10 +1225,14 @@ class AmbientMusicManager {
             clearInterval(this.randomMoodInterval);
         }
 
+        const randomIntervalSlider = document.getElementById('random-interval');
         const minutesValue = typeof randomIntervalSlider !== 'undefined' ?
             parseInt(randomIntervalSlider.value) : 10;
         const milliseconds = minutesValue * 60 * 1000;
 
+        console.debug(`🎵 Starting mood random cycle: ${minutesValue} minutes`);
+
+        const moodSelect = document.getElementById('mood');
         this.randomMoodInterval = setInterval(() => {
             if (this.isPlaying && typeof moodSelect !== 'undefined' && moodSelect.value === "random") {
                 this.changeToRandomMood();
@@ -1258,7 +1262,7 @@ class AmbientMusicManager {
     }
 
     // ===============================================
-    // SOUND ENGINE RANDOMIZATION (NEW)
+    // SOUND ENGINE RANDOMIZATION
     // ===============================================
 
     startRandomEngineCycle() {
@@ -1268,10 +1272,14 @@ class AmbientMusicManager {
             clearInterval(this.randomEngineInterval);
         }
 
+        const randomIntervalSlider = document.getElementById('random-interval');
         const minutesValue = typeof randomIntervalSlider !== 'undefined' ?
             parseInt(randomIntervalSlider.value) : 10;
         const milliseconds = minutesValue * 60 * 1000;
 
+        console.debug(`🎵 Starting sound engine random cycle: ${minutesValue} minutes`);
+
+        const soundEngineSelect = document.getElementById('sound-engine');
         this.randomEngineInterval = setInterval(() => {
             if (this.isPlaying && typeof soundEngineSelect !== 'undefined' && soundEngineSelect.value === "random") {
                 this.changeToRandomEngine();

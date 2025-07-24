@@ -879,9 +879,11 @@
             // Start random cycles if needed
             if (moodSelect.value === "random") {
                 musicManager.startRandomMoodCycle();
+                console.log('🎵 Started mood random cycle');
             }
             if (soundEngineSelect.value === "random") {
                 musicManager.startRandomEngineCycle();
+                console.log('🎵 Started mood engine cycle');
             }
 
             // Update audio settings
@@ -905,12 +907,20 @@
                     await melodyManager.setAllSlotsToInstrument(selectedInstrument, {
                         reverbAmount: parseFloat(document.getElementById('melodic-reverb').value)
                     });
+                } else {
+                    // Handle random instrument selection
+                    await melodyManager.randomizeSlotInstruments();
                 }
 
                 const currentScale = scales[currentActiveMood];
                 const melodicPattern = melodicPatterns[currentActiveMood];
                 if (currentScale && melodicPattern) {
                     await melodyManager.start(currentScale, melodicPattern);
+                }
+
+                if (selectedInstrument === "random") {
+                    melodyManager.startRandomCycle();
+                    console.log('🎵 Started melody random cycle');
                 }
             }
 
@@ -1230,6 +1240,32 @@
                 this.innerHTML = '<span>🎲</span> Random';
             }, 800);
         });
+
+        const randomIntervalSlider = document.getElementById('random-interval');
+        if (randomIntervalSlider) {
+            randomIntervalSlider.addEventListener('input', function() {
+                console.log(`🎲 Random interval changed to: ${this.value} minutes`);
+
+                // Restart all active random cycles with new timing
+                if (musicManager && isPlaying) {
+                    musicManager.restartRandomCycles();
+                }
+
+                if (melodyManager && isPlaying) {
+                    // Stop existing random cycle
+                    if (melodyManager.randomInterval) {
+                        clearInterval(melodyManager.randomInterval);
+                        melodyManager.randomInterval = null;
+                    }
+
+                    // Restart if instrument is set to random
+                    const melodicInstrumentSelect = document.getElementById('melodic-instrument');
+                    if (melodicInstrumentSelect && melodicInstrumentSelect.value === "random") {
+                        melodyManager.startRandomCycle();
+                    }
+                }
+            });
+        }
 
         updateCurrentSettings();
         console.log('✅ Mood App initialized successfully');
