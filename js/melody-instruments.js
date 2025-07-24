@@ -3618,7 +3618,7 @@ class ArpeggiatorInstrument extends BaseMelodyInstrument {
 
         // Evolution system
         this.evolutionTimeout = null;
-        this.evolutionInterval = 25000; // Change settings every 25 seconds
+        this.evolutionInterval = 1000 * 150; // Change settings every 2.5 minutes
 
         console.log('🎹 Arpeggiator instrument created');
     }
