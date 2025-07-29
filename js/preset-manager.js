@@ -244,6 +244,38 @@ class PresetManager {
                     // Clock
                     clockTempo: 60,
                 }
+            },
+            'crystal-cascade': {
+                name: 'Crystal Cascade',
+                description: 'Crystalline arpeggiator with cascading patterns',
+                settings: {
+                    // Standard settings
+                    mood: 'ethereal',
+                    soundEngine: 'glass-horizon',
+                    noteDensity: 3,
+                    reverb: 0.7,
+                    melody: true,
+                    clock: false,
+                    noise: false,
+                    thunder: false,
+
+                    // Arpeggiator-specific settings
+                    melodicInstrument: 'arpeggiator',
+                    arpeggiatorConfig: {
+                        pattern: 'cascade',
+                        synthesis: 'bells',
+                        chordProgression: 'floating',
+                        speed: 3,
+                        octaves: 4,
+                        noteLength: 1.2,
+                        chordChangeRate: 10,
+                        lockSynthesis: true  // Keep it as bells
+                    },
+
+                    noteFrequency: 5,
+                    melodicReverb: 0.9,
+                    layerRandomness: 0.3
+                }
             }
         };
     }

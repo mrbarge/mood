@@ -3598,6 +3598,11 @@ class ArpeggiatorInstrument extends BaseMelodyInstrument {
         this.currentChordIndex = 0;
         this.delay = null;
 
+        // Preset configuration support
+        this.presetMode = false;           // Whether we're in preset mode
+        this.lockSynthesis = false;        // Whether to prevent synthesis changes
+        this.presetConfig = null;          // Stored preset configuration
+
         // Randomizable settings
         this.settings = {
             pattern: 'upDown',
@@ -3755,7 +3760,6 @@ class ArpeggiatorInstrument extends BaseMelodyInstrument {
     }
 
     getChordProgressions() {
-        // Convert your app's current scale to chord progressions
         if (!this.currentScale || this.currentScale.length === 0) {
             // Fallback chord progressions
             return {
@@ -3980,6 +3984,8 @@ class ArpeggiatorInstrument extends BaseMelodyInstrument {
         const settingsToChange = Math.floor(Math.random() * 2) + 1;
         const changableSettings = ['pattern', 'speed', 'octaves', 'noteLength'];
 
+        console.log(`🎹 Arp pre-evolve settings were: ${this.settings.pattern} and ${this.settings.speed}`);
+
         for (let i = 0; i < settingsToChange; i++) {
             const settingToChange = changableSettings[Math.floor(Math.random() * changableSettings.length)];
 
@@ -4005,8 +4011,10 @@ class ArpeggiatorInstrument extends BaseMelodyInstrument {
             }
         }
 
+        console.log(`🎹 Arp pre-evolve settings are now : ${this.settings.pattern} and ${this.settings.speed}`);
+
         // Occasionally change synthesis type (less frequent)
-        if (Math.random() < 0.3) {
+        if (!this.lockSynthesis && Math.random() < 0.3) {
             const oldSynthesis = this.settings.synthesis;
             do {
                 this.settings.synthesis = this.synthesisTypes[Math.floor(Math.random() * this.synthesisTypes.length)];
@@ -4020,6 +4028,8 @@ class ArpeggiatorInstrument extends BaseMelodyInstrument {
                 this.settings.synthesis = oldSynthesis;
                 this.createArpeggiatorSynth();
             }
+        } else if (this.lockSynthesis) {
+            console.log(`🎹 Synthesis locked at: ${this.settings.synthesis} (preset mode)`);
         }
 
         // Restart sequence with new settings
@@ -4028,6 +4038,44 @@ class ArpeggiatorInstrument extends BaseMelodyInstrument {
             console.log('🎹 Settings evolved:', this.settings);
         } catch (error) {
             console.error('🎹 Error restarting sequence after evolution:', error);
+        }
+    }
+
+    applyPresetConfiguration(presetConfig) {
+        console.log('🎹 Applying arpeggiator preset configuration:', presetConfig);
+
+        this.presetMode = true;
+        this.lockSynthesis = presetConfig.lockSynthesis || false;
+        this.presetConfig = { ...presetConfig };
+
+        // Apply all preset settings
+        Object.assign(this.settings, presetConfig);
+
+        // Recreate synth if synthesis type changed
+        if (presetConfig.synthesis && presetConfig.synthesis !== this.settings.synthesis) {
+            this.createArpeggiatorSynth();
+        }
+
+        // Restart sequence if currently playing
+        if (this.isActive) {
+            this.startArpeggiatorSequence();
+        }
+
+        console.log('🎹 Preset applied. Synthesis locked:', this.lockSynthesis);
+    }
+
+    exitPresetMode() {
+        console.log('🎹 Exiting arpeggiator preset mode');
+        this.presetMode = false;
+        this.lockSynthesis = false;
+        this.presetConfig = null;
+
+        // Resume normal randomization
+        this.randomizeSettings();
+        this.createArpeggiatorSynth();
+
+        if (this.isActive) {
+            this.startArpeggiatorSequence();
         }
     }
 
