@@ -2,7 +2,9 @@ class PresetManager {
     constructor() {
         this.presets = this.initializePresets();
         this.currentPreset = null;
+        this.favourite = null;
         this.setupEventListeners();
+        this.loadFavourite(); // Load favourite from localStorage on init
     }
 
     initializePresets() {
@@ -285,10 +287,282 @@ class PresetManager {
         presetButtons.forEach(button => {
             button.addEventListener('click', (e) => {
                 const presetKey = button.getAttribute('data-preset');
-                this.applyPreset(presetKey);
+                if (presetKey === 'favourite') {
+                    this.applyFavourite();
+                } else {
+                    this.applyPreset(presetKey);
+                }
             });
         });
+
+        // Set up save favourite button
+        const saveFavouriteBtn = document.getElementById('save-favourite-btn');
+        if (saveFavouriteBtn) {
+            saveFavouriteBtn.addEventListener('click', () => {
+                this.saveCurrentAsFavourite();
+            });
+        }
     }
+
+    // Capture the current actual state (resolving random values)
+    captureCurrentState() {
+        const state = {
+            // Get actual current values from managers, not UI dropdowns
+            mood: this.getCurrentMood(),
+            soundEngine: this.getCurrentSoundEngine(),
+            melodicInstrument: this.getCurrentMelodicInstrument(),
+
+            // Get slider values
+            noteDensity: this.getSliderValue('density', 5),
+            reverb: this.getSliderValue('reverb', 0.5),
+            noteFrequency: this.getSliderValue('melodic-frequency', 6),
+            melodicReverb: this.getSliderValue('melodic-reverb', 0.8),
+            layerRandomness: this.getSliderValue('layer-randomness', 0.5),
+            melodySlotCount: this.getSliderValue('melody-slot-count', 1),
+
+            // Get toggle states
+            melody: this.getCheckboxValue('melody-toggle', true),
+
+            // Get ambient toggle states
+            clock: this.getAmbientToggleState('clock'),
+            noise: this.getAmbientToggleState('waves'),
+            thunder: this.getAmbientToggleState('thunder'),
+
+            // Get ambient settings
+            waveVolume: this.getSliderValue('noise-volume', -6),
+            waveNoiseType: this.getSelectValue('noise-type', 'pink'),
+            clockTempo: this.getSliderValue('clock-tempo', 60),
+
+            // Add master volume
+            masterVolume: this.getSliderValue('volume', -15),
+
+            // Add timestamp for identification
+            savedAt: new Date().toISOString(),
+            name: `Favourite (${new Date().toLocaleTimeString()})`
+        };
+
+        return state;
+    }
+
+    // Helper methods to get current actual values
+    getCurrentMood() {
+        // If mood is set to random, get the actual current mood from the manager
+        const moodSelect = document.getElementById('mood');
+        if (moodSelect && moodSelect.value !== 'random') {
+            return moodSelect.value;
+        }
+
+        // Get from global currentActiveMood or musicManager
+        if (typeof currentActiveMood !== 'undefined') {
+            return currentActiveMood;
+        }
+
+        if (typeof musicManager !== 'undefined' && musicManager.currentMood) {
+            return musicManager.currentMood;
+        }
+
+        return 'calm'; // fallback
+    }
+
+    getCurrentSoundEngine() {
+        const soundEngineSelect = document.getElementById('sound-engine');
+        if (soundEngineSelect && soundEngineSelect.value !== 'random') {
+            return soundEngineSelect.value;
+        }
+
+        // Get actual current engine from musicManager
+        if (typeof musicManager !== 'undefined' && musicManager.currentSoundEngine) {
+            return musicManager.getCurrentEngineKey();
+        }
+
+        return 'standard'; // fallback
+    }
+
+    getCurrentMelodicInstrument() {
+        const instrumentSelect = document.getElementById('melodic-instrument');
+        if (instrumentSelect && instrumentSelect.value !== 'random') {
+            return instrumentSelect.value;
+        }
+
+        // Get from melodyManager
+        if (typeof melodyManager !== 'undefined' && melodyManager.currentInstrument) {
+            return melodyManager.currentInstrument.instrumentType || 'piano';
+        }
+
+        return 'piano'; // fallback
+    }
+
+    getSliderValue(id, defaultValue) {
+        const slider = document.getElementById(id);
+        return slider ? parseFloat(slider.value) : defaultValue;
+    }
+
+    getSelectValue(id, defaultValue) {
+        const select = document.getElementById(id);
+        return select ? select.value : defaultValue;
+    }
+
+    getCheckboxValue(id, defaultValue) {
+        const checkbox = document.getElementById(id);
+        return checkbox ? checkbox.checked : defaultValue;
+    }
+
+    getAmbientToggleState(soundType) {
+        const toggle = document.querySelector(`.ambient-toggle[data-sound="${soundType}"]`);
+        return toggle ? toggle.classList.contains('active') : false;
+    }
+
+    // Save current state as favourite
+    saveCurrentAsFavourite() {
+        try {
+            this.favourite = this.captureCurrentState();
+            this.saveFavouriteToStorage();
+            this.updateFavouriteUI();
+
+            // Visual feedback
+            this.showSaveConfirmation();
+
+            console.log('Favourite saved:', this.favourite);
+        } catch (error) {
+            console.error('Error saving favourite:', error);
+            this.showSaveError();
+        }
+    }
+
+    // Apply favourite preset
+    applyFavourite() {
+        if (!this.favourite) {
+            console.warn('No favourite preset saved');
+            return;
+        }
+
+        console.log('Applying favourite preset:', this.favourite.name);
+
+        // Add loading state to favourite button
+        const favouriteButton = document.querySelector('[data-preset="favourite"]');
+        if (favouriteButton) {
+            this.setActivePreset(favouriteButton);
+            favouriteButton.classList.add('loading');
+        }
+
+        // Apply settings with a slight delay for visual feedback
+        setTimeout(() => {
+            this.applyPresetSettings(this.favourite);
+
+            if (favouriteButton) {
+                favouriteButton.classList.remove('loading');
+            }
+
+            this.currentPreset = 'favourite';
+            console.log('Favourite preset applied successfully');
+        }, 300);
+    }
+
+    // Save to localStorage
+    saveFavouriteToStorage() {
+        try {
+            localStorage.setItem('mood-app-favourite', JSON.stringify(this.favourite));
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+            // Could fallback to sessionStorage or just keep in memory
+            throw error;
+        }
+    }
+
+    // Load from localStorage
+    loadFavourite() {
+        try {
+            const saved = localStorage.getItem('mood-app-favourite');
+            if (saved) {
+                this.favourite = JSON.parse(saved);
+                this.updateFavouriteUI();
+                console.log('Favourite loaded from storage:', this.favourite.name);
+            }
+        } catch (error) {
+            console.error('Error loading favourite from storage:', error);
+            // Clear corrupted data
+            localStorage.removeItem('mood-app-favourite');
+        }
+    }
+
+    // Update UI to show favourite status
+    updateFavouriteUI() {
+        const saveFavouriteBtn = document.getElementById('save-favourite-btn');
+        const favouritePresetPill = document.querySelector('[data-preset="favourite"]');
+
+        if (this.favourite) {
+            // Show that a favourite exists
+            if (saveFavouriteBtn) {
+                saveFavouriteBtn.classList.add('has-favourite');
+                saveFavouriteBtn.title = `Update favourite (currently: ${this.favourite.name})`;
+            }
+
+            if (favouritePresetPill) {
+                favouritePresetPill.style.display = 'block';
+                favouritePresetPill.setAttribute('title', this.favourite.name);
+            }
+        } else {
+            // No favourite exists
+            if (saveFavouriteBtn) {
+                saveFavouriteBtn.classList.remove('has-favourite');
+                saveFavouriteBtn.title = 'Save current settings as favourite';
+            }
+
+            if (favouritePresetPill) {
+                favouritePresetPill.style.display = 'none';
+            }
+        }
+    }
+
+    // Visual feedback for save action
+    showSaveConfirmation() {
+        const saveFavouriteBtn = document.getElementById('save-favourite-btn');
+        if (saveFavouriteBtn) {
+            const originalText = saveFavouriteBtn.innerHTML;
+            saveFavouriteBtn.innerHTML = '💾 Saved!';
+            saveFavouriteBtn.classList.add('save-success');
+
+            setTimeout(() => {
+                saveFavouriteBtn.innerHTML = originalText;
+                saveFavouriteBtn.classList.remove('save-success');
+            }, 2000);
+        }
+    }
+
+    showSaveError() {
+        const saveFavouriteBtn = document.getElementById('save-favourite-btn');
+        if (saveFavouriteBtn) {
+            const originalText = saveFavouriteBtn.innerHTML;
+            saveFavouriteBtn.innerHTML = '❌ Error';
+            saveFavouriteBtn.classList.add('save-error');
+
+            setTimeout(() => {
+                saveFavouriteBtn.innerHTML = originalText;
+                saveFavouriteBtn.classList.remove('save-error');
+            }, 2000);
+        }
+    }
+
+    // Clear favourite
+    clearFavourite() {
+        this.favourite = null;
+        localStorage.removeItem('mood-app-favourite');
+        this.updateFavouriteUI();
+        console.log('Favourite cleared');
+    }
+
+    // Get favourite info for display
+    getFavouriteInfo() {
+        return this.favourite ? {
+            name: this.favourite.name,
+            savedAt: this.favourite.savedAt,
+            settings: Object.keys(this.favourite).filter(key =>
+                !['savedAt', 'name'].includes(key)
+            ).length
+        } : null;
+    }
+
+    // ... existing methods (applyPreset, applyPresetSettings, etc.) stay the same ...
 
     applyPreset(presetKey) {
         const preset = this.presets[presetKey];
@@ -299,14 +573,12 @@ class PresetManager {
 
         console.log(`Applying preset: ${preset.name}`);
 
-        // Add loading state
         const button = document.querySelector(`[data-preset="${presetKey}"]`);
         if (button) {
             this.setActivePreset(button);
             button.classList.add('loading');
         }
 
-        // Apply settings with a slight delay for visual feedback
         setTimeout(() => {
             this.applyPresetSettings(preset.settings);
 
@@ -320,25 +592,22 @@ class PresetManager {
     }
 
     applyPresetSettings(settings) {
-        const moodSelect = document.getElementById('mood');
-        if (moodSelect) {
-            moodSelect.value = settings.mood;
+        // Apply mood
+        if (settings.mood !== undefined) {
+            this.setSelectValue('mood', settings.mood);
         }
+
+        // Apply sound engine
         if (settings.soundEngine !== undefined) {
             this.setSelectValue('sound-engine', settings.soundEngine);
         }
+
+        // Apply instrument
         if (settings.melodicInstrument !== undefined) {
             this.setSelectValue('melodic-instrument', settings.melodicInstrument);
         }
-        const soundEngineSelect = document.getElementById('sound-engine');
-        if (soundEngineSelect) {
-            soundEngineSelect.value = settings.soundEngine;
-        }
-        const melodicInstrumentSelect = document.getElementById('melodic-instrument');
-        if (melodicInstrumentSelect) {
-            melodicInstrumentSelect.value = settings.melodicInstrument;
-        }
 
+        // Apply toggles
         if (settings.melody !== undefined) {
             this.setToggleButton('melody-toggle', settings.melody);
         }
@@ -352,36 +621,36 @@ class PresetManager {
             this.setAmbientToggle('thunder', settings.thunder);
         }
 
-        if (settings.reverb !== undefined) {
-            this.setSliderValue('reverb', settings.masterVolume);
-        }
+        // Apply sliders
         if (settings.noteDensity !== undefined) {
             this.setSliderValue('density', settings.noteDensity);
         }
-
+        if (settings.reverb !== undefined) {
+            this.setSliderValue('reverb', settings.reverb);
+        }
         if (settings.noteFrequency !== undefined) {
             this.setSliderValue('melodic-frequency', settings.noteFrequency);
         }
         if (settings.melodicReverb !== undefined) {
             this.setSliderValue('melodic-reverb', settings.melodicReverb);
         }
+        if (settings.layerRandomness !== undefined) {
+            this.setSliderValue('layer-randomness', settings.layerRandomness);
+        }
         if (settings.melodySlotCount !== undefined) {
             this.setSliderValue('melody-slot-count', settings.melodySlotCount);
         }
-        // Apply effects
-        if (settings.layerRandomness !== undefined) {
-            this.setSliderValue('layer-randomness', settings.layerRandomness);
+        if (settings.masterVolume !== undefined) {
+            this.setSliderValue('volume', settings.masterVolume);
         }
         if (settings.waveVolume !== undefined) {
             this.setSliderValue('noise-volume', settings.waveVolume);
         }
-        if (settings.waveNoiseType !== undefined) {
-            this.setSliderValue('noise-type', settings.waveNoiseType);
-        }
-
-        // Apply instrument selections
         if (settings.clockTempo !== undefined) {
             this.setSliderValue('clock-tempo', settings.clockTempo);
+        }
+        if (settings.waveNoiseType !== undefined) {
+            this.setSelectValue('noise-type', settings.waveNoiseType);
         }
     }
 
@@ -389,7 +658,6 @@ class PresetManager {
         const slider = document.getElementById(elementId);
         if (slider) {
             slider.value = value;
-            // Trigger change event to update any associated displays/logic
             slider.dispatchEvent(new Event('input', { bubbles: true }));
         }
     }
@@ -398,7 +666,6 @@ class PresetManager {
         const select = document.getElementById(elementId);
         if (select) {
             select.value = value;
-            // Trigger change event
             select.dispatchEvent(new Event('change', { bubbles: true }));
         }
     }
@@ -411,88 +678,24 @@ class PresetManager {
         }
 
         const isCurrentlyActive = toggle.classList.contains('active');
-
         if (enabled !== isCurrentlyActive) {
-            // State needs to change - trigger a click to activate the audio systems
             console.debug(`Preset: ${enabled ? 'Enabling' : 'Disabling'} ${elementId} ambient sound`);
             toggle.click();
-        } else {
-            console.debug(`Preset: ${elementId} ambient sound already in correct state (${enabled})`);
         }
     }
 
     setToggleButton(elementId, enabled) {
-        // Try multiple possible ID variations
-        const possibleIds = [
-            elementId,
-            elementId.replace('-toggle', '-btn'),
-            elementId.replace('-toggle', ''),
-            `toggle-${elementId.replace('-toggle', '')}`,
-            `btn-${elementId.replace('-toggle', '')}`
-        ];
-
-        let toggle = null;
-        let foundId = null;
-
-        for (const id of possibleIds) {
-            toggle = document.getElementById(id);
-            if (toggle) {
-                foundId = id;
-                break;
-            }
-        }
-
+        const toggle = document.getElementById(elementId);
         if (!toggle) {
-            console.warn(`Toggle button not found for any of these IDs:`, possibleIds);
+            console.warn(`Toggle button not found for: ${elementId}`);
             return;
         }
 
-        console.debug(`Found toggle with ID: ${foundId}, setting to: ${enabled}`);
-
-        // Get current state
-        const isCurrentlyActive = toggle.classList.contains('active') ||
-            toggle.classList.contains('enabled') ||
-            toggle.checked === true;
-
-        console.debug(`Current state: ${isCurrentlyActive}, target state: ${enabled}`);
-
-        // Only change if needed
-        if (isCurrentlyActive === enabled) {
-            console.debug('Toggle already in correct state');
-            return;
-        }
-
-        // Handle different types of toggle implementations
-        if (toggle.type === 'checkbox') {
+        const isCurrentlyActive = toggle.checked === true;
+        if (isCurrentlyActive !== enabled) {
             toggle.checked = enabled;
             toggle.dispatchEvent(new Event('change', { bubbles: true }));
-        } else if (toggle.tagName === 'BUTTON' || toggle.classList.contains('btn')) {
-            // Most likely a button-based toggle - just click it
-            console.debug('Clicking button toggle');
-            toggle.click();
-        } else if (toggle.classList.contains('toggle')) {
-            // Custom toggle class
-            if (enabled) {
-                toggle.classList.add('active');
-                toggle.classList.add('enabled');
-            } else {
-                toggle.classList.remove('active');
-                toggle.classList.remove('enabled');
-            }
-            toggle.dispatchEvent(new Event('change', { bubbles: true }));
-        } else {
-            // Default: try clicking
-            console.debug('Fallback: clicking toggle');
-            toggle.click();
         }
-
-        // Verify the change worked
-        setTimeout(() => {
-            const newState = toggle.classList.contains('active') ||
-                toggle.classList.contains('enabled') ||
-                toggle.checked === true;
-            console.debug(`Toggle state after change: ${newState}`);
-        }, 100);
     }
 
     setActivePreset(activeButton) {
@@ -500,15 +703,9 @@ class PresetManager {
             btn.classList.remove('active');
         });
 
-        // Add active class to clicked button
         if (activeButton) {
             activeButton.classList.add('active');
         }
-    }
-
-    addPreset(key, presetData) {
-        this.presets[key] = presetData;
-        console.log(`Preset '${key}' added`);
     }
 
     getCurrentPreset() {

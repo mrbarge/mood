@@ -706,3 +706,97 @@ input[type="range"]:disabled::-webkit-slider-thumb {
     cursor: not-allowed;
     background: rgba(255, 255, 255, 0.3);
 }
+
+/* Favourite preset pill styling */
+.favourite-preset {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.1));
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    color: #ffd700;
+    font-weight: 600;
+}
+
+.favourite-preset:hover {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.15));
+    border-color: rgba(255, 215, 0, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+}
+
+.favourite-preset.active {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.4), rgba(255, 193, 7, 0.2));
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+/* Save favourite button styling - keep consistent with other quick buttons */
+#save-favourite-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle indicator when favourite exists - just a small dot */
+#save-favourite-btn.has-favourite::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(74, 222, 128, 0.6);
+}
+
+/* Save confirmation states */
+#save-favourite-btn.save-success {
+    background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+#save-favourite-btn.save-error {
+    background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+}
+
+/* Loading state for preset pills */
+.preset-pill.loading {
+    position: relative;
+    color: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+}
+
+.preset-pill.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    margin-left: -8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 350px) {
+    .favourite-preset {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+
+    .quick-btn {
+        min-width: 70px;
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+}
