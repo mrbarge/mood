@@ -4138,6 +4138,143 @@ class ArpeggiatorInstrument extends BaseMelodyInstrument {
 }
 
 // ===============================================
+// SPECTRAL BREATH INSTRUMENT
+// Showcases Tone.js 15.x LFO partials:
+//   filterLFO   [1, 0.5, 0.2, 0.05]  - asymmetric sweep: rises fast, lingers at peak
+//   tremoloLFO  [1, 0, 0.4, 0, 0.15] - odd harmonics only: pulse-like, breath quality
+//   phaserLFO   [1, 0.7, 0.5, 0.3, 0.1] - rich harmonics: continuously varying sweep speed
+// Result: three independent non-sinusoidal cycles rarely align, so the
+// instrument always sounds slightly different, never mechanical.
+// ===============================================
+
+class SpectralBreathInstrument extends BaseMelodyInstrument {
+    constructor() {
+        super('Spectral Breath');
+        this.filterLFO = null;
+        this.tremoloLFO = null;
+        this.phaserLFO = null;
+    }
+
+    async initialize(masterVolume, globalReverb) {
+        super.initialize(masterVolume, globalReverb);
+
+        // Brighter FM timbre - higher modulationIndex gives more harmonics for the
+        // filter to carve into, making the sweep dramatically more audible
+        this.synth = new Tone.PolySynth(Tone.FMSynth, {
+            harmonicity: 2.0,
+            modulationIndex: 10,
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.6, decay: 0.5, sustain: 0.7, release: 3.5 },
+            modulation: { type: "sine" },
+            modulationEnvelope: { attack: 0.4, decay: 0.3, sustain: 0.6, release: 2.5 },
+            volume: -4
+        });
+
+        // Q: 6 adds resonant ring at the cutoff — you hear it "sing" as the filter sweeps
+        this.filterNode = new Tone.Filter({ frequency: 900, type: "lowpass", Q: 6 });
+        this.tremoloGain = new Tone.Gain(0.8);
+        // Phaser wet 0.85 + depth 0.95: unmistakably spacey
+        this.phaser = new Tone.Phaser({ frequency: 0.8, depth: 0.95, baseFrequency: 300, wet: 0.85 });
+        this.reverbNode = new Tone.Reverb({ decay: 15, wet: this.config.reverbAmount, preDelay: 0.06 });
+        const stereoWidener = new Tone.StereoWidener(0.75);
+
+        // LFO 1: Filter sweep - [1, 0.5, 0.2, 0.05]
+        // Wide range (150–4000 Hz) so the sweep is unmistakable; partials make it
+        // linger open at the peak rather than sweeping symmetrically.
+        // Faster (0.14 Hz = ~7s cycle) so you hear the full shape within a phrase.
+        this.filterLFO = new Tone.LFO({
+            frequency: 0.14,
+            min: 150,
+            max: 4000,
+            partials: [1, 0.5, 0.2, 0.05]
+        });
+
+        // LFO 2: Amplitude tremolo - [1, 0, 0.4, 0, 0.15]
+        // Odd harmonics only. Range 0.04–1.0: drops nearly to silence, then holds
+        // at full — a pronounced breath-like pulse rather than gentle bobbing.
+        // 0.19 Hz = ~5s cycle, fast enough to hear clearly per note.
+        this.tremoloLFO = new Tone.LFO({
+            frequency: 0.19,
+            min: 0.04,
+            max: 1.0,
+            partials: [1, 0, 0.4, 0, 0.15]
+        });
+
+        // LFO 3: Phaser rate - [1, 0.7, 0.5, 0.3, 0.1]
+        // Dense harmonics make the phaser sweep accelerate and decelerate erratically.
+        // Range widened (0.1–3.5 Hz): the contrast between slow drift and fast spin
+        // is now obvious enough to hear on each sweep.
+        this.phaserLFO = new Tone.LFO({
+            frequency: 0.07,
+            min: 0.1,
+            max: 3.5,
+            partials: [1, 0.7, 0.5, 0.3, 0.1]
+        });
+
+        this.filterLFO.connect(this.filterNode.frequency);
+        this.tremoloLFO.connect(this.tremoloGain.gain);
+        this.phaserLFO.connect(this.phaser.frequency);
+
+        this.filterLFO.start();
+        this.tremoloLFO.start();
+        this.phaserLFO.start();
+
+        this.synth.connect(this.filterNode);
+        this.filterNode.connect(this.tremoloGain);
+        this.tremoloGain.connect(this.phaser);
+        this.phaser.connect(stereoWidener);
+        stereoWidener.connect(this.reverbNode);
+        this.reverbNode.connect(masterVolume);
+
+        this.effects.push(this.filterNode, this.tremoloGain, this.phaser, stereoWidener, this.reverbNode);
+        this.synth.volume.value = this.config.volume;
+    }
+
+    playMelodicSequence(melody) {
+        // Long, overlapping notes so the LFO shapes are heard through the full note body
+        const noteDuration = 4.0;
+        const noteSpacing = 2.5;
+
+        melody.forEach((note, index) => {
+            const timing = index * noteSpacing * 1000 + Math.random() * 600;
+
+            setTimeout(() => {
+                if (!this.isActive) return;
+
+                if (typeof activeNotes !== 'undefined') {
+                    if (!activeNotes[note]) activeNotes[note] = { count: 1, type: 'melodic' };
+                    else activeNotes[note].count++;
+                }
+
+                try {
+                    this.synth.triggerAttackRelease(note, noteDuration);
+                } catch (error) {
+                    console.debug("Note playback error:", error.message);
+                }
+
+                setTimeout(() => {
+                    if (typeof isPlaying !== 'undefined' && isPlaying &&
+                        typeof activeNotes !== 'undefined' && activeNotes[note]) {
+                        activeNotes[note].count--;
+                        if (activeNotes[note].count <= 0) delete activeNotes[note];
+                    }
+                }, noteDuration * 1000 + 500);
+            }, timing);
+        });
+    }
+
+    dispose() {
+        [this.filterLFO, this.tremoloLFO, this.phaserLFO].forEach(lfo => {
+            if (lfo) { try { lfo.stop(); lfo.dispose(); } catch (e) {} }
+        });
+        this.filterLFO = null;
+        this.tremoloLFO = null;
+        this.phaserLFO = null;
+        super.dispose();
+    }
+}
+
+// ===============================================
 // MELODY INSTRUMENT REGISTRY
 // ===============================================
 
@@ -4168,6 +4305,7 @@ class MelodyInstrumentRegistry {
         this.register('deep-bass-melodic', DeepBassMelodicInstrument);
 
         this.register('arpeggiator', ArpeggiatorInstrument);
+        this.register('spectral-breath', SpectralBreathInstrument);
     }
 
     register(key, InstrumentClass) {
