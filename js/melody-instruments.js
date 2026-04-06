@@ -4275,6 +4275,352 @@ class SpectralBreathInstrument extends BaseMelodyInstrument {
 }
 
 // ===============================================
+// FRACTAL CASCADE INSTRUMENT
+// Fractal Cascade from the lab — faithful port — plus one
+// companion arp chosen randomly at instantiation time:
+//   'muteWeave'  — two harmonically-muted sequences
+//   'polyrhythm' — straight 8ths + triplet 8ths (4:3)
+//   'humanTouch' — humanised loop with ±18ms sub-tick offsets
+//
+// Both layers share one signal chain so the phaser and delay
+// print the same space onto everything.
+// ===============================================
+
+class FractalCascadeInstrument extends BaseMelodyInstrument {
+    constructor() {
+        super('Fractal Cascade');
+
+        const companions = ['muteWeave', 'polyrhythm', 'humanTouch'];
+        this.companionType = companions[Math.floor(Math.random() * companions.length)];
+
+        // Cascade state
+        this.cascadePattern  = null;
+        this.cascadeMuteLoop = null;
+        this.cascadeMutePhase = Math.random() * Math.PI * 2;
+
+        // Companion state
+        this.companionNodes  = [];   // all sequences/loops for the active companion
+        this.companionMuteLoop = null;
+        this.compSeqA = null;        // referenced by mute loops that need safe null checks
+        this.compSeqB = null;
+        this.compMutePhaseA = Math.random() * Math.PI * 2;
+        this.compMutePhaseB = this.compMutePhaseA + Math.PI * 0.8;
+
+        // Chord progression
+        this.currentChordIndex = 0;
+        this.chordProgression  = 'simple';
+        this.chordChangeRate   = 10;
+        this.chordChangeTimeout = null;
+
+        // Extra nodes disposed separately
+        this.companionSynth = null;
+        this.phaserLFO      = null;
+    }
+
+    async initialize(masterVolume, globalReverb) {
+        super.initialize(masterVolume, globalReverb);
+
+        // Cascade synth: clean sine pluck — exactly as in the lab
+        this.synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.004, decay: 0.8, sustain: 0.0, release: 1.2 }
+        });
+        this.synth.volume.value = -12;
+
+        // Companion synth: warmer timbre so the two layers are distinguishable
+        this.companionSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'triangle8' },
+            envelope: { attack: 0.006, decay: 0.28, sustain: 0.12, release: 1.0 }
+        });
+        this.companionSynth.volume.value = -16;
+
+        // Shared signal chain — matches the lab's Fractal Cascade exactly
+        const filter  = new Tone.Filter({ frequency: 2800, type: 'lowpass', Q: 1.5 });
+        const phaser  = new Tone.Phaser({ frequency: 0.5, depth: 0.8, baseFrequency: 400, wet: 0.5 });
+        const delay   = new Tone.FeedbackDelay({ delayTime: '8n.', feedback: 0.55, wet: 0.45 });
+        this.reverbNode = new Tone.Reverb({ decay: 6, wet: this.config.reverbAmount });
+
+        this.phaserLFO = new Tone.LFO({ frequency: 0.06, min: 0.1, max: 3.2, partials: [1, 0.7, 0.5, 0.3, 0.1] });
+        this.phaserLFO.connect(phaser.frequency);
+        this.phaserLFO.start();
+
+        this.synth.connect(filter);
+        this.companionSynth.connect(filter);
+        filter.connect(phaser);
+        phaser.connect(delay);
+        delay.connect(this.reverbNode);
+        this.reverbNode.connect(masterVolume);
+
+        this.effects.push(filter, phaser, delay, this.reverbNode);
+
+        const names = ['simple', 'jazzy', 'mysterious', 'floating', 'epic'];
+        this.chordProgression = names[Math.floor(Math.random() * names.length)];
+        this.chordChangeRate  = 8 + Math.random() * 8;
+    }
+
+    // ── Chord helpers ──────────────────────────────────────
+
+    buildChordsFromScale(scale) {
+        const s = scale.slice(0, 7);
+        const chords = [];
+        for (let i = 0; i < 7; i++) chords.push([s[i], s[(i + 2) % 7], s[(i + 4) % 7]]);
+        return chords;
+    }
+
+    getChordProgressions() {
+        if (!this.currentScale || this.currentScale.length === 0) {
+            return {
+                simple:     [['C4','E4','G4'],  ['G4','B4','D5'],  ['A4','C5','E5'],  ['F4','A4','C5']],
+                jazzy:      [['D4','F4','A4'],  ['G4','B4','D5'],  ['C4','E4','G4'],  ['A4','C5','E5']],
+                mysterious: [['C4','Eb4','G4'], ['Bb3','D4','F4'], ['Ab3','C4','Eb4'],['Bb3','D4','F4']],
+                floating:   [['C4','E4','G4'],  ['D4','F4','A4'],  ['E4','G4','B4'],  ['D4','F4','A4']],
+                epic:       [['A4','C5','E5'],  ['F4','A4','C5'],  ['C4','E4','G4'],  ['G4','B4','D5']]
+            };
+        }
+        const c = this.buildChordsFromScale(this.currentScale);
+        return {
+            simple:     [c[0], c[4], c[5], c[3]],
+            jazzy:      [c[1], c[4], c[0], c[5]],
+            mysterious: [c[0], c[6], c[5], c[6]],
+            floating:   [c[0], c[1], c[2], c[1]],
+            epic:       [c[5], c[3], c[0], c[4]]
+        };
+    }
+
+    noteToMidi(note) {
+        const map = {'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'F':5,'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11};
+        return (parseInt(note.slice(-1)) + 1) * 12 + (map[note.slice(0, -1)] ?? 0);
+    }
+
+    trackNote(note, duration) {
+        if (typeof activeNotes === 'undefined') return;
+        if (!activeNotes[note]) activeNotes[note] = { count: 1, type: 'arpeggio' };
+        else activeNotes[note].count++;
+        setTimeout(() => {
+            if (typeof isPlaying !== 'undefined' && isPlaying &&
+                typeof activeNotes !== 'undefined' && activeNotes[note]) {
+                activeNotes[note].count--;
+                if (activeNotes[note].count <= 0) delete activeNotes[note];
+            }
+        }, duration * 1000 + 500);
+    }
+
+    // ── Fractal Cascade layer ───────────────────────────────
+
+    startCascade(notes) {
+        if (this.cascadePattern) {
+            try { this.cascadePattern.stop(); this.cascadePattern.dispose(); } catch(e) {}
+            this.cascadePattern = null;
+        }
+
+        // Faithful port of the lab's Fractal Cascade
+        this.cascadePattern = new Tone.Pattern((time, note) => {
+            if (!this.isActive || !note || !this.synth) return;
+
+            if (!this.cascadePattern.mute) {
+                this.trackNote(note, 0.8);
+                try { this.synth.triggerAttackRelease(note, '16n', time, 0.65); } catch(e) {}
+
+                // Every 3rd index: scatter ghost notes ahead
+                if (this.cascadePattern.index % 3 === 0) {
+                    const count = 1 + (this.cascadePattern.index % 4 === 0 ? 2 : 1);
+                    for (let i = 1; i <= count; i++) {
+                        const ghost = notes[(notes.indexOf(note) + i) % notes.length];
+                        try { this.synth.triggerAttackRelease(ghost, '32n', time + i * 0.07, 0.3 / i); } catch(e) {}
+                    }
+                }
+            }
+        }, notes, 'up');
+        this.cascadePattern.interval = '8n';
+        this.cascadePattern.start(0);
+
+        // Mute loop persists across chord changes
+        if (!this.cascadeMuteLoop) {
+            this.cascadeMuteLoop = new Tone.Loop(() => {
+                this.cascadeMutePhase += 0.055;
+                const v = Math.sin(this.cascadeMutePhase) + 0.45 * Math.sin(2 * this.cascadeMutePhase);
+                if (this.cascadePattern) this.cascadePattern.mute = v > 0.9;
+            }, '8n');
+            this.cascadeMuteLoop.start(0);
+        }
+    }
+
+    // ── Companion layer ─────────────────────────────────────
+
+    stopCompanion() {
+        this.companionNodes.forEach(n => { try { n.stop?.(); n.dispose?.(); } catch(e) {} });
+        this.companionNodes = [];
+        this.compSeqA = null;
+        this.compSeqB = null;
+        if (this.companionMuteLoop) {
+            try { this.companionMuteLoop.stop(); this.companionMuteLoop.dispose(); } catch(e) {}
+            this.companionMuteLoop = null;
+        }
+    }
+
+    startCompanion(chord) {
+        this.stopCompanion();
+        // Expand chord over two octaves for companions that walk a range
+        const expanded = [...chord];
+        chord.forEach(note => {
+            const name = note.slice(0, -1), oct = parseInt(note.slice(-1));
+            if (oct + 1 <= 6) expanded.push(name + (oct + 1));
+        });
+        expanded.sort((a, b) => this.noteToMidi(a) - this.noteToMidi(b));
+
+        if (this.companionType === 'muteWeave')  this.startMuteWeave(chord, expanded);
+        if (this.companionType === 'polyrhythm') this.startPolyrhythm(chord);
+        if (this.companionType === 'humanTouch') this.startHumanTouch(expanded);
+    }
+
+    startMuteWeave(chord, expanded) {
+        const bassOct  = Math.max(2, parseInt(chord[0].slice(-1)) - 1);
+        const bassRoot = chord[0].slice(0, -1) + bassOct;
+        const fifth    = chord[2] || chord[0];
+
+        this.compSeqA = new Tone.Sequence((time, note) => {
+            if (!this.isActive || !note || !this.companionSynth) return;
+            try { this.companionSynth.triggerAttackRelease(note, '16n', time, 0.42); } catch(e) {}
+        }, expanded, '16n');
+
+        this.compSeqB = new Tone.Sequence((time, note) => {
+            if (!this.isActive || !note || !this.companionSynth) return;
+            try { this.companionSynth.triggerAttackRelease(note, '16n', time, 0.32); } catch(e) {}
+        }, [bassRoot, null, fifth, null, chord[0], null, fifth, null], '16n');
+
+        this.compSeqA.start(0);
+        this.compSeqB.start(0);
+        this.companionNodes.push(this.compSeqA, this.compSeqB);
+
+        this.companionMuteLoop = new Tone.Loop(() => {
+            this.compMutePhaseA += 0.065; this.compMutePhaseB += 0.04;
+            const vA = Math.sin(this.compMutePhaseA) + 0.55 * Math.sin(2 * this.compMutePhaseA) + 0.22 * Math.sin(3 * this.compMutePhaseA);
+            const vB = Math.sin(this.compMutePhaseB) + 0.6  * Math.sin(2 * this.compMutePhaseB) + 0.3  * Math.sin(5 * this.compMutePhaseB);
+            if (this.compSeqA) this.compSeqA.mute = vA < -0.55;
+            if (this.compSeqB) this.compSeqB.mute = vB >  1.05;
+        }, '8n');
+        this.companionMuteLoop.start(0);
+    }
+
+    startPolyrhythm(chord) {
+        // Straight 8ths: diatonic walk through the chord
+        this.compSeqA = new Tone.Sequence((time, note) => {
+            if (!this.isActive || !note || !this.companionSynth) return;
+            try { this.companionSynth.triggerAttackRelease(note, '16n', time, 0.48); } catch(e) {}
+        }, [...chord, chord[0]], '8n');
+
+        // Triplet 8ths: mid-chord tones creating 4:3 cross-rhythm
+        this.compSeqB = new Tone.Sequence((time, note) => {
+            if (!this.isActive || !note || !this.companionSynth) return;
+            try { this.companionSynth.triggerAttackRelease(note, '32n', time, 0.36); } catch(e) {}
+        }, [chord[1] || chord[0], chord[2] || chord[0], chord[0], chord[1] || chord[0]], '8t');
+
+        this.compSeqA.start(0);
+        this.compSeqB.start(0);
+        this.companionNodes.push(this.compSeqA, this.compSeqB);
+
+        this.companionMuteLoop = new Tone.Loop(() => {
+            this.compMutePhaseA += 0.045; this.compMutePhaseB += 0.028;
+            const vA = Math.sin(this.compMutePhaseA) + 0.4 * Math.sin(3 * this.compMutePhaseA);
+            const vB = Math.sin(this.compMutePhaseB) + 0.5 * Math.sin(2 * this.compMutePhaseB) + 0.2 * Math.sin(5 * this.compMutePhaseB);
+            if (this.compSeqA) this.compSeqA.mute = vA < -0.65;
+            if (this.compSeqB) this.compSeqB.mute = vB <  0.25;
+        }, '8n');
+        this.companionMuteLoop.start(0);
+    }
+
+    startHumanTouch(expanded) {
+        let idx = 0;
+        const loop = new Tone.Loop((time) => {
+            if (!this.isActive || !this.companionSynth) return;
+            const offset = (Math.random() - 0.5) * 0.036;
+            const vel    = 0.3 + Math.random() * 0.32;
+            try { this.companionSynth.triggerAttackRelease(expanded[idx % expanded.length], '8n', time + offset, vel); } catch(e) {}
+            if      (Math.random() < 0.10) idx += 2;
+            else if (Math.random() < 0.08) { /* repeat */ }
+            else idx++;
+        }, '8n');
+        loop.start(0);
+        this.companionNodes.push(loop);
+        // No mute loop for humanTouch — its natural velocity/skip variation is enough
+    }
+
+    // ── Sequencer lifecycle ─────────────────────────────────
+
+    startAllSequences() {
+        if (!this.isActive) return;
+        const progressions = this.getChordProgressions();
+        const chord = progressions[this.chordProgression][this.currentChordIndex];
+
+        // Build ascending note pool for the Pattern
+        const cascadeNotes = [...chord];
+        chord.forEach(note => {
+            const name = note.slice(0, -1), oct = parseInt(note.slice(-1));
+            if (oct + 1 <= 6) cascadeNotes.push(name + (oct + 1));
+        });
+        cascadeNotes.sort((a, b) => this.noteToMidi(a) - this.noteToMidi(b));
+
+        this.startCascade(cascadeNotes);
+        this.startCompanion(chord);
+    }
+
+    scheduleChordChanges() {
+        if (this.chordChangeTimeout) clearTimeout(this.chordChangeTimeout);
+        this.chordChangeTimeout = setTimeout(() => {
+            if (!this.isActive) return;
+            const progressions = this.getChordProgressions();
+            this.currentChordIndex = (this.currentChordIndex + 1) % progressions[this.chordProgression].length;
+            this.startAllSequences();
+            this.scheduleChordChanges();
+        }, this.chordChangeRate * 1000);
+    }
+
+    start(scale, melodicPattern) {
+        super.start(scale, melodicPattern);
+        if (Tone.Transport.state !== 'started') Tone.Transport.start();
+        this.startAllSequences();
+        this.scheduleChordChanges();
+    }
+
+    stop() {
+        super.stop();
+        if (this.companionSynth) { try { this.companionSynth.releaseAll(); } catch(e) {} }
+
+        if (this.cascadePattern) {
+            try { this.cascadePattern.stop(); this.cascadePattern.dispose(); } catch(e) {}
+            this.cascadePattern = null;
+        }
+        if (this.cascadeMuteLoop) {
+            try { this.cascadeMuteLoop.stop(); this.cascadeMuteLoop.dispose(); } catch(e) {}
+            this.cascadeMuteLoop = null;
+        }
+
+        this.stopCompanion();
+
+        if (this.chordChangeTimeout) {
+            clearTimeout(this.chordChangeTimeout);
+            this.chordChangeTimeout = null;
+        }
+        this.currentChordIndex = 0;
+    }
+
+    dispose() {
+        this.stop();
+        if (this.phaserLFO) {
+            try { this.phaserLFO.stop(); this.phaserLFO.dispose(); } catch(e) {}
+            this.phaserLFO = null;
+        }
+        const cs = this.companionSynth;
+        this.companionSynth = null;
+        setTimeout(() => { if (cs) { try { cs.dispose(); } catch(e) {} } }, 500);
+        super.dispose();
+    }
+
+    startMelodicPhrases() {}
+    playMelodicSequence() {}
+}
+
+// ===============================================
 // MELODY INSTRUMENT REGISTRY
 // ===============================================
 
@@ -4305,6 +4651,7 @@ class MelodyInstrumentRegistry {
         this.register('deep-bass-melodic', DeepBassMelodicInstrument);
 
         this.register('arpeggiator', ArpeggiatorInstrument);
+        this.register('fractal-cascade', FractalCascadeInstrument);
         this.register('spectral-breath', SpectralBreathInstrument);
     }
 
