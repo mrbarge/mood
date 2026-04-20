@@ -579,6 +579,7 @@
     let sleepManager = null;
     let thunderManager = null;
     let presetManager = null;
+    let iosKeepAliveAudio = null;
     let clockInitialized = false;
     let isPlaying = false;
     let activeNotes = {};
@@ -838,6 +839,38 @@
         animateWaves();
     }
 
+    // Keep iOS audio session alive so audio continues when screen locks.
+    // iOS suspends Web Audio contexts when the screen locks, but a looping
+    // <audio> element (started from a user gesture) prevents that suspension.
+    function startIOSKeepAlive() {
+        if (!iosKeepAliveAudio) {
+            iosKeepAliveAudio = new Audio();
+            // Minimal silent WAV (no audible output)
+            iosKeepAliveAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+            iosKeepAliveAudio.loop = true;
+        }
+        iosKeepAliveAudio.play().catch(() => {});
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: 'Mood',
+                artist: 'Ambient Music'
+            });
+            navigator.mediaSession.setActionHandler('play', () => { if (!isPlaying) startMusic(); });
+            navigator.mediaSession.setActionHandler('pause', () => { if (isPlaying) stopMusic(); });
+            navigator.mediaSession.playbackState = 'playing';
+        }
+    }
+
+    function stopIOSKeepAlive() {
+        if (iosKeepAliveAudio) {
+            iosKeepAliveAudio.pause();
+        }
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
+    }
+
     // Music functions (adapted from original)
     async function startMusic() {
         if (isPlaying) return;
@@ -846,6 +879,7 @@
 
         try {
             await Tone.start();
+            startIOSKeepAlive();
             isPlaying = true;
             activeNotes = {};
 
@@ -956,6 +990,7 @@
 
     function stopMusic() {
         console.log('🛑 Stopping ambient music system...');
+        stopIOSKeepAlive();
         isPlaying = false;
 
         if (musicManager) musicManager.stop();
@@ -986,6 +1021,13 @@
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🎵 Initializing Mood App...');
+
+        // Resume AudioContext if iOS suspends it (e.g. after screen lock)
+        Tone.context.on('statechange', () => {
+            if (isPlaying && Tone.context.state !== 'running') {
+                Tone.context.resume();
+            }
+        });
 
         // Initialize managers
         melodyManager = new MultiMelodyManager();
